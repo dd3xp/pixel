@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src.optimize import run  # noqa: E402
+from src.optimize import run, run_pyramid  # noqa: E402
 
 
 def main() -> None:
@@ -23,7 +23,10 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy(args.config, out_dir / "config.yaml")
 
-    run(cfg, out_dir)
+    if "scales" in cfg:
+        run_pyramid(cfg, out_dir)
+    else:
+        run(cfg, out_dir)
 
 
 if __name__ == "__main__":

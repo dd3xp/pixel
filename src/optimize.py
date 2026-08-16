@@ -1,4 +1,9 @@
-"""Single-scale optimization loop (P0). P1 extends this into the multi-scale pyramid."""
+"""Optimization loops.
+
+P0: single-scale (`run`) — direct optimization at target resolution.
+P1: multi-scale pyramid (`run_pyramid`) — refine at each scale, downsample,
+re-initialize the next scale from the previous level's result.
+"""
 import csv
 import random
 from pathlib import Path
@@ -14,11 +19,14 @@ from .renderer import PaletteRenderer
 from .sds import SDXLGuidance
 
 
-def _load_image(path: str, size: int, device: str) -> torch.Tensor:
+def _load_image(path: str, device: str) -> torch.Tensor:
     img = Image.open(path).convert("RGB")
     t = torch.tensor(list(img.getdata()), dtype=torch.float32).view(img.height, img.width, 3) / 255.0
-    t = t.permute(2, 0, 1).unsqueeze(0).to(device)
-    return F.interpolate(t, size=(size, size), mode="bilinear", antialias=True).squeeze(0)
+    return t.permute(2, 0, 1).to(device)  # (3, H, W) full resolution
+
+
+def _resize(image_3hw: torch.Tensor, size: int) -> torch.Tensor:
+    return F.interpolate(image_3hw.unsqueeze(0), size=(size, size), mode="bilinear", antialias=True).squeeze(0)
 
 
 def _save_png(image_3hw: torch.Tensor, path: Path, resize: int | None = 256) -> None:
@@ -29,32 +37,31 @@ def _save_png(image_3hw: torch.Tensor, path: Path, resize: int | None = 256) -> 
     img.save(path)
 
 
-def run(cfg: dict, out_dir: Path) -> None:
-    device = cfg.get("device", "cuda")
-    torch.manual_seed(cfg.get("seed", 0))
-    random.seed(cfg.get("seed", 0))
-
-    png_dir = out_dir / "png_logs"
-    png_dir.mkdir(parents=True, exist_ok=True)
-
-    palette = load_hex_palette(cfg["palette"]).to(device)
-    H = W = int(cfg["image_size"])
-    renderer = PaletteRenderer(H, W, palette, init_std=cfg.get("init_std", 1.0)).to(device)
-
-    reference_small = None
-    if cfg.get("image"):
-        reference_small = _load_image(cfg["image"], H, device)
-        renderer.init_from_image(reference_small, distance=cfg.get("init_distance", "l1"))
-
+def _build_guidance(cfg: dict, device: str) -> SDXLGuidance:
     guidance = SDXLGuidance(
         model_id=cfg.get("model_id", "stabilityai/stable-diffusion-xl-base-1.0"),
         device=device,
         render_size=int(cfg.get("render_size", 1024)),
     )
     guidance.set_prompt(cfg["prompt"], cfg.get("negative_prompt", ""))
+    return guidance
 
-    opt = torch.optim.Adam(renderer.parameters(), lr=float(cfg.get("lr", 0.025)))
-    steps = int(cfg["steps"])
+
+def _optimize_scale(
+    renderer: PaletteRenderer,
+    guidance: SDXLGuidance,
+    cfg: dict,
+    out_dir: Path,
+    steps: int,
+    reference_small: torch.Tensor | None,
+    lr: float,
+) -> None:
+    """Inner loop shared by single-scale and pyramid runs."""
+    device = renderer.logits.device
+    png_dir = out_dir / "png_logs"
+    png_dir.mkdir(parents=True, exist_ok=True)
+
+    opt = torch.optim.Adam(renderer.parameters(), lr=lr)
     save_steps = int(cfg.get("save_steps", 50))
     tau_min, tau_max = cfg.get("tau_min", 0.5), cfg.get("tau_max", 1.5)
     anchor_weight = float(cfg.get("anchor_weight", 0.0))
@@ -67,7 +74,7 @@ def run(cfg: dict, out_dir: Path) -> None:
     for step in range(steps + 1):
         opt.zero_grad(set_to_none=True)
         tau = random.uniform(tau_min, tau_max)
-        img = renderer(tau=tau, mode="gumbel")  # (3, H, W)
+        img = renderer(tau=tau, mode="gumbel")
 
         if random.random() < cfg.get("hflip_prob", 0.5):
             img = img.flip(-1)
@@ -102,8 +109,62 @@ def run(cfg: dict, out_dir: Path) -> None:
                     f"{highfreq_energy(hard):.5f}",
                     f"{l1_to_reference(hard, init_hard):.5f}",
                 ])
-            print(f"[{step}/{steps}] sds={float(sds):.2f} colors={colors_used(renderer.hard_indices())}")
+            print(f"[{out_dir.name} {step}/{steps}] sds={float(sds):.2f} colors={colors_used(renderer.hard_indices())}", flush=True)
+
+    _save_png(renderer(mode="hard").detach(), out_dir / "final_hard.png")
+
+
+def run(cfg: dict, out_dir: Path) -> None:
+    """P0 single-scale optimization at target resolution."""
+    device = cfg.get("device", "cuda")
+    torch.manual_seed(cfg.get("seed", 0))
+    random.seed(cfg.get("seed", 0))
+
+    palette = load_hex_palette(cfg["palette"]).to(device)
+    size = int(cfg["image_size"])
+    renderer = PaletteRenderer(size, size, palette, init_std=cfg.get("init_std", 1.0)).to(device)
+
+    reference_small = None
+    if cfg.get("image"):
+        reference_small = _resize(_load_image(cfg["image"], device), size)
+        renderer.init_from_image(reference_small, distance=cfg.get("init_distance", "l1"))
+
+    guidance = _build_guidance(cfg, device)
+    _optimize_scale(renderer, guidance, cfg, out_dir, int(cfg["steps"]), reference_small, float(cfg.get("lr", 0.025)))
+    _save_png(renderer(mode="hard").detach(), out_dir / "final_hard_1x.png", resize=None)
+    print(f"Done -> {out_dir}", flush=True)
+
+
+def run_pyramid(cfg: dict, out_dir: Path) -> None:
+    """P1 multi-scale: refine at each scale, hand result down to the next."""
+    device = cfg.get("device", "cuda")
+    torch.manual_seed(cfg.get("seed", 0))
+    random.seed(cfg.get("seed", 0))
+
+    scales: list[int] = [int(s) for s in cfg["scales"]]
+    steps_list: list[int] = [int(s) for s in cfg["steps_per_scale"]]
+    assert len(scales) == len(steps_list), "scales and steps_per_scale must align"
+    lrs = cfg.get("lr_per_scale") or [cfg.get("lr", 0.025)] * len(scales)
+
+    palette = load_hex_palette(cfg["palette"]).to(device)
+    source = _load_image(cfg["image"], device)
+    guidance = _build_guidance(cfg, device)
+
+    carry = None  # previous level's soft render, full precision
+    renderer = None
+    for i, (size, steps) in enumerate(zip(scales, steps_list)):
+        level_dir = out_dir / f"level_{i}_{size}"
+        reference_small = _resize(source, size)
+        init_img = reference_small if carry is None else _resize(carry, size)
+
+        renderer = PaletteRenderer(size, size, palette, init_std=cfg.get("init_std", 1.0)).to(device)
+        renderer.init_from_image(init_img, distance=cfg.get("init_distance", "l1"))
+
+        print(f"=== level {i}: {size}x{size}, {steps} steps ===", flush=True)
+        _optimize_scale(renderer, guidance, cfg, level_dir, steps, reference_small, float(lrs[i]))
+
+        carry = renderer(tau=1.0, mode="softmax").detach()
 
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard.png")
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard_1x.png", resize=None)
-    print(f"Done -> {out_dir}")
+    print(f"Done -> {out_dir}", flush=True)
