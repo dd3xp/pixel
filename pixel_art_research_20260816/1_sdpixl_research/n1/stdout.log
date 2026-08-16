@@ -1,0 +1,147 @@
+[Info] Load mykeys from C:\Agents\GA\GenericAgent\mykey.py
+[Debug] Updated system prompt, length 2700 chars.
+[Debug] Current context: 425 chars, 1 messages.
+[Cache] input=3633 cached=0
+[Output] tokens=783
+code run output:
+=== Searching: VSD ProlificDreamer ===
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/YIw0O3hMxor08Y9aATu2VC2Rnm4</id>
+  <title>arXiv Query: search_query=all:ProlificDreamer OR all:Variational OR all:Score OR all:Distillation&amp;id_list=&amp;start=0&amp;max_results=5</title>
+  <updated>2026-08-16T04:01:27Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=all:ProlificDreamer+OR+(all:Variational+OR+(all:Score+OR+all:Distillation))&amp;start=0&amp;max_results=5&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>5</opensearch:itemsPerPage>
+  <opensearch:totalResults>210996</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2412.06780v2</id>
+    <title>Diverse Score Distillation</title>
+    <updated>2025-04-15T21:06:54Z</updated>
+    <link href="https://arxiv.org/abs/2412.06780v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2412.06780v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Score distillation of 2D diffusion models has proven to be a powerful mechanism to guide 3D optimization, for example enabling text-based 3D generation or single-view reconstruction. A common limitation of existing score distillation formulations, however, is that the outputs of the (mode-seeking) optimization are limited in diversity despite the underlying diffusion model being capable of generating diverse samples. In this work, inspired by the sampling process in denoising diffusion, we propose a score formulation that guides the optimization to follow generation paths defined by random initial seeds, thus ensuring diversity. We then present an approximation to adopt this formulation for scenarios where the optimization may not precisely follow the generation paths (\eg a 3D representation whose renderings evolve in a co-dependent manner). We showcase the applications of our `Diverse Score Distillation' (DSD) formulation across tasks such as 2D optimization, text-based 3D inference, and single-view reconstruction. We also empirically validate DSD against prior score distillation formulations and show that it significantly improves sample diversity while preserving fidelity.</summary>
+    <category term="cs.CV" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-12-09T18:59:02Z</published>
+    <arxiv:comment>Project Page: https://billyxyb.github.io/Diverse-Score-Distillation/</arxiv:comment>
+    <arxiv:primary_category term="cs.CV"/>
+    <author>
+      <name>Yanbo Xu</name>
+    </author>
+    <author>
+      <name>Jayanth Srinivasa</name>
+    </author>
+    <author>
+      <name>Gaowen Liu</name>
+    </author>
+    <author>
+      <name>Shubham Tulsiani</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2305.16213v2</id>
+    <title>ProlificDreamer: High-Fidelity and Diverse Text-t
+[Debug] Current context: 7188 chars, 3 messages.
+[Cache] input=9501 cached=0
+[Output] tokens=566
+code run output:
+
+=== Paper 2305.16213 ===
+Title: arXiv Query: search_query=&amp;id_list=2305.16213&amp;start=0&amp;max_results=10
+Published: 2023-05
+Summary: Score distillation sampling (SDS) has shown great promise in text-to-3D generation by distilling pretrained large-scale text-to-image diffusion models, but suffers from over-saturation, over-smoothing, and low-diversity problems. In this work, we propose to model the 3D parameter as a random variable instead of a constant as in SDS and present variational score distillation (VSD), a principled particle-based variational framework to explain and address the aforementioned issues in text-to-3D gen...
+
+=== Paper 2211.10440 ===
+Title: arXiv Query: search_query=&amp;id_list=2211.10440&amp;start=0&amp;max_results=10
+Published: 2022-11
+Summary: DreamFusion has recently demonstrated the utility of a pre-trained text-to-image diffusion model to optimize Neural Radiance Fields (NeRF), achieving remarkable text-to-3D synthesis results. However, the method has two inherent limitations: (a) extremely slow optimization of NeRF and (b) low-resolution image space supervision on NeRF, leading to low-quality 3D models with a long processing time. In this paper, we address these limitations by utilizing a two-stage optimization framework. First, w...
+[Debug] Current context: 10592 chars, 5 messages.
+[Cache] input=11363 cached=6553
+[Output] tokens=200
+[Debug] Current context: 11212 chars, 7 messages.
+[Cache] input=5888 cached=15
+[Output] tokens=1071
+code run output:
+# DreamFusion之后SDS算法的核心改进工作
+================================================================================
+
+Magic3D: High-Resolution Text-to-3D Content Creation | 2022-11 | Two-stage coarse-to-fine optimization: low-res NeRF then high-res DMTet mesh refinement. Achieves 8x higher resolution and 2x faster than DreamFusion. | https://arxiv.org/abs/2211.10440
+
+ProlificDreamer: High-Fidelity and Diverse Text-to-3D Generation with Variational Score Distillation | 2023-05 | Proposes Variational Score Distillation (VSD) treating 3D parameters as random variables instead of constants. Solves SDS's over-saturation, over-smoothing, and low-diversity problems. | https://arxiv.org/abs/2305.16213
+
+Score Jacobian Chaining: Lifting Pretrained 2D Diffusion Models for 3D Generation | 2022-12 | Applies chain rule on learned score gradients, back-propagating through renderer Jacobian. Addresses distribution mismatch between 2D training and 3D application. | https://arxiv.org/abs/2212.00774
+
+Stable Score Distillation for High-Quality 3D Generation | 2023-12 | Identifies variance-reducing term in SDS as sub-optimal. Strategically orchestrates each term to prevent over-smoothness and color-saturation, provides theoretical understanding. | https://arxiv.org/abs/2312.09305
+
+Score Distillation via Reparametrized DDIM | 2024-05 | Reformulates SDS as high-variance DDIM. Inverts DDIM in each update to recover better noise approximation, reducing over-smoothing without training extra networks. | https://arxiv.org/abs/2405.15891
+
+Invariant Score Distillation For Hyper-Realistic Text-to-3D Generation | 2024-07 | Decouples SDS into reconstruction and CFG terms. Uses invariant score from DDIM to replace reconstruction term, enabling medium CFG scale to avoid over-saturation/smoothing. | https://arxiv.org/abs/2407.09822
+
+
+
+================================================================================
+共找到 6 篇核心改进论文（2022年9月DreamFusion之后）
+[Cut] 17005 -> 17005
+[Debug] Current context: 17005 chars, 9 messages.
+[Cache] input=9346 cached=0
+[Output] tokens=911
+[Debug] Current context: 19544 chars, 11 messages.
+[Cache] input=10626 cached=3801
+[Output] tokens=593
+[Debug] Current context: 21535 chars, 13 messages.
+[Cache] input=11924 cached=0
+[Output] tokens=47
+[Debug] Current context: 24671 chars, 15 messages.
+[Cache] input=13726 cached=0
+[Output] tokens=1048
+code run output:
+CWD: C:\Agents\GA\GenericAgent\temp
+Found: C:\Agents\GA\GenericAgent\temp\output.txt (2729 bytes)
+
+=== C:\Agents\GA\GenericAgent\temp\output.txt ===
+# SD-πXL 论文评价与后续工作总结
+
+## 基本信息
+- **论文标题**: SD-πXL: Generating Low-Resolution Quantized Imagery via Score Distillation
+- **作者**: Alexandre Binninger, Olga Sorkine-Hornung
+- **发表会议**: SIGGRAPH Asia 2024 (ACM顶级图形学会议)
+- **ArXiv提交日期**: [Submitted on 8 Oct 2024]
+- **ACM链接**: https://dl.acm.org/doi/abs/10.1145/3680528.3687570
+- **ArXiv链接**: https://arxiv.org/abs/2410.06236
+
+## 学术影响力
+- **引用数**: 10 (Google Scholar统计，截至2026年8月)
+- **会议等级**: SIGGRAPH Asia为CCF A类会议，图形学领域顶级会议
+
+## 开源情况
+- **GitHub仓库**: https://g
+[Debug] Current context: 29596 chars, 17 messages.
+[Cache] input=14066 cached=10623
+[Output] tokens=628
+[Cut] 32160 -> 24078
+[Debug] Current context: 24078 chars, 19 messages.
+[Cache] input=13005 cached=3801
+[Output] tokens=755
+code run output:
+✓ 已写入: C:\Agents\GA\GenericAgent\temp\output.txt
+✓ 文件大小: 2322 bytes
+
+=== 验证前100字符 ===
+# DreamFusion之后SDS算法的核心改进工作
+# 搜索时间: 2026-08-16 | 筛选条件: 2022年9月后的理论改进类论文
+============================
+
+=== 验证末100字符 ===
+re Jacobian Chaining梯度链
+3. 过平滑/过饱和: VSD变分框架、Stable SSD系数重组、Reparametrized DDIM噪声近似、Invariant SSD项分解
+
+[Debug] Current context: 29319 chars, 21 messages.
+[Cache] input=15996 cached=13002
+[Output] tokens=166
+code run output:
+File exists: C:\Agents\GA\GenericAgent\temp\output.txt
+Size: 2322 bytes
+First line: # DreamFusion之后SDS算法的核心改进工作
+[Debug] Current context: 31001 chars, 23 messages.
+[Cache] input=13600 cached=94
+[Output] tokens=338

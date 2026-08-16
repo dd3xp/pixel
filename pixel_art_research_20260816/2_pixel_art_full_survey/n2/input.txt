@@ -1,0 +1,18 @@
+目标：传统像素化算法（抖动dithering/调色板量化/矢量转像素/下采样）的经典方法和最新改进
+
+数据来源：Google Scholar + 图形学会议(SIGGRAPH)，关键词: pixelization algorithm OR dithering OR palette quantization OR downsampling
+
+交付物：算法分类、复杂度对比、开源实现
+
+要求：
+1. 使用web_search工具搜索相关论文、工具、项目
+2. 访问核心资源提取详细信息
+3. 按要求格式整理到output.txt
+4. 标注论文年份、会议/期刊、引用数、代码链接
+5. 对比不同方法的优缺点
+
+约束：
+- 优先Google Scholar和arXiv，禁用DuckDuckGo
+- 论文必须标注arXiv/DOI链接
+- 工具必须标注GitHub star数或官网
+- 结论控制在500字以内，详细内容写正文

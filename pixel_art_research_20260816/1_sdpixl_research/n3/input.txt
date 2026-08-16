@@ -1,0 +1,12 @@
+目标：查找扩散模型在离散约束生成中的应用
+
+要求：
+1. 使用Google搜索关键词: "diffusion model" AND ("palette constraint" OR "color quantization" OR "discrete constraint")
+2. 找到调色板约束、风格化、离散化生成的相关工作
+3. 提取约束实现方式：后处理/引导采样/损失函数设计等
+4. 总结到output.txt
+
+约束：
+- 重点关注"如何在扩散模型中施加离散约束"的技术路线
+- 区分训练时约束 vs 推理时约束
+- 标注方法的可微性

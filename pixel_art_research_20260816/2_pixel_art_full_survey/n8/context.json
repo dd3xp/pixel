@@ -1,0 +1,8 @@
+{
+  "root_question": "像素画生成的全面调查，覆盖所有技术路线和应用场景",
+  "parent_conclusions": [],
+  "sub_question": "最新研究趋势（2023-2026顶会论文/工作坊/新兴方向）",
+  "source": "CVPR/ICCV/ECCV/SIGGRAPH 2023-2026，关键词: pixel art OR sprite generation",
+  "deliverable": "热点方向、未解决问题、未来趋势",
+  "output_file": "C:\\Agents\\GA\\GenericAgent\\temp\\dr_pixel_art_full\\n8\\output.txt"
+}

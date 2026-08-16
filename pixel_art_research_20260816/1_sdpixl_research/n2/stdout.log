@@ -1,0 +1,5 @@
+[Info] Load mykeys from C:\Agents\GA\GenericAgent\mykey.py
+[Debug] Updated system prompt, length 2700 chars.
+[Debug] Current context: 352 chars, 1 messages.
+[Cache] input=6587 cached=0
+[Output] tokens=310

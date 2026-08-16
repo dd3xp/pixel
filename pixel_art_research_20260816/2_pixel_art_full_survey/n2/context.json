@@ -1,0 +1,8 @@
+{
+  "root_question": "像素画生成的全面调查，覆盖所有技术路线和应用场景",
+  "parent_conclusions": [],
+  "sub_question": "传统像素化算法（抖动dithering/调色板量化/矢量转像素/下采样）的经典方法和最新改进",
+  "source": "Google Scholar + 图形学会议(SIGGRAPH)，关键词: pixelization algorithm OR dithering OR palette quantization OR downsampling",
+  "deliverable": "算法分类、复杂度对比、开源实现",
+  "output_file": "C:\\Agents\\GA\\GenericAgent\\temp\\dr_pixel_art_full\\n2\\output.txt"
+}

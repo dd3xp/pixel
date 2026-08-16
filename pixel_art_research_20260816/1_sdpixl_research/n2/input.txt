@@ -1,0 +1,12 @@
+目标：查找像素画/低分辨率量化图像生成的深度学习方法
+
+要求：
+1. 使用Google搜索关键词: "pixel art generation" OR "low resolution image synthesis" OR "quantized image neural"
+2. 找到至少3种不同方法（GAN/VAE/扩散模型/强化学习等）
+3. 对比各方法的优缺点和适用场景
+4. 总结到output.txt
+
+约束：
+- 包括2020年前的经典工作和2023年后的新方法
+- 重点关注方法论，不要纯艺术创作工具
+- 每个方法标注是否开源、是否有代码

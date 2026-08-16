@@ -1,0 +1,8 @@
+{
+  "root_question": "像素画生成的全面调查，覆盖所有技术路线和应用场景",
+  "parent_conclusions": [],
+  "sub_question": "交互式像素画工具和软件（Aseprite/Piskel/Pyxel Edit/Photoshop插件/在线工具）",
+  "source": "Google + GitHub + ProductHunt，关键词: pixel art software OR sprite editor OR pixel art tool",
+  "deliverable": "工具分类、功能对比、开源/商业状态",
+  "output_file": "C:\\Agents\\GA\\GenericAgent\\temp\\dr_pixel_art_full\\n4\\output.txt"
+}

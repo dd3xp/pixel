@@ -1,0 +1,7 @@
+{
+  "root_question": "查找SD-πXL相关的论文，包括SDS算法改进、像素画生成方法、扩散模型约束生成",
+  "parent_conclusions": [],
+  "sub_question": "DreamFusion(2022)提出SDS后，有哪些改进工作？重点关注VSD、ProlificDreamer、Magic3D等方法",
+  "source": "Google Scholar / arXiv，搜索关键词: Score Distillation Sampling improvement OR Variational Score Distillation",
+  "output_file": "C:\\Agents\\GA\\GenericAgent\\temp\\dr_sdpixl_related\\n1_output.txt"
+}

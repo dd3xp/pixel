@@ -1,0 +1,8 @@
+{
+  "root_question": "像素画生成的全面调查，覆盖所有技术路线和应用场景",
+  "parent_conclusions": [],
+  "sub_question": "像素画数据集和评估指标（公开数据集/质量评估方法/用户研究）",
+  "source": "Papers with Code + GitHub，关键词: pixel art dataset OR sprite dataset OR pixel art evaluation metrics",
+  "deliverable": "数据集规模、标注类型、评估协议",
+  "output_file": "C:\\Agents\\GA\\GenericAgent\\temp\\dr_pixel_art_full\\n7\\output.txt"
+}

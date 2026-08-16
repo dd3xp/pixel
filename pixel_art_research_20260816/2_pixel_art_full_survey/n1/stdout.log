@@ -1,0 +1,368 @@
+[Info] Load mykeys from C:\Agents\GA\GenericAgent\mykey.py
+[Debug] Updated system prompt, length 2700 chars.
+[Debug] Current context: 490 chars, 1 messages.
+[Cache] input=3256 cached=40
+[Output] tokens=181
+[Debug] Current context: 1094 chars, 3 messages.
+[Cache] input=4547 cached=3212
+[Output] tokens=72
+code run output:
+[Debug] Current context: 1642 chars, 5 messages.
+[Cache] input=4707 cached=4544
+[Output] tokens=62
+code run output:
+[Debug] Current context: 2485 chars, 7 messages.
+[Cache] input=5054 cached=4704
+[Output] tokens=67
+code run output:
+[Cut] 3032 -> 3032
+[Debug] Current context: 3032 chars, 9 messages.
+[Cache] input=5208 cached=5051
+[Output] tokens=359
+code run output:
+Traceback (most recent call last):
+  File "C:\Agents\GA\GenericAgent\temp\tmp7f8y1635.ai.py", line 31, in <module>
+    from es_wrapper import search_files
+ModuleNotFoundError: No module named 'es_wrapper'
+
+[Agent Hint]: NO GUESSING! You MUST probe first. If missing common package, pip.
+[Debug] Current context: 4521 chars, 11 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[Cache] input=5883 cached=5205
+[Output] tokens=102
+code run output:
+[Debug] Current context: 5079 chars, 13 messages.
+[Cache] input=6068 cached=5880
+[Output] tokens=54
+[Debug] Current context: 5477 chars, 15 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 5628 chars, 16 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[Cache] input=6244 cached=6241
+[Output] tokens=51
+[Cut] 6023 -> 5741
+[Debug] Current context: 5741 chars, 18 messages.
+[Cache] input=6315 cached=0
+[Output] tokens=833
+code run output:
+=== GAN pixel art ===
+[2024] DogLayout: Denoising Diffusion GAN for Discrete and Continuous Layout Generation | http://arxiv.org/abs/2412.00381v1
+[2023] SCPAT-GAN: Structural Constrained and Pathology Aware Convolutional Transformer-GAN for Virtual Histology Staining of Human Coronary OCT images | http://arxiv.org/abs/2307.12138v1
+[2018] Sequential Attention GAN for Interactive Image Editing | http://arxiv.org/abs/1812.08352v4
+[2019] Visual Indeterminacy in GAN Art | http://arxiv.org/abs/1910.04639v3
+[2017] Recurrent Topic-Transition GAN for Visual Paragraph Generation | http://arxiv.org/abs/1703.07022v2
+[2022] ActFormer: A GAN-based Transformer towards General Action-Conditioned 3D Human Motion Generation | http://arxiv.org/abs/2203.07706v2
+[2021] Data-Efficient GAN Training Beyond (Just) Augmentations: A Lottery Ticket Perspective | http://arxiv.org/abs/2103.00397v3
+[2018] StoryGAN: A Sequential Conditional GAN for Story Visualization | http://arxiv.org/abs/1812.02784v2
+[Debug] Current context: 12371 chars, 20 messages.
+[Cache] input=8614 cached=3212
+[Output] tokens=64
+[Debug] Current context: 19841 chars, 22 messages.
+[Cache] input=12533 cached=8611
+[Output] tokens=90
+code run output:
+academic_research_material_sop.md
+deepresearch_sop.md
+[Debug] Current context: 20532 chars, 24 messages.
+[Cache] input=12753 cached=12530
+[Output] tokens=438
+code run output:
+=== VAE pixel art ===
+[2024] Fast Sprite Decomposition from Animated Graphics | http://arxiv.org/abs/2408.03923v1
+[2022] Generating Pixel Art Character Sprites using GANs | http://arxiv.org/abs/2208.06413v1
+[2017] Variational autoencoders for tissue heterogeneity exploration from (almost) no preprocessed mass spectrometry imaging data | http://arxiv.org/abs/1708.07012v2
+[2024] Large Motion Video Autoencoding with Cross-modal Video VAE | http://arxiv.org/abs/2412.17805v1
+[2022] Three Variations on Variational Autoencoders | http://arxiv.org/abs/2212.04451v2
+[2026] VAE-MS: An Asymmetric Variational Autoencoder for Mutational Signature Extraction | http://arxiv.org/abs/2602.22239v1
+[1999] The ATLAS Pixel Project | http://arxiv.org/abs/hep-ex/9903035v1
+[2019] M$^2$VAE - Derivation of a Multi-Modal Variational Autoencoder Objective from the Marginal Joint Log-Likelihood | http://arxiv.org/abs/1903.07303v1
+
+=== Diffusion pixel art ===
+[2024] Fast Sprite Decomposition from Animated Graphics | http://arxiv.org/abs/2408.03923v1
+[2022] Generating Pixel Art Character Sprites using GANs | http://arxiv.org/abs/2208.06413v1
+[2022] DDPM-CD: Denoising Diffusion Probabilistic Models as Feature Extractors for Change Detection | http://arxiv.org/abs/2206.11892v3
+[1999] The ATLAS Pixel Project | http://arxiv.org/abs/hep-ex/9903035v1
+[2025] PixNerd: Pixel Neural Field Diffusion | http://arxiv.org/abs/2507.23268v2
+[2024] Sprite Sheet Diffusion: Generate Game Character for Animation | http://arxiv.org/abs/2412.03685v2
+[2011] Recent progress of the ATLAS Planar Pixel Sensor R&D Project | http://arxiv.org/abs/1109.5944v1
+[2025] Push-broom Mapping of Galaxies and Supernova Remnants with the SPRITE CubeSat | http://arxiv.org/abs/2512.03329v1
+[Debug] Current context: 25345 chars, 26 messages.
+[Cache] input=11949 cached=54
+[Output] tokens=293
+[Cut] 26872 -> 26528
+[Debug] Current context: 26528 chars, 28 messages.
+[Cache] input=16041 cached=0
+[Output] tokens=748
+code run output:
+=== Transformer pixel art ===
+[2022] Generating Pixel Art Character Sprites using GANs
+  ID: http://arxiv.org/abs/2208.06413v1
+  Auth: Flávio Coutinho, Luiz Chaimowicz
+  Abs: Iterating on creating pixel art character sprite sheets is essential to the game development process. However, it can take a lot of effort until the final versions containing different poses and anima
+
+[2024] Fast Sprite Decomposition from Animated Graphics
+  ID: http://arxiv.org/abs/2408.03923v1
+  Auth: Tomoyuki Suzuki, Kotaro Kikuchi, Kota Yamaguchi
+  Abs: This paper presents an approach to decomposing animated graphics into sprites, a set of basic elements or layers. Our approach builds on the optimization of sprite parameters to fit the raster video. 
+
+[1999] The ATLAS Pixel Project
+  ID: http://arxiv.org/abs/hep-ex/9903035v1
+  Auth: John Richardson, representing the ATLAS Pixel Project
+  Abs: The ATLAS experiment, at the Large Hadron Collider, will incorporate discrete, high-resolution tracking sub-systems in the form of segmented silicon detectors with 40MHz radiation-hard readout electro
+
+[2024] A Missing Data Imputation GAN for Character Sprite Generation
+  ID: http://arxiv.org/abs/2409.10721v1
+  Auth: Flávio Coutinho, Luiz Chaimowicz
+  Abs: Creating and updating pixel art character sprites with many frames spanning different animations and poses takes time and can quickly become repetitive. However, that can be partially automated to all
+
+[2011] Recent progress of the ATLAS Planar Pixel Sensor R&D Project
+  ID: http://arxiv.org/abs/1109.5944v1
+  Auth: The ATLAS Planar Pixel Sensor R&D Project,  :, M. Bomben
+  Abs: The foreseen luminosity upgrade for the LHC (a factor of 5-10 more in peak luminosity by 2021) poses serious constraints on the technology for the ATLAS tracker in this High Luminosity era (HL-LHC). I
+
+[2025] Push-broom Mapping of Galaxies and Supernova Remnants with the SPRITE CubeSat
+  ID: http://arxiv.org/abs/2512.03329v1
+  Auth: Elena Carlson, Brian Fleming, Yi Hang Valerie Wong
+  Abs: Supernovae (SNe) enrich and energize the surrounding interstellar medium (ISM) and are a key mechanism in the galaxy feedback cycle. The heating of the ISM by supernova shocks, and its subsequent cool
+
+[2024] Sprite Sheet Diffusion: Generate Game Character for Animation
+  ID: http://arxiv.org/abs/2412.03685v2
+  Auth: Cheng-An Hsieh, Jing Zhang, Ava Yan
+  Abs: In the game development process, creating character animations is a vital step that involves several stages. Typically for 2D games, illustrators begin by designing the main character image, which ser
+
+[2025] ART: Articulated Reconstruction Transformer
+  ID: http://arxiv.org/abs/2512.14671v3
+  Auth: Zizhang Li, Cheng Zhang, Zhengqin Li
+  Abs: We introduce ART, Articulated Reconstruction Transformer -- a category-agnostic, feed-forward model that reconstructs complete 3D articulated objects from only sparse, multi-state RGB images. Previous
+
+=== NeRF / 3D pixel art ===
+[2020] Neural Volume Rendering: NeRF And Beyond
+  ID: http://arxiv.org/abs/2101.05204v2
+  Abs: Besides the COVID-19 pandemic and political upheaval in the US, 2020 was also the year in which neural volume rendering exploded onto the scene, triggered by the impressive NeRF paper by Mildenhall et
+
+[2025] R3eVision: A Survey on Robust Rendering, Restoration, and Enhancement for 3D Low-Level Vision
+  ID: http://arxiv.org/abs/2506.16262v2
+  Abs: Neural rendering methods such as Neural Radiance Fields (NeRF) and 3D Gaussian Splatting (3DGS) have achieved significant progress in photorealistic 3D scene reconstruction and novel view synthesis. H
+
+[2025] Tile and Slide : A New Framework for Scaling NeRF from Local to Global 3D Earth Observation
+  ID: http://arxiv.org/abs/2507.01631v2
+  Abs: Neural Radiance Fields (NeRF) have recently emerged as a paradigm for 3D reconstruction from multiview satellite imagery. However, state-of-the-art NeRF methods are typically constrained to small scen
+
+[2023] MIMO-NeRF: Fast Neural Rendering with Multi-input Multi-output Neural Radiance Fields
+  ID: http://arxiv.org/abs/2310.01821v1
+  Abs: Neural radiance fields (NeRFs) have shown impressive results for novel view synthesis. However, they depend on the repetitive use of a single-input single-output multilayer perceptron (SISO MLP) that 
+
+[2025] Voxify3D: Pixel Art Meets Volumetric Rendering
+  ID: http://arxiv.org/abs/2512.07834v2
+  Abs: Voxel art is a distinctive stylization widely used in games and digital media, yet automated generation from 3D meshes remains challenging due to conflicting requirements of geometric abstraction, sem
+
+[2024] ViCA-NeRF: View-Consistency-Aware 3D Editing of Neural Radiance Fields
+  ID: http://arxiv.org/abs/2402.00864v1
+  Abs: We introduce ViCA-NeRF, the first view-consistency-aware method for 3D editing with text instructions. In addition to the implicit neural radiance field (NeRF) modeling, our key insight is to exploit 
+
+[2023] DITTO-NeRF: Diffusion-based Iterative Text To Omni-directional 3D Model
+  ID: http://arxiv.org/abs/2304.02827v1
+  Abs: The increasing demand for high-quality 3D content creation has motivated the development of automated methods for creating 3D object models from a single image and/or from a text prompt. However, the 
+
+[2022] Block-NeRF: Scalable Large Scene Neural View Synthesis
+  ID: http://arxiv.org/abs/2202.05263v1
+  Abs: We present Block-NeRF, a variant of Neural Radiance Fields that can represent large-scale environments. Specifically, we demonstrate that when scaling NeRF to render city-scale scenes spanning multipl
+
+[Debug] Current context: 36499 chars, 30 messages.
+[Cache] input=19098 cached=3212
+[Output] tokens=365
+code run output:
+=== GitHub Projects Stars ===
+Rucol/Pixel-Art-AI-Generator: N/A stars
+AgaMiko/pixel_character_generator: N/A stars
+leejaeka/PixelGAN: N/A stars
+Hexanol777/PixelGAN: N/A stars
+jainr3/text-to-pixel-gif: N/A stars
+KyroChi/pokemon-sprite-generator: N/A stars
+[Debug] Current context: 38749 chars, 32 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[Cache] input=20845 cached=0
+[Output] tokens=554
+code run output:
+=== Semantic Scholar: pixel art generation deep learning ===
+Traceback (most recent call last):
+  File "C:\Agents\GA\GenericAgent\temp\tmpq3r4erkr.ai.py", line 40, in <module>
+    r1 = semantic_search("pixel art generation deep learning GAN", 10)
+  File "C:\Agents\GA\GenericAgent\temp\tmpq3r4erkr.ai.py", line 36, in semantic_search
+    with urllib.request.urlopen(req, timeout=20) as resp:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\17145\AppData\Local\Programs\Python\Python313\Lib\urllib\request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\17145\AppData\Local\Programs\Python\Python313\Lib\urllib\request.py", line 495, in open
+    response = meth(req, response)
+  File "C:\Users\17145\AppData\Local\Programs\Python\Python313\Lib\urllib\request.py", line 604, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "C:\Users\17145\AppData\Local\Programs\Python\Python313\Lib\urllib\request.py", line 533, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\17145\AppData\Local\Programs\Python\Python313\Lib\urllib\request.py", line 466, in _call_chain
+    result = func(*args)
+  File "C:\Users\17145\AppData\Local\Programs\Python\Python313\Lib\urllib\request.py", line 613, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 429: 
+[Debug] Current context: 44205 chars, 34 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[Cache] input=23149 cached=0
+[Output] tokens=1719
+code run output:
+
+=== 2208.06413 ===
+Title: Generating Pixel Art Character Sprites using GANs
+Date:  2022-08
+Auth:  Flávio Coutinho, Luiz Chaimowicz
+Cats:  ['cs.GR', 'cs.AI', 'cs.CV']
+Abs:   Iterating on creating pixel art character sprite sheets is essential to the game development process. However, it can take a lot of effort until the final versions containing different poses and animation clips are achieved. This paper investigates using conditional generative adversarial networks to aid the designers in creating such sprite sheets. We propose an architecture based on Pix2Pix to g
+
+=== 2409.10721 ===
+Title: A Missing Data Imputation GAN for Character Sprite Generation
+Date:  2024-09
+Auth:  Flávio Coutinho, Luiz Chaimowicz
+Cats:  ['cs.CV', 'cs.AI', 'cs.GR']
+Abs:   Creating and updating pixel art character sprites with many frames spanning different animations and poses takes time and can quickly become repetitive. However, that can be partially automated to allow artists to focus on more creative tasks. In this work, we concentrate on creating pixel art character sprites in a target pose from images of them facing other three directions. We present a novel 
+
+=== 2412.03685 ===
+Title: Sprite Sheet Diffusion: Generate Game Character for Animation
+Date:  2024-12
+Auth:  Cheng-An Hsieh, Jing Zhang, Ava Yan
+Cats:  ['cs.GR', 'cs.CV']
+Abs:   In the game development process, creating character animations is a vital step that involves several stages. Typically for 2D games, illustrators begin by designing the main character image, which serves as the foundation for all subsequent animations. To create a smooth motion sequence, these subsequent animations involve drawing the character in different poses and actions, such as running, jump
+
+=== 2408.03923 ===
+Title: Fast Sprite Decomposition from Animated Graphics
+Date:  2024-08
+Auth:  Tomoyuki Suzuki, Kotaro Kikuchi, Kota Yamaguchi
+Cats:  ['cs.CV', 'cs.GR']
+Abs:   This paper presents an approach to decomposing animated graphics into sprites, a set of basic elements or layers. Our approach builds on the optimization of sprite parameters to fit the raster video. For efficiency, we assume static textures for sprites to reduce the search space while preventing artifacts using a texture prior model. To further speed up the optimization, we introduce the initiali
+
+=== 2507.23268 ===
+Title: PixNerd: Pixel Neural Field Diffusion
+Date:  2025-07
+Auth:  Shuai Wang, Ziteng Gao, Chenhui Zhu, Weilin Huang
+Cats:  ['cs.CV']
+Abs:   The current success of diffusion transformers heavily depends on the compressed latent space shaped by the pre-trained variational autoencoder(VAE). However, this two-stage training paradigm inevitably introduces accumulated errors and decoding artifacts. To address the aforementioned problems, researchers return to pixel space at the cost of complicated cascade pipelines and increased token compl
+
+=== 2512.07834 ===
+Title: Voxify3D: Pixel Art Meets Volumetric Rendering
+Date:  2025-12
+Auth:  Yi-Chuan Huang, Jiewen Chan, Hao-Jen Chien, Yu-Lun Liu
+Cats:  ['cs.CV']
+Abs:   Voxel art is a distinctive stylization widely used in games and digital media, yet automated generation from 3D meshes remains challenging due to conflicting requirements of geometric abstraction, semantic preservation, and discrete color coherence. Existing methods either over-simplify geometry or fail to achieve the pixel-precise, palette-constrained aesthetics of voxel art. We introduce Voxify3
+[Debug] Current context: 54245 chars, 36 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Cut] 54396 -> 44662
+[Debug] Current context: 44662 chars, 37 messages.
+[Cache] input=20803 cached=0
+[Output] tokens=1439
+code run output:
+=== VAE pixel art / low-res generation ===
+[2022-08] Generating Pixel Art Character Sprites using GANs
+  ID: http://arxiv.org/abs/2208.06413v1
+  Auth: Flávio Coutinho, Luiz Chaimowicz
+  Abs: Iterating on creating pixel art character sprite sheets is essential to the game development process. However, it can take a lot of effort until the final versions containing different poses and animation clips are achieved. This paper investigates using conditional generative adversarial networks t
+
+[2024-08] Fast Sprite Decomposition from Animated Graphics
+  ID: http://arxiv.org/abs/2408.03923v1
+  Auth: Tomoyuki Suzuki, Kotaro Kikuchi, Kota Yamaguchi
+  Abs: This paper presents an approach to decomposing animated graphics into sprites, a set of basic elements or layers. Our approach builds on the optimization of sprite parameters to fit the raster video. For efficiency, we assume static textures for sprites to reduce the search space while preventing ar
+
+[1999-03] The ATLAS Pixel Project
+  ID: http://arxiv.org/abs/hep-ex/9903035v1
+  Auth: John Richardson, representing the ATLAS Pixel Project
+  Abs: The ATLAS experiment, at the Large Hadron Collider, will incorporate discrete, high-resolution tracking sub-systems in the form of segmented silicon detectors with 40MHz radiation-hard readout electronics. In the region closest to the pp interaction point, the thin silicon tiles will be segmented in
+
+[2024-09] A Missing Data Imputation GAN for Character Sprite Generation
+  ID: http://arxiv.org/abs/2409.10721v1
+  Auth: Flávio Coutinho, Luiz Chaimowicz
+  Abs: Creating and updating pixel art character sprites with many frames spanning different animations and poses takes time and can quickly become repetitive. However, that can be partially automated to allow artists to focus on more creative tasks. In this work, we concentrate on creating pixel art chara
+
+[2025-12] Push-broom Mapping of Galaxies and Supernova Remnants with the SPRITE CubeSat
+  ID: http://arxiv.org/abs/2512.03329v1
+  Auth: Elena Carlson, Brian Fleming, Yi Hang Valerie Wong, Briana Indahl
+  Abs: Supernovae (SNe) enrich and energize the surrounding interstellar medium (ISM) and are a key mechanism in the galaxy feedback cycle. The heating of the ISM by supernova shocks, and its subsequent cooling is critical to future star formation. The cooling of the diffuse shock-heated ISM is dominated b
+
+[2011-09] Recent progress of the ATLAS Planar Pixel Sensor R&D Project
+  ID: http://arxiv.org/abs/1109.5944v1
+  Auth: The ATLAS Planar Pixel Sensor R&D Project,  :, M. Bomben
+  Abs: The foreseen luminosity upgrade for the LHC (a factor of 5-10 more in peak luminosity by 2021) poses serious constraints on the technology for the ATLAS tracker in this High Luminosity era (HL-LHC). In fact, such luminosity increase leads to increased occupancy and radiation damage of the tracking d
+
+[2025-12] A MAPS Detector for High Resolution Low Dose EBSD
+  ID: http://arxiv.org/abs/2512.16839v1
+  Auth: Barnaby D. A. Levin, Kalani Moore, Nicolò M. Della Ventura, McLean P. Echlin
+  Abs: The use of highly sensitive pixelated direct detectors has dramatically improved the performance of high energy instrumentation such as transmission electron microscopy. Here, we describe a recently developed monolithic active pixel sensor designed for low energy scanning electron microscopy applica
+
+
+=== Transformer / VQ-VAE pixel art ===
+[2022-03] Pixel VQ-VAEs for Improved Pixel Art Representation
+  ID: http://arxiv.org/abs/2203.12130v2
+  Auth: Akash Saravanan, Matthew Guzdial
+  Abs: Machine learning has had a great deal of success in image processing. However, the focus of this work has largely been on realistic images, ignoring more niche art styles such as pixel art. Additionally, many traditional machine learning models that focus on groups of pixels do not work well with pi
+
+[2021-02] Self-Supervised VQ-VAE for One-Shot Music Style Transfer
+  ID: http://arxiv.org/abs/2102.05749v2
+  Auth: Ondřej Cífka, Alexey Ozerov, Umut Şimşekli, Gaël Richard
+  Abs: Neural style transfer, allowing to apply the artistic style of one image to another, has become one of the most widely showcased computer vision applications shortly after its introduction. In contrast, related tasks in the music audio domain remained, until recently, largely untackled. While severa
+
+[2022-08] Generating Pixel Art Character Sprites using GANs
+  ID: http://arxiv.org/abs/2208.06413v1
+  Auth: Flávio Coutinho, Luiz Chaimowicz
+  Abs: Iterating on creating pixel art character sprite sheets is essential to the game development process. However, it can take a lot of effort until the final versions containing different poses and animation clips are achieved. This paper investigates using conditional generative adversarial networks t
+
+[2024-08] Fast Sprite Decomposition from Animated Graphics
+  ID: http://arxiv.org/abs/2408.03923v1
+  Auth: Tomoyuki Suzuki, Kotaro Kikuchi, Kota Yamaguchi
+  Abs: This paper presents an approach to decomposing animated graphics into sprites, a set of basic elements or layers. Our approach builds on the optimization of sprite parameters to fit the raster video. For efficiency, we assume static textures for sprites to reduce the search space while preventing ar
+
+[1999-03] The ATLAS Pixel Project
+  ID: http://arxiv.org/abs/hep-ex/9903035v1
+  Auth: John Richardson, representing the ATLAS Pixel Project
+  Abs: The ATLAS experiment, at the Large Hadron Collider, will incorporate discrete, high-resolution tracking sub-systems in the form of segmented silicon detectors with 40MHz radiation-hard readout electronics. In the region closest to the pp interaction point, the thin silicon tiles will be segmented in
+
+[2021-11] TransMorph: Transformer for unsupervised medical image registration
+  ID: http://arxiv.org/abs/2111.10480v6
+  Auth: Junyu Chen, Eric C. Frey, Yufan He, William P. Segars
+  Abs: In the last decade, convolutional neural networks (ConvNets) have been a major focus of research in medical image analysis. However, the performances of ConvNets may be limited by a lack of explicit consideration of the long-range spatial relationships in an image. Recently Vision Transformer archit
+
+
+=== Diffusion pixel art style transfer ===
+[2022-07] Playing a 2D Game Indefinitely using NEAT and Reinforcement Learning
+  ID: http://arxiv.org/abs/2207.14140v1
+  Abs: For over a decade now, robotics and the use of artificial agents have become a common thing.Testing the performance of new path finding or search space optimization algorithms has also become a challenge as they require simulation or an environment to test them.The creation of artificial environment
+
+[2025-10] Fine-Tuning Open Video Generators for Cinematic Scene Synthesis: A Small-Data Pipeline with LoRA and Wan2.1 I2V
+  ID: http://arxiv.org/abs/2510.27364v1
+  Abs: We present a practical pipeline for fine-tuning open-source video diffusion transformers to synthesize cinematic scenes for television and film production from small datasets. The proposed two-stage process decouples visual style learning from motion generation. In the first stage, Low-Rank Adaptati
+
+[2024-03] Implicit Style-Content Separation using B-LoRA
+  ID: http://arxiv.org/abs/2403.14572v2
+  Abs: Image stylization involves manipulating the visual appearance and texture (style) of an image while preserving its underlying objects, structures, and concepts (content). The separation of style and content is essential for manipulating the image's style independently from its content, ensuring a ha
+
+[2017-02] Style Transfer Generative Adversarial Networks: Learning to Play Chess Differently
+  ID: http://arxiv.org/abs/1702.06762v2
+  Abs: The idea of style transfer has largely only been explored in image-based tasks, which we attribute in part to the specific nature of loss functions used for style transfer. We propose a general formulation of style transfer as an extension of generative adversarial networks, by using a discriminator
+
+[2011-04] Optimal strategies for a game on amenable semigroups
+  ID: http://arxiv.org/abs/1104.3098v3
+  Abs: The semigroup game is a two-person zero-sum game defined on a semigroup S as follows: Players 1 and 2 choose elements x and y in S, respectively, and player 1 receives a payoff f(xy) defined by a function f from S to [-1,1]. If the semigroup is amenable in the sense of Day and von Neumann, one can e
+
+[Debug] Current context: 61222 chars, 39 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)

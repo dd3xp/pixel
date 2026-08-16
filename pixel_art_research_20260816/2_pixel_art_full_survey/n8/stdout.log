@@ -1,0 +1,446 @@
+[Info] Load mykeys from C:\Agents\GA\GenericAgent\mykey.py
+[Debug] Updated system prompt, length 2700 chars.
+[Debug] Current context: 429 chars, 1 messages.
+[Cache] input=3257 cached=86
+[Output] tokens=444
+[Debug] Current context: 2110 chars, 3 messages.
+[Cache] input=5227 cached=3212
+[Output] tokens=66
+[Debug] Current context: 3830 chars, 5 messages.
+[Cache] input=5958 cached=0
+[Output] tokens=532
+[Debug] Current context: 6060 chars, 7 messages.
+[Cache] input=10199 cached=0
+[Output] tokens=86
+code run output:
+Start-Process : 无法对参数“FilePath”执行参数验证。参数为 Null 或空。请提供一个不为 Null 或空的参数，然后重试该命令。
+所在位置 行:1 字符: 65
++ ... ole]::OutputEncoding = [System.Text.Encoding]::UTF8; start "" "https: ...
++                                                                ~~
+    + CategoryInfo          : InvalidData: (:) [Start-Process]，ParameterBindingValidationException
+    + FullyQualifiedErrorId : ParameterArgumentValidationError,Microsoft.PowerShell.Commands.StartProcessCommand
+ 
+[Cut] 7544 -> 7544
+[Debug] Current context: 7544 chars, 9 messages.
+[Cache] input=5542 cached=32
+[Output] tokens=83
+code run output:
+[Debug] Current context: 8950 chars, 11 messages.
+[Cache] input=7778 cached=0
+[Output] tokens=76
+code run output:
+[Debug] Current context: 10021 chars, 13 messages.
+[Cache] input=8258 cached=0
+[Output] tokens=52
+[Debug] Current context: 10528 chars, 15 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 10679 chars, 16 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[Cache] input=8415 cached=8412
+[Output] tokens=52
+[Cut] 11078 -> 9366
+[Debug] Current context: 9366 chars, 18 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 11859 chars, 19 messages.
+[Cache] input=7539 cached=97
+[Output] tokens=129
+[Debug] Current context: 18568 chars, 21 messages.
+[Cache] input=10655 cached=56
+[Output] tokens=371
+[Debug] Current context: 20083 chars, 23 messages.
+[Cache] input=13956 cached=3212
+[Output] tokens=331
+code run output:
+关闭旧Chrome进程...
+启动Chrome with CDP on port 9222...
+CDP连接成功，页面信息:
+[ {
+   "description": "",
+   "devtoolsFrontendUrl": "https://chrome-devtools-frontend.appspot.com/serve_rev/@41fa82442390a4d4456c78f2d69a832d5720cb27/inspector.html?ws=127.0.0.1:9222/devtools/page/A92CE5B0B38C80583DEB11A8B3F5C066",
+   "faviconUrl": "https://scholar.google.com/favicon.ico",
+   "id": "A92CE5B0B38C80583DEB11A8B3F5C066",
+   "title": "pixel art generation CVPR ICCV ECCV SIGGRAPH 2023... - Google 学术搜索",
+   "type": "page",
+   "url": "https://scholar.google.com/scholar?q=pixel+ar
+[Debug] Current context: 23835 chars, 25 messages.
+[Cache] input=16443 cached=0
+[Output] tokens=440
+code run output:
+pixel art generation CVPR ICCV ECCV SIGGRAPH 2023... - Google 学术搜索 | https://scholar.google.com/scholar?q=pixel+art+generation+CVPR+ICCV+ECCV+SIGGRAP
+Omnibox Popup | chrome://omnibox-popup.top-chrome/
+Omnibox Popup | chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html
+Service Worker chrome-extension://fignfifoniblkonapihmkfakmlgkbkcf/service_worke | chrome-extension://fignfifoniblkonapihmkfakmlgkbkcf/service_worker.js
+[Cut] 26119 -> 24763
+[Debug] Current context: 24763 chars, 27 messages.
+[Cache] input=24404 cached=3657
+[Output] tokens=134
+code run output:
+Google Scholar搜索结果（前3000字符）:
+登录
+文章
+找到约 1,630 条结果 （用时0.09秒）
+我的个人学术档案
+我的图书馆
+时间不限
+2026以来
+2025以来
+2022以来
+自定义范围...
+按相关性排序
+按日期排序
+不限语言
+中文网页
+简体中文网页
+类型不限
+评论性文章
+包括专利
+包含引用
+创建快讯
+	
+[HTML] acm.org
+Pixal3D: Pixel-Aligned 3D Generation from Images
+DY Li, W Zhao, Y Chen, W Hu, MH Guo… - Proceedings of the …, 2026 - dl.acm.org
+… consistency using ULIP2 [Xue et al. 2024] and Uni3D [Zhou et al. 2024]. We also conduct a
+user … and recent SAM3D [SAM et al. 2025]. SAM3D jointly estimates canonical geometry and …
+保存 引用 被引用次数：1 相关文章 所有 3 个版本
+[PDF] acm.org
+Generating Objects with Part-Articulation from a Single Image
+R Lu, Y Liu, J Tang, J Ni, Y Wang, D Wan… - … SIGGRAPH Asia 2025 …, 2025 - dl.acm.org
+… 2025]. For the movable part, we derive a 2D segmentation mask from SAM [Kirillov et al.
+2023… baselines, STAG4D [Zeng et al. 2024] and L4GM [Ren et al. 2024], both without fine-tuning. …
+保存 引用 被引用次数：2 相关文章
+[PDF] acm.org
+AI for Creative Visual Content Generation, Editing and Understanding
+S Yang, G Parmar, O Kara, J Ma, L Zhang… - Proceedings of the …, 2026 - dl.acm.org
+… at SIGGRAPH’25 [Patashnik et al. 2025], CVPR’25, CVPR’24, ICCV’23, ECCV’22, and ICCV’…
+We focus on enhancing explicit controllability [Parmar et al. 2023; Zhang et al. 2023, 2025] …
+保存 引用 相关文章
+[PDF] springer.com
+Advancing Aesthetic Image Generation via Composition Transfer
+K Zou, Z Zhao, B Liu, N Yu - International Journal of Computer Vision, 2026 - Springer
+… for controlling composition in image generation. Our framework begins by … 2023), we
+incorporate color distribution modeling for enhanced composition control in image generation…
+保存 引用 被引用次数：3 相关文章 所有 4 个版本
+[PDF] arxiv.org
+Pixel-Perfect Visual Geometry Estimation
+G Xu, H Lin, H Luo, H Sun, B Wang, G Chen… - arXiv preprint arXiv …, 2026 - arxiv.org
+… A preliminary version of this work was published at NeurIPS 2025. … We perform diffusion
+generation directly in pixel space … for stereo matching,” in CVPR, 2024, pp. 19 701–19 710. …
+保存 引用 被引用次数：1 相关文章 所有 2 个版本 
+[PDF] acm.org
+Training-free instance-aware 3d scene reconstruction and diffusion-based view synthesis from sparse images
+J Xia, L Liu - Proceedings of the SIGGRAPH Asia 2025 Conference …, 2025 - dl.acm.org
+… Our results establish a new direction for efficient, editable 3D content generation without …
+We begin by applying a foundational segmentation model (eg, SAM [Kirillov et al. 2023]) to each …
+保存 引用 被引用次数：6 相关文章 所有 3 个版本
+[HTML] acm.org
+PixelSync: Enhancing Texture Generation via Explicit Feature Synchronization
+P Drescher, EA Dominici, G Nazzaro, K Vardis… - Proceedings of the …, 2026 - dl.acm.org
+… The generation of consistent multi-view images is essential … First, we compute visibility-aware
+pixel correspondences … of the PolyHaven [Poly Haven 2025] dataset and thus are not …
+保存 引用 相关文章 所有 3 个版本
+[PDF] wiley.com
+Full View
+Image Inpainting in 30 Years: A Survey
+Z Yu, H Zhao, W Zhang, W Song, Y Zheng… - Expert …, 2026 - Wiley Online Library
+… generations: traditional prior- driven synthesis, deep learning data- driven reco
+[Debug] Current context: 30351 chars, 29 messages.
+[Cache] input=28608 cached=16835
+[Output] tokens=55
+[Debug] Current context: 33765 chars, 31 messages.
+[Cache] input=19530 cached=3212
+[Output] tokens=273
+code run output:
+arXiv搜索结果（前4000字符）:
+Skip to main content
+arXiv is now an independent nonprofit!
+Learn more
+×
+Search
+Submit
+Donate
+Log in
+Showing 1–50 of 10,005 results for all: pixel art OR sprite generation
+Search v0.5.6 released 2020-02-24  
+Search term or terms
+All fields
+Title
+Author(s)
+Abstract
+Comments
+Journal reference
+ACM classification
+MSC classification
+Report number
+arXiv identifier
+DOI
+ORCID
+License (URI)
+arXiv author ID
+Help pages
+Full text
+Search
+ Show abstracts  Hide abstracts
+Advanced Search
+25
+50
+100
+200
+ results per page.
+Sort results by 
+Announcement date (newest first)
+Announcement date (oldest first)
+Submission date (newest first)
+Submission date (oldest first)
+Relevance
+Go
+Next
+1
+2
+3
+4
+5
+…
+
+arXiv:2608.13556  [pdf, ps, other] 
+
+ cs.CV
+
+V-RAE: Rethinking Video Latent Spaces for Generation
+
+Authors: Minghui Guo, Shengqiong Wu, Hao Fei
+
+Abstract: Latent video generation relies on autoencoders to define a compact space in which… ▽ More
+
+Submitted 13 August, 2026; originally announced August 2026.
+
+Comments: 26 pages, 8 tables, 13 figures, project page: https://v-rae.github.io/
+
+arXiv:2608.13492  [pdf, ps, other] 
+
+ cs.AI
+
+AlayaWorld: Interactive Long-Horizon World Modeling - Full Technical Report (v1.1)
+
+Authors: AlayaWorld Team, Kaipeng Zhang, Chuanhao Li, Yifan Zhan, Yongtao Ge, Yuanyang Yin, Jiaming Tan, Kang He, Liaoyuan Fan, Mingliang Zhai, Ruicong Liu, Xiaojie Xu, Xuangeng Chu, Zhen Li, Zhengyuan Lin, Zhixiang Wang, Zian Meng, Zihui Gao
+
+Abstract: This report presents an improved version of AlayaWorld. While the backbone architecture, chunk-wise autoregressive generation scheme, and training data remain unchanged from the previous release, we substantially revise how conditioning signals are represented and integrated into the model. The new design is guided by a simple principle: conditioning signals… ▽ More
+
+Submitted 13 August, 2026; originally announced August 2026.
+
+Comments: Authors are listed alphabetically by the first name and their role. See the contribution section for details
+
+arXiv:2608.13363  [pdf, ps, other] 
+
+ stat.ME math.ST
+
+Weighted cumulative past inaccuracy and Kullback-Leibler divergence based on extropy: properties, estimation, and applications
+
+Authors: Bighneswar Sahoo, Suchandan Kayal
+
+Abstract: …two measures, referred to as the weighted cumulative past extropy inaccuracy (WCPEI) and the weighted cumulative past extropy Kullback-Leibler divergence (WCPED). The generalized weight function is considered in this study. We investigate a number of theoretical properties of these measures. Empirical distribution function-based nonparametric estimator is su… ▽ More
+
+Submitted 13 August, 2026; originally announced August 2026.
+
+Comments: 28 pages, 1 figure
+
+arXiv:2608.12997  [pdf, ps, other] 
+
+ cs.CV
+
+PixSDS: Why Latent SDS Makes Noisy Pixels
+
+Authors: Vsevolod Skorokhodov
+
+Abstract: Score Distillation Sampling (SDS) enables text-to-3D generation by optimizing rendered images with a pretrained diffusion prior, but latent SDS often produces structured color artifacts and high-frequency texture noise. We identify a failure mode of latent SDS caused by VAE-induced… ▽ More
+
+Submitted 13 August, 2026; originally announced August 2026.
+
+arXiv:2608.12811  [pdf, ps, other] 
+
+ cs.CV
+
+Structured Local Differential Modeling for AI-Generated Image Detection
+
+Authors: Jiazhen Yang, Ruijin Jin, Junjun Zheng, Xiangheng Kong, Zunlei Feng, Jie Lei
+
+Abstract: The rapid advancement of AI-generated content has made the reliable detection of… ▽ More
+
+Submitted 13 August, 2026; originally announced August 2026.
+
+arXiv:2608.12773  [pdf, ps, other] 
+
+ cs.CV cs.LG eess.IV
+
+CW-BASS v2: Saturation-Aware Pseudo-Label Selection for Semi-Supervised Segmentation under Foundation-Model Teachers
+
+Authors: Ebenezer Tarubinga
+
+Abstract: Semi-supervised semantic segmentation has long turned on one question, which pseudo-labels to trust, and a generation of selection rules, dynamic thresholds, per-class curricula, soft confidence weights, answered it for the
+[Debug] Current context: 41023 chars, 33 messages.
+[Cache] input=22619 cached=19527
+[Output] tokens=209
+code run output:
+已导航到arXiv，等待页面加载...
+[Debug] Current context: 42443 chars, 35 messages.
+[Cache] input=23289 cached=22616
+[Output] tokens=144
+code run output:
+arXiv搜索结果（前5000字符）:
+Skip to main content
+arXiv is now an independent nonprofit!
+Learn more
+×
+Search
+Submit
+Donate
+Log in
+Showing 1–50 of 10,005 results for all: pixel art OR sprite generation
+Search v0.5.6 released 2020-02-24  
+Search term or terms
+All fields
+Title
+Author(s)
+Abstract
+Comments
+Journal reference
+ACM classification
+MSC classification
+Report number
+arXiv identifier
+DOI
+ORCID
+License (URI)
+arXiv author ID
+Help pages
+Full text
+Search
+ Show abstracts  Hide abstracts
+Advanced Search
+25
+50
+100
+200
+ results per page.
+Sort results by 
+Announcement date (newest first)
+Announcement date (oldest first)
+Submission date (newest first)
+Submission date (oldest first)
+Relevance
+Go
+Next
+1
+2
+3
+4
+5
+…
+
+arXiv:2608.13556  [pdf, ps, other] 
+
+ cs.CV
+
+V-RAE: Rethinking Video Latent Spaces for Generation
+
+Authors: Minghui Guo, Shengqiong Wu, Hao Fei
+
+Abstract: Latent video generation relies on autoencoders to define a compact space in which… ▽ More
+
+Submitted 13 August, 2026; originally announced August 2026.
+
+Comments: 26 pages, 8 tables, 13 figures, project page: https://v-rae.github.io/
+
+arXiv:2608.13492  [pdf, ps, other] 
+
+ cs.AI
+
+AlayaWorld: Interactive Long-Horizon World Modeling - Full Technical Report (v1.1)
+
+Authors: AlayaWorld Team, Kaipeng Zhang, Chuanhao Li, Yifan Zhan, Yongtao Ge, Yuanyang Yin, Jiaming Tan, Kang He, Liaoyuan Fan, Mingliang Zhai, Ruicong Liu, Xiaojie Xu, Xuangeng Chu, Zhen Li, Zhengyuan Lin, Zhixiang Wang, Zian Meng, Zihui Gao
+
+Abstract: This report presents an improved version of AlayaWorld. While the backbone architecture, chunk-wise autoregressive generation scheme, and training data remain unchanged from the previous release, we substantially revise how conditioning signals are represented and integrated into the model. The new design is guided by a simple principle: conditioning signals… ▽ More
+
+Submitted 13 August, 2026; originally announced August 2026.
+
+Comments: Authors are listed alphabetically by the first name and their role. See the contribution section for details
+
+arXiv:2608.13363  [pdf, ps, other] 
+
+ stat.ME math.ST
+
+Weighted cumulative past inaccuracy and Kullback-Leibler divergence based on extropy: properties, estimation, and applications
+
+Authors: Bighneswar Sahoo, Suchandan Kayal
+
+Abstract: …two measures, referred to as the weighted cumulative past extropy inaccuracy (WCPEI) and the weighted cumulative past extropy Kullback-Leibler divergence (WCPED). The generalized weight function is considered in this study. We investigate a number of theoretical properties of these measures. Empirical distribution function-based nonparametric estimator is su… ▽ More
+
+Submitted 13 August, 2026; originally announced August 2026.
+
+Comments: 28 pages, 1 figure
+
+arXiv:2608.12997  [pdf, ps, other] 
+
+ cs.CV
+
+PixSDS: Why Latent SDS Makes Noisy Pixels
+
+Authors: Vsevolod Skorokhodov
+
+Abstract: Score Distillation Sampling (SDS) enables text-to-3D generation by optimizing rendered images with a pretrained diffusion prior, but latent SDS often produces structured color artifacts and high-frequency texture noise. We identify a failure mode of latent SDS caused by VAE-induced… ▽ More
+
+Submitted 13 August, 2026; originally announced August 2026.
+
+arXiv:2608.12811  [pdf, ps, other] 
+
+ cs.CV
+
+Structured Local Differential Modeling for AI-Generated Image Detection
+
+Authors: Jiazhen Yang, Ruijin Jin, Junjun Zheng, Xiangheng Kong, Zunlei Feng, Jie Lei
+
+Abstract: The rapid advancement of AI-generated content has made the reliable detection of… ▽ More
+
+Submitted 13 August, 2026; originally announced August 2026.
+
+arXiv:2608.12773  [pdf, ps, other] 
+
+ cs.CV cs.LG eess.IV
+
+CW-BASS v2: Saturation-Aware Pseudo-Label Selection for Semi-Supervised Segmentation under Foundation-Model Teachers
+
+Authors: Ebenezer Tarubinga
+
+Abstract: Semi-supervised semantic segmentation has long turned on one question, which pseudo-labels to trust, and a generation of selection rules, dynamic thresholds, per-class curricula, soft confidence weights, answered it for the noisy, under-confident ResNet teachers of their day. Self-supervised foundation encoders change the regime: with a DINOv2 teacher, confi… ▽ More
+
+Submitted 12 August, 2026; originally announced August 2026.
+
+Comments: Submitted to IEEE TPAMI. 22 pages, 11 figures, 17 tables
+
+arXiv:2608.12763  [pdf, ps, other] 
+
+ cs.CE
+
+ARIES-Mission2: A Zero-Shot Vision-Language-Action Framework for Fast Large-Scale Aerial Mission Generation
+
+Authors: Junhao Wei, Yanxiao Li, Haochen Li, Yifu Zhao, Dexing Yao, Baili Lu, Zikun Li, Yapeng Wang, Sio-Kei Im, Dingcheng Yang, Xu Yang
+
+Abstract: Multimodal Large Language Models (MLLMs) have shown strong semantic understanding capabilities, but their direct use in low-altitude Unmanned Aerial Vehicle (UAV) mission generation remains limited by weak spatial optimization and inefficient route planning. To address this issue, we propose ARIES-Mission2, a zero-shot Vision-Language-Action (VLA) framework… ▽ More
+
+Submitted 12 August, 2026; originally announced Augu
+[Cut] 50589 -> 44407
+[Debug] Current context: 44407 chars, 37 messages.
+[Cache] input=23079 cached=3212
+[Output] tokens=309
+[Debug] Current context: 48245 chars, 39 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)

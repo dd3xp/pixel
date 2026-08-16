@@ -1,0 +1,7 @@
+{
+  "root_question": "查找SD-πXL相关的论文，包括SDS算法改进、像素画生成方法、扩散模型约束生成",
+  "parent_conclusions": [],
+  "sub_question": "扩散模型在离散约束（调色板、颜色量化、stylization）生成中的应用有哪些？",
+  "source": "Google Scholar，搜索关键词: diffusion model palette constraint OR color quantization diffusion OR discrete constraint image generation",
+  "output_file": "C:\\Agents\\GA\\GenericAgent\\temp\\dr_sdpixl_related\\n3_output.txt"
+}

@@ -1,0 +1,13 @@
+目标：查找DreamFusion之后SDS算法的改进工作
+
+要求：
+1. 使用Google搜索关键词: "Score Distillation Sampling" OR "Variational Score Distillation" OR "ProlificDreamer"
+2. 找到至少3篇核心论文（VSD、ProlificDreamer、Magic3D等）
+3. 提取每篇论文的核心改进点：解决了SDS的什么问题、用了什么方法
+4. 总结到output.txt，格式：
+   论文标题 | 年份 | 核心改进 | arXiv链接
+
+约束：
+- 只查找2022年之后的论文（DreamFusion是2022.09）
+- 重点关注理论改进，不要应用类论文
+- 每篇论文用1-2句话总结核心贡献

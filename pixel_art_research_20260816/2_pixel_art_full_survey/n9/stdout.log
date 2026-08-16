@@ -1,0 +1,116 @@
+[Info] Load mykeys from C:\Agents\GA\GenericAgent\mykey.py
+[Debug] Updated system prompt, length 2700 chars.
+[Debug] Current context: 456 chars, 1 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[Cache] input=3247 cached=23
+[Output] tokens=213
+[Debug] Current context: 1079 chars, 3 messages.
+[Cache] input=3456 cached=45
+[Output] tokens=72
+[Debug] Current context: 2445 chars, 5 messages.
+[Cache] input=5009 cached=0
+[Output] tokens=370
+[Debug] Current context: 4608 chars, 7 messages.
+[Cache] input=6049 cached=3212
+[Output] tokens=909
+code run output:
+=== 抓取 GitHub Trending ===
+找到 0 个相关项目
+
+=== 搜索 GitHub pixel art API 项目 ===
+pixelme: 5 结果
+pixel-art-react: 5 结果
+pixelartcss: 0 结果
+pixel-craft: 5 结果
+sprite-generator: 5 结果
+pixel-art-generator: 5 结果
+
+总计收集 25 个项目
+
+=== TOP 10 Star 项目 ===
+jvalen/pixel-art-react: 5986 ⭐
+rgab1508/PixelCraft: 1506 ⭐
+SlopeCraft/SlopeCraft: 758 ⭐
+emirongrr/pixelArt_Generator: 181 ⭐
+KilledByAPixel/ZzSprite: 166 ⭐
+EYamanS/texel-studio: 159 ⭐
+EYamanS/texel-studio: 159 ⭐
+abagames/PixelArtGen: 83 ⭐
+kult0922/minecraftDot: 47 ⭐
+GAlbanese09/spritebrew: 46 ⭐
+[Cut] 9241 -> 9241
+[Debug] Current context: 9241 chars, 9 messages.
+[Cache] input=7866 cached=6046
+[Output] tokens=2148
+code run output:
+✓ 商业数据已整理到 commercial_data.json
+
+统计:
+  SaaS平台: 4 个
+  API服务: 3 个
+  开源项目: 7 个
+[Debug] Current context: 17200 chars, 11 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[Cache] input=11226 cached=7863
+[Output] tokens=1426
+code run output:
+✓ 数据已保存到 commercial_data.json
+
+统计:
+  SaaS平台: 4
+  API服务: 2
+  开源项目: 4
+[Debug] Current context: 22726 chars, 13 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[Cache] input=13722 cached=0
+[Output] tokens=735
+code run output:
+✓ Orama-Interactive/Pixelorama: 10117 ⭐
+✓ aseprite/aseprite: 38750 ⭐
+✗ jvalen/pixel-art-react: HTTP 403
+✗ rgab1508/PixelCraft: HTTP 403
+✗ DavidTParks/pixelfy: HTTP 403
+✗ Rucol/Pixel-Art-AI-Generator: HTTP 403
+✗ KilledByAPixel/ZzSprite: HTTP 403
+✗ abagames/PixelArtGen: HTTP 403
+✗ EYamanS/texel-studio: HTTP 403
+
+=== 按star数排序 ===
+aseprite/aseprite: 38750 ⭐ | C++ | Animated sprite editor & pixel art tool (Windows, macOS, Lin
+Orama-Interactive/Pixelorama: 10117 ⭐ | GDScript | Unleash your creativity with Pixelorama, a powerful and acce
+[Debug] Current context: 26700 chars, 15 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 26851 chars, 16 messages.
+[Cache] input=15098 cached=15054
+[Output] tokens=533
+code run output:
+=== 获取GitHub项目详细数据 ===
+✗ Orama-Interactive/Pixelorama: HTTP 403
+✗ aseprite/aseprite: HTTP 403
+✗ jvalen/pixel-art-react: HTTP 403
+✗ rgab1508/PixelCraft: HTTP 403
+✗ KilledByAPixel/ZzSprite: HTTP 403
+✗ abagames/PixelArtGen: HTTP 403
+✗ EYamanS/texel-studio: HTTP 403
+✗ SlopeCraft/SlopeCraft: HTTP 403
+✗ emirongrr/pixelArt_Generator: HTTP 403
+
+✓ 获取到 0 个项目数据
+
+=== TOP项目 ===
+[Cut] 30566 -> 27743
+[Debug] Current context: 27743 chars, 18 messages.
+[LLM Retry] HTTP 502, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 30236 chars, 19 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)

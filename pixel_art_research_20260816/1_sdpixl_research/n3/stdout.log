@@ -1,0 +1,297 @@
+[Info] Load mykeys from C:\Agents\GA\GenericAgent\mykey.py
+[Debug] Updated system prompt, length 2700 chars.
+[Debug] Current context: 352 chars, 1 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[Cache] input=3595 cached=0
+[Output] tokens=322
+[Debug] Current context: 2344 chars, 3 messages.
+[Cache] input=4770 cached=0
+[Output] tokens=110
+[Debug] Current context: 2818 chars, 5 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[Cache] input=4600 cached=0
+[Output] tokens=67
+[Debug] Current context: 10367 chars, 7 messages.
+[Cache] input=7233 cached=71
+[Output] tokens=196
+[Cut] 11420 -> 11420
+[Debug] Current context: 11420 chars, 9 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[Cache] input=7598 cached=7416
+[Output] tokens=1319
+code run output:
+已整理10篇核心文献
+[
+  {
+    "title": "Palette Aligned Image Diffusion",
+    "url": "https://arxiv.org/html/2509.02000",
+    "key": "调色板对齐的图像扩散",
+    "constraint_type": "palette constraint",
+    "summary": "精确控制颜色分布，生成与用户指定调色板感知对齐的图像"
+  },
+  {
+    "title": "Dequantization and Color Transfer with Diffusion Models",
+    "url": "https://arxiv.org/html/2307.02698v4",
+    "key": "去量化和颜色迁移",
+    "constraint_type": "color quantization",
+    "summary": "在量化图像上操作，颜色调色板使扩散模型输出更易控制和解释"
+  },
+  {
+    "title": "Exploring Palette based Color Guidance in Diffusion Models",
+    "url": "https://arxiv.org/html/2508.08754",
+    "key": "调色板引导",
+    "constraint_type": "palette guidance",
+    "summary": "在扩散模型图像着色框架中探索各种调色板表示方法的有效性"
+  },
+  {
+    "title": "Inference-Time Loss-Guided Colour Preservation in Diffusion Sampling",
+    "url": "https://arxiv.org/html/2601.17259",
+    "key": "推理时损失引导颜色保持",
+    "constraint_type": "inference-time loss guidance",
+    "summary": "推理时通过损失引导实现调色板和颜色约束"
+  },
+  {
+    "title": "Constrained Language Generation with Discrete Diffusion Models",
+    "url": "https://arxiv.org/html/2503.09790v1",
+    "key": "离散扩散模型约束生成",
+    "constraint_type": "discrete constraint",
+    "summary": "约束感知过程在保持流畅性和语义一致性的同时实现高保真约束满足"
+  },
+  {
+    "title": "Simple Guidance Mechanisms for Discrete Diffusion Models",
+    "url": "https://arxiv.org/html/2412.10193v1",
+    "key": "离散扩散引导机制",
+    "constraint_type": "discrete guidance",
+    "summary": "连续引导方法不能直接应用于离散扩散，需要专门的引导机制"
+  },
+  {
+    "title": "Unlocking Guidance for Discrete State-Space Diffusion and Flow Models",
+    "url": "https://arxiv.org/html/2406.01572",
+    "key": "离散状态空间引导",
+    "constraint_type": "discrete state-space guidance",
+    "summary": "连续空间的引导方法不能直接用于离散状态空间模型"
+  },
+  {
+    "title": "Constrained Diffusion with Trust Sampling",
+    "url": "https://arxiv.org/html/2411.10932",
+    "key": "信任采样约束扩散",
+    "constraint_type": "trust sampling",
+    "summary": "在遵循无条件扩散模型和遵守损失引导之间有效平衡"
+  },
+  {
+    "title": "Conditional Diffusion Guidance under Hard Constraint",
+    "url": "https://arxiv.org/html/2602.05533",
+    "key": "硬约束条件生成",
+    "constraint_type": "hard constraint",
+    "summary": "生成样本必须以概率1满足规定事件，适用于安全关键应用和稀有事件模拟"
+  },
+  {
+    "title": "Discrete Diffusion Posterior Sampling for Paths in Layered Graphs",
+    "url": "https://arxiv.org/html/2504.20754v1",
+    "key": "后验采样约束",
+    "constraint_type": "structural constraint",
+    "summary": "样本需要遵守某种预定义的结构约束"
+  }
+]
+[Debug] Current context: 19244 chars, 11 messages.
+[Cache] input=10535 cached=33
+[Output] tokens=2253
+code run output:
+已整理17篇文献，按类别分组：
+- 调色板/颜色约束: 4篇
+- 离散扩散通用方法: 7篇
+- 约束方法: 5篇
+
+总计: 16篇
+[Debug] Current context: 26026 chars, 13 messages.
+[Cache] input=16349 cached=0
+[Output] tokens=776
+code run output:
+测试抓取arxiv...
+2601.17259: Precise color control remains a persistent failure mode in text-to-image diffusion systems, particularly in design-oriented workflows where outputs must satisfy explicit, user-specified color targets. We present an inference-time, region-constrained color preservation method that steers a pretrained...
+[Debug] Current context: 30197 chars, 15 messages.
+[Cache] input=13959 cached=67
+[Output] tokens=979
+code run output:
+开始抓取论文摘要...
+[1/10] 2601.17259 - Inference-Time Loss-Guided Colour Preservation
+[2/10] 2509.02000 - Palette Aligned Image Diffusion
+[3/10] 2412.10193 - Simple Guidance Mechanisms for Discrete Diffusion
+[4/10] 2406.01572 - Unlocking Guidance for Discrete State-Space
+[5/10] 2605.09749 - Primal-Dual Guided Decoding
+[6/10] 2503.09790 - Constrained Language Generation with Discrete Diffusion
+[7/10] 2508.08754 - Exploring Palette based Color Guidance
+[8/10] 2307.02698 - Dequantization and Color Transfer
+[9/10] 2411.10932 - Constrained Diffusion with Trust Sampling
+[10/10] 2602.05533 - Conditional Diffusion Guidance under Hard Constraint
+
+成功抓取 10/10 篇
+摘要已保存到 arxiv_abstracts.json
+[Debug] Current context: 34491 chars, 17 messages.
+[Cache] input=15389 cached=23
+[Output] tokens=44
+[Cut] 49597 -> 42915
+[Debug] Current context: 42915 chars, 19 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[Cache] input=15330 cached=10514
+[Output] tokens=2801
+code run output:
+================================================================================
+技术路线分析完成
+================================================================================
+
+[1] Inference-Time Loss-Guided Colour Preservation (arXiv:2601.17259)
+  约束类型: 颜色约束 (Color Constraint)
+  实施阶段: 推理时 (Inference-time)
+  方法: 梯度引导 + 损失函数 (Gradient Guidance + Loss Function)
+  可微性: 可微 (Differentiable)
+  关键技术:
+    - 无需训练 (training-free)
+    - ROI-based inpainting 空间选择
+    - 复合损失函数: CIE Lab + linear RGB
+    - CVaR-style + soft-maximum penalties 控制误差分布尾部
+    - 时间依赖调度 (time-dependent schedule)
+    - latent nudging via gradient guidance
+
+[2] Palette Aligned Image Diffusion (arXiv:2509.02000)
+  约束类型: 调色板约束 (Palette Constraint)
+  实施阶段: 训练时 (Training-time)
+  方法: Adapter训练 + 条件化 (Adapter Training + Conditioning)
+  可微性: 可微 (Differentiable)
+  关键技术:
+    - 调色板解释为稀疏直方图
+    - 两个标量控制参数: histogram entropy + palette-to-histogram distance
+    - negative histogram mechanism 抑制不需要的色调
+    - classifier-free guidance
+    - 平衡罕见和常见颜色的数据集
+
+[3] Simple Guidance Mechanisms for Discrete Diffusion (arXiv:2412.10193)
+  约束类型: 离散约束 (Discrete Constraint)
+  实施阶段: 推理时 (Inference-time)
+  方法: Classifier-free + Classifier-based Guidance
+  可微性: 部分可微 (Partially Differentiable)
+  关键技术:
+    - uniform noise diffusion (更易引导)
+    - 连续编辑输出的能力
+    - continuous-time variational lower bound
+    - 适用于基因序列、小分子、离散化图像
+
+[4] Unlocking Guidance for Discrete State-Space (arXiv:2406.01572)
+  约束类型: 离散状态空间约束 (Discrete State-Space Constraint)
+  实施阶段: 推理时 (Inference-time)
+  方法: 连续时间马尔可夫过程引导 (Continuous-time Markov Process Guidance)
+  可微性: 可微 (Differentiable)
+  关键技术:
+    - 利用离散状态空间上的连续时间马尔可夫过程
+    - 从期望引导分布中采样
+    - 适用于小分子、DNA序列、蛋白质序列
+
+[5] Primal-Dual Guided Decoding (arXiv:2605.09749)
+  约束类型: 全局属性约束 (Global Property Constraint)
+  实施阶段: 推理时 (Inference-time)
+  方法: 原对偶优化 + 自适应拉格朗日乘子 (Primal-Dual Optimization + Adaptive Lagrangian)
+  可微性: 可微 (Differentiable)
+  关键技术:
+    - 表述为KL正则化优化问题
+    - 通过mirror descent更新拉格朗日乘子
+    - 加性约束偏置 (additive constraint-dependent bias)
+    - KL正则化投影
+    - 无需重训练，无需额外模型评估
+    - 支持多个同时约束
+    - 约束违反的形式化界
+
+[6] Constrained Language Generation with Discrete Diffusion (arXiv:2503.09790)
+  约束类型: 序列级约束 (Sequence-level Constraint)
+  实施阶段: 推理时 (Inference-time)
+  方法: 可微约束优化 (Differentiable Constraint Optimization)
+  可微性: 可微 (Differentiable)
+  关键技术:
+    - 将约束优化集成到扩散过程中
+    - 直接将约束施加到离散扩散采样过程
+    - 无需训练 (training-free)
+    - 零约束违反 (zero constraint violations)
+    - 适用于毒性控制、分子设计、指令约束文本
+
+[7] Exploring Palette based Color Guidance (arXiv:2508.08754)
+  约束类型: 调色板引导 (Palette Guidance)
+  实施阶段: 训练时 + 推理时 (Training + Inference)
+  方法: 调色板作为独立引导机制 (Palette as Separate Guidance)
+  可微性: 可微 (Differentiable)
+  关键技术:
+    - 调色板和文本提示分离引导
+    - 基于扩散的图像着色框架
+    - 探索多种调色板表示方法
+    - 专用调色板-文本-图像数据集
+
+[8] Dequantization and Color Transfer (arXiv:2307.02698)
+  约束类型: 颜色量化约束 (Color Quantization Constraint)
+  实施阶段: 训练时 (Training-time)
+  方法: 量化图像操作 + 调色板迁移 (Quantized Image Operation + Palette Transfer)
+  可微性: 可微 (Differentiable)
+  关键技术:
+    - 基于加权二分匹配的调色板迁移
+    - 可选纹理条件: luminance, gradients, thresholded gradients
+    - 克服现有着色方法的亮度限制
+    - 支持图像块重着色
+
+[9] Constrained Diffusion with Trust Sampling (arXiv:2411.10932)
+  约束类型: 通用约束 (General Constraint)
+  实施阶段: 推理时 (Inference-time)
+  方法: 信任采样 + 优化视角 (Trust Sampling + Optimization Perspective)
+  可微性: 可微 (Differentiable)
+  关键技术:
+    - 无需训练的损失引导扩散
+    - 系列约束优化
+    - 沿代理约束函数梯度多步
+    - 根据每个扩散级别的方差决定信任边界
+    - 估计扩散模型的状态流形
+    - 早停机制防止偏离状态流形
+    - 平衡无条件扩散和损失引导
+
+[10] Conditional Diffusion Guidance under Hard Constraint (arXiv:2602.05533)
+  约束类型: 硬约束 (Hard Constraint - 概率1满足)
+  实施阶段: 推理时 (Inference-time)
+  方法: Doob's h-transform + 鞅表示 (Doob's h-transform + Martingale Representation)
+  可微性: 可微 (Differentiable)
+  关键技术:
+    - 基于Doob's h-transform
+    - 鞅表示和二次变分过程
+    - 显式漂移校正: 条件函数的对数梯度
+    - 不修改预训练score网络
+    - off-policy学习算法: martingale loss + martingale-covariation loss
+    - 总变差和Wasserstein距离的非渐近保证
+
+
+分析结果已保存到 paper_analysis.json
+[Debug] Current context: 57839 chars, 21 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[Cache] input=26356 cached=0
+[Output] tokens=2034
+code run output:
+分析完成，共处理 10 篇论文
+
+统计:
+  推理时约束: 8 篇
+  训练时约束: 2 篇
+  训练+推理: 1 篇
+[Debug] Current context: 65919 chars, 23 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 66070 chars, 24 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 66411 chars, 25 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[Cache] input=25041 cached=55
+[Output] tokens=152
+[Cut] 67195 -> 53117
+[Debug] Current context: 53117 chars, 27 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)

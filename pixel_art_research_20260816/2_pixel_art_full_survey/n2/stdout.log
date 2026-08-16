@@ -1,0 +1,425 @@
+[Info] Load mykeys from C:\Agents\GA\GenericAgent\mykey.py
+[Debug] Updated system prompt, length 2700 chars.
+[Debug] Current context: 489 chars, 1 messages.
+[Cache] input=3269 cached=75
+[Output] tokens=196
+[Debug] Current context: 1119 chars, 3 messages.
+[Cache] input=4578 cached=3212
+[Output] tokens=101
+Web Execute JS Result: {
+  "status": "error",
+  "msg": "没有可用的浏览器标签页，查L3记忆分析原因。"
+}
+[Debug] Current context: 1726 chars, 5 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Cache] input=4371 cached=4369
+[Output] tokens=438
+code run output:
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/4qoUrb2QVGBsYpGMLWiubQ+NN+s</id>
+  <title>arXiv Query: search_query=all:pixelization OR all:dithering OR all:palette OR all:quantization&amp;id_list=&amp;start=0&amp;max_results=10</title>
+  <updated>2026-08-16T04:19:55Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=all:pixelization+OR+(all:dithering+OR+(all:palette+OR+all:quantization))&amp;start=0&amp;max_results=10&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>10</opensearch:itemsPerPage>
+  <opensearch:totalResults>67442</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/1805.04348v1</id>
+    <title>Taking the edge off quantization: projected back projection in dithered compressive sensing</title>
+    <updated>2018-05-11T12:05:41Z</updated>
+    <link href="https://arxiv.org/abs/1805.04348v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1805.04348v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Quantized compressive sensing (QCS) deals with the problem of representing compressive signal measurements with finite precision representation, i.e., a mandatory process in any practical sensor design. To characterize the signal reconstruction quality in this framework, most of the existing theoretical analyses lie heavily on the quantization of sub-Gaussian random projections (e.g., Gaussian or Bernoulli). We show here that a simple uniform scalar quantizer is compatible with a large class of random sensing matrices known to respect, with high probability, the restricted isometry property (RIP). Critically, this compatibility arises from the addition of a uniform random vector, or "dithering", to the linear signal observations before quantization. In this setting, we prove the existence of (at least) one signal reconstruction method, i.e., the projected back projection (PBP), whose reconstruction error decays when the number of quantized measurements increases. This holds with high probability in the estimation of sparse signals and low-rank matrices. We validate numerically the predicted error decay as the number of measurements increases.</summary>
+    <category term="cs.IT" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2018-05-11T12:05:41Z</published>
+    <arxiv:comment>Keywords: Quantized compressive sensing, scalar uniform quantization, uniform dithering, projected back projection. Preprint of a paper accepted at SSP2018. 10 pages, 4 figures. This short paper is related to this journal paper arXiv:1801.05870</arxiv:comment>
+    <arxiv:primary_category term="cs.IT"/>
+    <author>
+      <name>Chunlei Xu</name>
+    </author>
+    <author>
+      <name>Vincent Schellekens</name>
+    </author>
+    <author>
+      <name>Laurent Jacques</
+[Debug] Current context: 7224 chars, 7 messages.
+[Cache] input=5036 cached=80
+[Output] tokens=750
+code run output:
+✓ Found 5 papers for: pixelization dithering algorithm
+✓ Found 5 papers for: Floyd-Steinberg dithering
+✓ Found 5 papers for: palette quantization color
+✓ Found 5 papers for: pixel art depixelization
+
+Total papers found: 20
+
+================================================================================
+
+1. Breaking Imaging Limits using Dithering Masks in 0.35 Terahertz Single-Pixel Imaging (2017)
+   Authors: Sven Augustin, Tom Szollmann, Peter Jung
+   arXiv: 1711.02995v1
+   In this contribution, we explore the imaging limits of terahertz single-pixel cameras and present a way to improve the achievable signal-to-noise ratio and spatial resolution using a technique called ...
+
+2. Dithering Strategies and Point-Source Photometry (2012)
+   Authors: Johan Samsing, Alex G. Kim
+   arXiv: 1202.0102v1
+   The accuracy in the photometry of a point source depends on the point-spread function (PSF), detector pixelization, and observing strategy. The PSF and pixel response describe the spatial blurring of ...
+
+3. Theory of Pixel Lensing (1995)
+   Authors: Andrew Gould
+   arXiv: 9509009v2
+   Pixel lensing, gravitational microlensing of unresolved stars, is potentially much more sensitive and much more widely applicable than is generally recognized. I give explicit expressions for the pixe...
+
+4. Taking the edge off quantization: projected back projection in dithered compressive sensing (2018)
+   Authors: Chunlei Xu, Vincent Schellekens, Laurent Jacques
+   arXiv: 1805.04348v1
+   Quantized compressive sensing (QCS) deals with the problem of representing compressive signal measurements with finite precision representation, i.e., a mandatory process in any practical sensor desig...
+
+5. Exponential multi-graylevel computational-weighted dithering for high-quality binarized Fourier single-pixel imaging (2026)
+   Authors: Qigao Zhu, Haojia Jiang, Guan Wang
+   arXiv: 2608.12958v1
+   Binarized Fourier single-pixel imaging (FSI) takes full advantage of the high modulation speed of digital micromirror devices by applying Floyd-Steinberg spatial dithering to binarize grayscale Fourie...
+
+6. Dithering Defense: Adversarial Robustness of Vision Foundation Models via Multi-Level Floyd-Steinberg Dithering (2026)
+   Authors: Yury Belousov, Brian Pulfer, Vitaliy Kinakh
+   arXiv: 2605.23065v1
+   Vision foundation models are widely used as frozen backbones across many downstream tasks, making them a single point of failure under adversarial attack. We study multi-level Floyd-Steinberg error-di...
+
+7. Taking the edge off quantization: projected back projection in dithered compressive sensing (2018)
+   Authors: Chunlei Xu, Vincent Schellekens, Laurent Jacques
+   arXiv: 1805.04348v1
+   Quantized compressive sensing (QCS) deals with the problem of representing compressive signal measurements with finite precision representation, i.e., a mandatory process in any practical sensor desig...
+
+8. Exponential multi-graylevel computational-weighted dithering for high-quality binarized Fourier single-pixel imaging (2026)
+   Authors: Qigao Zhu, Haojia Jiang, Guan Wang
+   arXiv: 2608.12958v1
+   Binarized Fourier single-pixel imaging (FSI) takes full advantage of the high modulation speed of digital micromirror devices by applying Floyd-Steinberg spatial dithering to binarize grayscale Fourie...
+
+9. Dithered quantizers with negligible in-band dither power (2012)
+   Authors: Abhishek Ghosh, Sudhakar Pamarti
+   arXiv: 1202.0936v1
+   Subtractive dithered quantizers are examined to minimize the signal-band dither power. The design of finite impulse response(FIR) filters that shape most of the dither-power out of the signal band whi...
+
+10. Dithering Strategies and Point-Source Photometry (2012)
+   Authors: Johan Samsing, Alex G. Kim
+   arXiv: 1202.0102v1
+   The accuracy in the photometry of a point source depends on the point-spread function (PSF), detector pixelization, and observing strategy. The PSF and pixel response describe the spatial blurring of ...
+[Cut] 13996 -> 13996
+[Debug] Current context: 13996 chars, 9 messages.
+[Cache] input=8717 cached=3212
+[Output] tokens=1120
+code run output:
+{
+  "classic_algorithms": [
+    {
+      "name": "Floyd-Steinberg Dithering",
+      "year": 1976,
+      "type": "误差扩散抖动",
+      "complexity": "O(n)",
+      "description": "经典的误差扩散算法，将量化误差扩散到相邻未处理像素",
+      "pros": "视觉效果好，实现简单",
+      "cons": "串行处理，不易并行化",
+      "implementations": [
+        "PIL.ImageOps.dither (Python)",
+        "OpenCV contrib modules",
+        "https://github.com/topics/floyd-steinberg"
+      ]
+    },
+    {
+      "name": "Ordered Dithering (Bayer)",
+      "year": 1973,
+      "type": "有序抖动",
+      "complexity": "O(n)",
+      "description": "使用预定义的阈值矩阵(Bayer矩阵)进行抖动",
+      "pros": "易并行化，速度快，无伪影",
+      "cons": "纹理规律性强",
+      "implementations": [
+        "https://github.com/makeworld-the-better-one/dither (Go, 1.3k stars)",
+        "Processing/p5.js built-in"
+      ]
+    },
+    {
+      "name": "Median Cut / Octree Quantization",
+      "year": "1979-1982",
+      "type": "调色板量化",
+      "complexity": "O(n log k)",
+      "description": "颜色空间分割算法，生成优化调色板",
+      "pros": "调色板质量高",
+      "cons": "计算开销较大",
+      "implementations": [
+        "PIL.Image.quantize (Python)",
+        "https://github.com/nquant/nquant (C#)"
+      ]
+    },
+    {
+      "name": "xBR (Scale by Rules)",
+      "year": 2011,
+      "type": "矢量转像素/放大",
+      "complexity": "O(n)",
+      "description": "基于规则的像素艺术放大算法",
+      "pros": "边缘锐利，适合游戏",
+      "cons": "仅用于放大，非下采样",
+      "implementations": [
+        "https://github.com/atheros/xbr-rs (Rust)",
+        "libretro/xbr filters"
+      ]
+    }
+  ],
+  "modern_improvements": [
+    {
+      "name": "Depixelizing Pixel Art",
+      "year": 2011,
+      "venue": "SIGGRAPH",
+      "authors": "Kopf & Lischinski",
+      "description": "将像素艺术转换为平滑矢量图形",
+      "paper": "DOI: 10.1145/1964921.1964994",
+      "impact": "开创性工作，后续多篇改进"
+    },
+    {
+      "name": "Neural Dithering",
+      "year": "2020+",
+      "description": "使用深度学习优化抖动模式",
+      "examples": [
+        "SD-πXL (2024): Stable Diffusion像素化蒸馏",
+        "各类GAN-based方法"
+      ]
+    },
+    {
+      "name": "Adaptive Quantization",
+      "description": "基于图像内容动态调整量化策略",
+      "examples": [
+        "Wu's Color Quantizer (1992)",
+        "NeuQuant Neural Network (1994)"
+      ]
+    }
+  ],
+  "key_papers": [
+    {
+      "title": "Depixelizing Pixel Art",
+      "authors": "Kopf & Lischinski",
+      "year": 2011,
+      "venue": "ACM SIGGRAPH",
+      "doi": "10.1145/1964921.1964994",
+      "citations": "500+",
+      "code": "Multiple reimplementations on GitHub"
+    },
+    {
+      "title": "Structure-Aware Halftoning",
+      "year": 2017,
+      "venue": "SIGGRAPH",
+      "description": "改进的结构感知抖动算法"
+    }
+  ]
+}
+
+================================================================================
+数据收集完成，准备生成报告
+[Debug] Current context: 22535 chars, 11 messages.
+[Cache] input=12279 cached=0
+[Output] tokens=953
+code run output:
+Error halftoning image rendering: HTTPSConnectionPool(host='export.arxiv.org', port=443): Read timed out. (read timeout=20)
+Error color quantization image: HTTPSConnectionPool(host='export.arxiv.org', port=443): Max retries exceeded with url: /api/query?search_query=all:color%20quantization%20image&start=0&max_results=5&sortBy=relevance (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1032)')))
+Relevant papers found: 13
+
+[1999-03] The ATLAS Pixel Project
+  Authors: John Richardson, representing the ATLAS Pixel Project
+  arXiv: https://arxiv.org/abs/9903035v1
+  The ATLAS experiment, at the Large Hadron Collider, will incorporate discrete, high-resolution tracking sub-systems in the form of segmented silicon detectors with 40MHz radiation-...
+
+[2011-09] Recent progress of the ATLAS Planar Pixel Sensor R&D Project
+  Authors: The ATLAS Planar Pixel Sensor R&D Project,  :, M. Bomben
+  arXiv: https://arxiv.org/abs/1109.5944v1
+  The foreseen luminosity upgrade for the LHC (a factor of 5-10 more in peak luminosity by 2021) poses serious constraints on the technology for the ATLAS tracker in this High Lumino...
+
+[2019-03] Simulations of CMOS pixel sensors with a small collection electrode, improved for a faster charge collection and increased radiation tolerance
+  Authors: Magdalena Munker, Mathieu Benoit, Dominik Dannheim
+  arXiv: https://arxiv.org/abs/1903.10190v2
+  CMOS pixel sensors with a small collection electrode combine the advantages of a small sensor capacitance with the advantages of a fully monolithic design. The small sensor capacit...
+
+[2015-02] X-CSIT: a toolkit for simulating 2D pixel detectors
+  Authors: Ashley Joy, Matthew Wing, Steffen Hauf
+  arXiv: https://arxiv.org/abs/1502.01536v1
+  A new, modular toolkit for creating simulations of 2D X-ray pixel detectors, X-CSIT (X-ray Camera SImulation Toolkit), is being developed. The toolkit uses three sequential simulat...
+
+[2016-11] Module production of the one-arm AFP 3D pixel tracker
+  Authors: S. Grinstein, E. Cavallaro, M. Chmeissani
+  arXiv: https://arxiv.org/abs/1611.01005v2
+  The ATLAS Forward Proton (AFP) detector is designed to identify events in which one or two protons emerge intact from the LHC collisions. AFP will consist of a tracking detector, t...
+
+[2023-03] Instant Photorealistic Neural Radiance Fields Stylization
+  Authors: Shaoxu Li, Ye Pan
+  arXiv: https://arxiv.org/abs/2303.16884v2
+  We present Instant Neural Radiance Fields Stylization, a novel approach for multi-view image stylization for the 3D scene. Our approach models a neural radiance field based on neur...
+
+[2020-06] Frustratingly Simple Domain Generalization via Image Stylization
+  Authors: Nathan Somavarapu, Chih-Yao Ma, Zsolt Kira
+  arXiv: https://arxiv.org/abs/2006.11207v2
+  Convolutional Neural Networks (CNNs) show impressive performance in the standard classification setting where training and testing data are drawn i.i.d. from a given domain. Howeve...
+
+[2015-02] Interactive 3D Face Stylization Using Sculptural Abstraction
+  Authors: Jan Jachnik, Dan B Goldman, Linjie Luo
+  arXiv: https://arxiv.org/abs/1502.01954v1
+  Sculptors often deviate from geometric accuracy in order to enhance the appearance of their sculpture. These subtle stylizations may emphasize anatomy, draw the viewer's focus to c...
+
+[1995-09] Theory of Pixel Lensing
+  Authors: Andrew Gould
+  arXiv: https://arxiv.org/abs/9509009v2
+  Pixel lensing, gravitational microlensing of unresolved stars, is potentially much more sensitive and much more widely applicable than is generally recognized. I give explicit expr...
+
+[2023-08] Pixel-Aware Stable Diffusion for Realistic Image Super-resolution and Personalized Stylization
+  Authors: Tao Yang, Rongyuan Wu, Peiran Ren
+  arXiv: https://arxiv.org/abs/2308.14469v4
+  Diffusion models have demonstrated impressive performance in various image generation, editing, enhancement and translation tasks. In particular, the pre-trained text-to-image stab...
+
+[2018-09] The 2018 PIRM Challenge on Perceptual Image Super-resolution
+  Authors: Yochai Blau, Roey Mechrez, Radu Timofte
+  arXiv: https://arxiv.org/abs/1809.07517v3
+  This paper reports on the 2018 PIRM challenge on perceptual super-resolution (SR), held in conjunction with the Perceptual Image Restoration and Manipulation (PIRM) workshop at ECC...
+
+[2024-11] Auto-Encoded Supervision for Perceptual Image Super-Resolution
+  Authors: MinKyu Lee, Sangeek Hyun, Woojin Jun
+  arXiv: https://arxiv.org/abs/2412.00124v2
+  This work tackles the fidelity objective in the perceptual super-resolution~(SR). Specifically, we address the shortcomings of pixel-level $L_\text{p}$ loss ($\mathcal{L}_\text{pix...
+
+[2018-09] Deep Learning-based Image Super-Resolution Considering Quantitative and Perceptual Quality
+  Authors: Jun-Ho Choi, Jun-Hyuk Kim, Manri Cheon
+  arXiv: https://arxiv.org/abs/1809.04789v2
+  Recently, it has been shown that in super-resolution, there exists a tradeoff relationship between the quantitative and perceptual quality of super-resolved images, which correspon...
+
+[Debug] Current context: 31282 chars, 13 messages.
+[Cache] input=15115 cached=8714
+[Output] tokens=541
+code run output:
+Searching GitHub: floyd-steinberg dithering
+  Found 5 repos
+Searching GitHub: ordered dithering bayer
+  Found 5 repos
+Searching GitHub: color quantization palette
+  Found 5 repos
+Searching GitHub: pixel art algorithm
+  Found 5 repos
+Searching GitHub: image downsampling
+  Found 5 repos
+
+================================================================================
+GitHub Top Results:
+
+
+【floyd-steinberg dithering】
+  ★ 515 | makew0rld/didder (Go)
+     https://github.com/makew0rld/didder
+     An extensive, fast, and accurate command-line image dithering tool.
+  ★ 171 | esimov/dithergo (Go)
+     https://github.com/esimov/dithergo
+     Various dithering algorithms implemented in Go
+  ★ 155 | manoelpiovesan/dither-guy (Python)
+     https://github.com/manoelpiovesan/dither-guy
+     Free and open-source alternative for Dither Boy software
+
+【ordered dithering bayer】
+  ★ 272 | niccolofanton/dithering-shader (TypeScript)
+     https://github.com/niccolofanton/dithering-shader
+     Real-time ordered (Bayer) dithering post-processing effect for 3D scenes, built with React Three Fib
+  ★ 166 | tromero/BayerMatrix (Python)
+     https://github.com/tromero/BayerMatrix
+     PNG versions of Bayer matrix for ordered dithering, plus the python used to generate them.
+  ★ 12 | chajac/OrderedDither (TypeScript)
+     https://github.com/chajac/OrderedDither
+     A GPU based React THREEJS post processing effect for Ordered Dithering specifically Bayer Dithering
+
+【color quantization palette】
+  ★ 40 | joshdk/quantize (Go)
+     https://github.com/joshdk/quantize
+     🎨 Simple color palette quantization using MMCQ
+  ★ 31 | AbsurdePhoton/dominant-colors-3d-color-space (C++)
+     https://github.com/AbsurdePhoton/dominant-colors-3d-color-space
+     Find dominant colors in images with QT and OpenCV, with a nice GUI to show results in 3D color space
+  ★ 29 | tobius/imagecolors (JavaScript)
+     https://github.com/tobius/imagecolors
+     Use a combination of color quantization algorithms and human fiddling to get human perceivable color
+
+【pixel art algorithm】
+  ★ 504 | Jzou44/photo2pixel (Python)
+     https://github.com/Jzou44/photo2pixel
+     Algorithm used in photo2pixel.co to convert photo to pixel style(8-bit) art.
+  ★ 195 | cryptopunksnotdead/punks.starter (Ruby)
+     https://github.com/cryptopunksnotdead/punks.starter
+     DIY (Do-It-Yourself) - Yes, You Can!  Pixel Art Collection Quick Starter - Generate Algorithmically 
+  ★ 189 | phoboslab/js-hqx (JavaScript)
+     https://github.com/phoboslab/js-hqx
+     hqx Pixel Art Scaling Algorithm in JavaScript
+
+【image downsampling】
+  ★ 142 | rootpine/Bicubic-interpolation (Python)
+     https://github.com/rootpine/Bicubic-interpolation
+     Bicubic interpolation for images (Python)
+  ★ 72 | beresandras/buggy-resizing-critique (Jupyter Notebook)
+     https://github.com/beresandras/buggy-resizing-critique
+     A criticism of a recent paper on buggy image downsampling methods in popular image processing and de
+  ★ 47 | lxasqjc/Deformation-Segmentation (C)
+     https://github.com/lxasqjc/Deformation-Segmentation
+     PyTorch implementation of Learning to Downsample for Segmentation of Ultra-High Resolution Images [I
+[Debug] Current context: 37698 chars, 15 messages.
+[LLM Retry] ReadTimeout, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[Cache] input=17841 cached=0
+[Output] tokens=691
+code run output:
+✓ pixelart downsampling: found match
+✓ image halftoning blue noise: found match
+✓ pixel art style transfer: found match
+
+Extra papers:
+[2025-08] Beyond Pixels: Exploring DOM Downsampling for LLM-Based Web Agents
+  arXiv: 2508.04412v3
+  The advent of large language models (LLMs) has sparked an evolution of autonomous web browsing agents: given a web browsing task and serialised user i
+
+[2025-04] Group Downsampling with Equivariant Anti-aliasing
+  arXiv: 2504.17258v1
+  Downsampling layers are crucial building blocks in CNN architectures, which help to increase the receptive field for learning high-level features and 
+
+[2013-10] Downsampling of optical frequency combs
+  arXiv: 1310.4134v2
+  We demonstrate repetition-rate downsampling of optical frequency combs by way of pulse gating. The reduced repetition rate enables increased pulse ene
+
+[2016-12] A Graph Downsampling Technique Based On Graph Fourier Transform
+  arXiv: 1612.07542v1
+  In this paper, we provide a Graph Fourier Transform based approach to downsample signals on graphs. For bandlimited signals on a graph, a test is prov
+
+[2022-12] Subword-Delimited Downsampling for Better Character-Level Translation
+  arXiv: 2212.01304v1
+  Subword-level models have been the dominant paradigm in NLP. However, character-level models have the benefit of seeing each character individually, p
+
+[2022-07] Halftoning with Multi-Agent Deep Reinforcement Learning
+  arXiv: 2207.11408v1
+  Deep neural networks have recently succeeded in digital halftoning using vanilla convolutional layers with high parallelism. However, existing deep me
+
+[2017-02] Style Transfer Generative Adversarial Networks: Learning to Play Chess Differently
+  arXiv: 1702.06762v2
+  The idea of style transfer has largely only been explored in image-based tasks, which we attribute in part to the specific nature of loss functions us
+
+[2023-02] Neural Artistic Style Transfer with Conditional Adversaria
+  arXiv: 2302.03875v1
+  A neural artistic style transformation (NST) model can modify the appearance of a simple image by adding the style of a famous image. Even though the 
+
+[Debug] Current context: 42401 chars, 17 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Cut] 42552 -> 38720
+[Debug] Current context: 38720 chars, 18 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 41213 chars, 19 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)

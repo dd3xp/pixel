@@ -1,0 +1,7 @@
+{
+  "root_question": "查找SD-πXL相关的论文，包括SDS算法改进、像素画生成方法、扩散模型约束生成",
+  "parent_conclusions": [],
+  "sub_question": "像素画/低分辨率量化图像生成的深度学习方法有哪些？包括神经网络方法、GAN、扩散模型等",
+  "source": "Google Scholar，搜索关键词: pixel art generation neural network OR low resolution quantized image synthesis",
+  "output_file": "C:\\Agents\\GA\\GenericAgent\\temp\\dr_sdpixl_related\\n2_output.txt"
+}

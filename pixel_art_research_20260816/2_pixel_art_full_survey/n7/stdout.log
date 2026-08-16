@@ -1,0 +1,44 @@
+[Info] Load mykeys from C:\Agents\GA\GenericAgent\mykey.py
+[Debug] Updated system prompt, length 2700 chars.
+[Debug] Current context: 458 chars, 1 messages.
+[Cache] input=3247 cached=74
+[Output] tokens=98
+[Debug] Current context: 929 chars, 3 messages.
+[Cache] input=4427 cached=3212
+[Output] tokens=50
+[Debug] Current context: 2259 chars, 5 messages.
+[Cache] input=5208 cached=4424
+[Output] tokens=330
+[Debug] Current context: 3904 chars, 7 messages.
+[Cache] input=9671 cached=0
+[Output] tokens=331
+code run output:
+Start-Process : 无法对参数“FilePath”执行参数验证。参数为 Null 或空。请提供一个不为 Null 或空的参数，然后重试该命令。
+所在位置 行:1 字符: 65
++ ... ole]::OutputEncoding = [System.Text.Encoding]::UTF8; start "" "https: ...
++                                                                ~~
+    + CategoryInfo          : InvalidData: (:) [Start-Process]，ParameterBindingValidationException
+    + FullyQualifiedErrorId : ParameterArgumentValidationError,Microsoft.PowerShell.Commands.StartProcessCommand
+ 
+[Cut] 5495 -> 5495
+[Debug] Current context: 5495 chars, 9 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[Cache] input=6881 cached=6878
+[Output] tokens=823
+[Debug] Current context: 7825 chars, 11 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 7976 chars, 12 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 8127 chars, 13 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)

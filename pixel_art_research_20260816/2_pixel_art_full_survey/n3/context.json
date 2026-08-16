@@ -1,0 +1,8 @@
+{
+  "root_question": "像素画生成的全面调查，覆盖所有技术路线和应用场景",
+  "parent_conclusions": [],
+  "sub_question": "图像到像素画转换（depixelization/super-resolution/style transfer to pixel art）",
+  "source": "Google Scholar，关键词: image to pixel art OR depixelization OR pixel art style transfer",
+  "deliverable": "输入输出类型、质量评估、代表工作",
+  "output_file": "C:\\Agents\\GA\\GenericAgent\\temp\\dr_pixel_art_full\\n3\\output.txt"
+}

@@ -1,0 +1,121 @@
+[Info] Load mykeys from C:\Agents\GA\GenericAgent\mykey.py
+[Debug] Updated system prompt, length 2700 chars.
+[Debug] Current context: 465 chars, 1 messages.
+[Cache] input=3254 cached=29
+[Output] tokens=198
+Web Execute JS Result: {
+  "status": "error",
+  "msg": "没有可用的浏览器标签页，查L3记忆分析原因。"
+}
+[Debug] Current context: 1439 chars, 3 messages.
+[Cache] input=4708 cached=3212
+[Output] tokens=179
+[Debug] Current context: 1949 chars, 5 messages.
+[Cache] input=4912 cached=4705
+[Output] tokens=1449
+code run output:
+核心资源已整理，准备访问详细页面提取元数据...
+{
+  "sketch_colorization": [
+    {
+      "title": "Guiding Users to Where To Give Color Hints for Efficient Interactive Sketch Colorization",
+      "arxiv": "2210.14270",
+      "conference": "WACV 2023",
+      "url": "https://arxiv.org/abs/2210.14270"
+    },
+    {
+      "title": "Two-Stage Sketch Colorization With Color Parsing",
+      "conference": "ACM SIGGRAPH Asia 2018",
+      "url": "https://dl.acm.org/doi/10.1145/3272127.3275090"
+    },
+    {
+      "title": "iColoriT: Towards Propagating Local Hint to the Right Region in Interactive Colorization",
+      "arxiv": "2207.06831",
+      "url": "https://arxiv.org/abs/2207.06831"
+    },
+    {
+      "title": "Control Color: Multimodal Diffusion-Based Interactive Image Colorization",
+      "arxiv": "2402.10855",
+      "journal": "IJCV 2025",
+      "url": "https://arxiv.org/abs/2402.10855"
+    }
+  ],
+  "auto_colorization": [
+    {
+      "title": "Deep Edge-Aware Interactive Colorization",
+      "arxiv": "2107.01619",
+      "url": "https://arxiv.org/abs/2107.01619"
+    },
+    {
+      "title": "Real-Time User-Guided Image Colorization with Learned Deep Priors",
+      "author": "Richard Zhang et al.",
+      "url": "https://richzhang.github.io/InteractiveColorization/index"
+    },
+    {
+      "title": "Real-Time User-Guided Adaptive Colorization With Vision Transformer",
+      "conference": "WACV 2024",
+      "url": "https://www.openaccess.thecvf.com/content/WACV2024/papers/Lee_Real-Time_User-Guided_Adaptive_Colorization_With_Vision_Transformer_WACV_2024_paper.pdf"
+    }
+  ],
+  "github_tools": [
+    {
+      "name": "Auto_painter",
+      "description": "cGAN for sketch-to-image synthesis with automatic color generation",
+      "url": "https://github.com/irfanICMLL/Auto_painter"
+    },
+    {
+      "name": "deepcolor",
+      "description": "Automatic coloring and shading of manga-style lineart using cGANs",
+      "url": "https://github.com/kvfrans/deepcolor"
+    },
+    {
+      "name": "Control-Color",
+      "description": "Multimodal diffusion-based interactive image colorization",
+      "url": "https://github.com/ZhexinLiang/Control-Color"
+    },
+    {
+      "name": "AttentionedDeepPaint",
+      "description": "Automatic Anime Sketch Colorization Using GAN",
+      "url": "https://github.com/ktaebum/AttentionedDeepPaint"
+    }
+  ],
+  "pixel_art": [
+    {
+      "title": "Pixelated Interactions: Exploring Pixel Art for Graphical Primitives",
+      "arxiv": "2305.19444",
+      "url": "https://arxiv.org/abs/2305.19444"
+    }
+  ]
+}
+[Debug] Current context: 9620 chars, 7 messages.
+[Cache] input=7711 cached=4909
+[Output] tokens=2989
+code run output:
+================================================================================
+研究数据结构整理完成
+================================================================================
+
+核心论文数量: 11
+开源工具数量: 7
+
+按类别统计:
+  - 交互式上色: 3篇
+  - 自动上色: 3篇
+  - sketch上色: 3篇
+  - 像素艺术生成: 2篇
+[Cut] 18346 -> 18346
+[Debug] Current context: 18346 chars, 9 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 18497 chars, 10 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)
+[Debug] Current context: 18648 chars, 11 messages.
+[LLM Retry] ConnectionError, retry in 1.5s (1/5)
+[LLM Retry] ConnectionError, retry in 3.0s (2/5)
+[LLM Retry] ConnectionError, retry in 6.0s (3/5)
+[LLM Retry] ConnectionError, retry in 12.0s (4/5)

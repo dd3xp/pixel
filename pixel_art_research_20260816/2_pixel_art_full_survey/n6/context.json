@@ -1,0 +1,8 @@
+{
+  "root_question": "像素画生成的全面调查，覆盖所有技术路线和应用场景",
+  "parent_conclusions": [],
+  "sub_question": "艺术创作辅助（sketch-to-pixel/自动上色/风格迁移/细节增强）",
+  "source": "Google Scholar + arXiv，关键词: sketch to pixel art OR pixel art colorization OR pixel art enhancement",
+  "deliverable": "交互方式、辅助类型、用户研究",
+  "output_file": "C:\\Agents\\GA\\GenericAgent\\temp\\dr_pixel_art_full\\n6\\output.txt"
+}

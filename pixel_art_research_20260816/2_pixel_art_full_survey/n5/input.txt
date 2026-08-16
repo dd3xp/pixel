@@ -1,0 +1,18 @@
+目标：游戏资产生成（角色sprite/场景tile/动画帧/tileset自动生成）
+
+数据来源：Google Scholar + GDC，关键词: game sprite generation OR tileset generation OR pixel art animation
+
+交付物：应用场景、技术路线、商业案例
+
+要求：
+1. 使用web_search工具搜索相关论文、工具、项目
+2. 访问核心资源提取详细信息
+3. 按要求格式整理到output.txt
+4. 标注论文年份、会议/期刊、引用数、代码链接
+5. 对比不同方法的优缺点
+
+约束：
+- 优先Google Scholar和arXiv，禁用DuckDuckGo
+- 论文必须标注arXiv/DOI链接
+- 工具必须标注GitHub star数或官网
+- 结论控制在500字以内，详细内容写正文

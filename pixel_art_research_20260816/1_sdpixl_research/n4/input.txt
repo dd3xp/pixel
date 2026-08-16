@@ -1,0 +1,11 @@
+目标：查找SD-πXL论文的引用和后续工作
+
+要求：
+1. 在Google Scholar搜索论文标题: "SD-πXL Generating Low-Resolution Quantized Imagery via Score Distillation"
+2. 查看引用该论文的工作（如果有）
+3. 查看同作者的后续论文
+4. 总结论文评价（引用数、会议/期刊等级）到output.txt
+
+约束：
+- 如果引用数为0，说明这是新论文，总结其发表信息即可
+- 关注是否有开源代码、是否有复现

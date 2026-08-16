@@ -1,0 +1,18 @@
+目标：深度学习方法（GAN/VAE/扩散模型/Transformer/NeRF）在像素画生成中的应用
+
+数据来源：Google Scholar + arXiv，关键词: pixel art generation deep learning OR GAN OR VAE OR diffusion OR transformer
+
+交付物：按方法分类，列出代表性论文、核心创新、优缺点对比
+
+要求：
+1. 使用web_search工具搜索相关论文、工具、项目
+2. 访问核心资源提取详细信息
+3. 按要求格式整理到output.txt
+4. 标注论文年份、会议/期刊、引用数、代码链接
+5. 对比不同方法的优缺点
+
+约束：
+- 优先Google Scholar和arXiv，禁用DuckDuckGo
+- 论文必须标注arXiv/DOI链接
+- 工具必须标注GitHub star数或官网
+- 结论控制在500字以内，详细内容写正文
