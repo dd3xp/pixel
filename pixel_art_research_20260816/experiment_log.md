@@ -44,7 +44,9 @@
 - 配置: `configs/petal_16_db32_full.yaml` = 与 EXP-002 同参（16×16, DB32, 10000步, CFG 40, lr 0.025, 同一张蓝白花源图），差异: 无 ControlNet、增强只有 hflip（无 distortion/grayscale）
 - 运行: emnlp GPU1, PID 357089, 日志 `pixel/logs/exp003_replication.log`, 输出 `pixel/workdir/petal_16_db32_full/<时间戳>/`
 - 判据: final_hard 与 EXP-002 final 定性相近（同等"潦草"即算复刻成功）；metrics.csv 应复现出细节退化曲线（colors_used/lum_levels 随步数下降）
-- 结果: （待填）
+- 结果: **完成**（06:10 启动，~50 分钟跑完 10000 步——远快于 SD-piXL 的 3.5h，因无 ControlNet/双渲染）。样本在 samples/exp003_*.png，指标在 samples/exp003_metrics.csv
+- **定性**: 与 EXP-002 同族——中心花团 + 花心结构，同量级的"潦草"，行为复刻成立。差异：背景从灰蓝漂成饱和蓝（CFG=40 过饱和更明显）、有零散杂色像素（绿/青/灰）
+- **定量意外**: 我们的版本 colors_used 5→9、lum_levels 5→7（不降反升），白色保住了——与 EXP-002 的塌缩相反。解释：EXP-002 的 distortion/grayscale 增强是把细节磨平的主力，我们只有 hflip。**增强强度 = 杂散像素鲁棒性 vs 细节保留的权衡**——这是 P2 锚定设计的重要输入（EXP-002 的"细节被抹掉"部分归因于增强，不全是 SDS 本身）
 
 ---
 
