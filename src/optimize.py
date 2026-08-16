@@ -12,7 +12,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 
-from .losses import lowpass_l1_anchor
+from .losses import ANCHORS
 from .metrics import colors_used, highfreq_energy, l1_to_reference, luminance_levels
 from .palette import load_hex_palette
 from .renderer import PaletteRenderer
@@ -53,8 +53,10 @@ def _optimize_scale(
     cfg: dict,
     out_dir: Path,
     steps: int,
-    reference_small: torch.Tensor | None,
     lr: float,
+    anchor_ref: torch.Tensor | None = None,
+    anchor_weight: float = 0.0,
+    t_max: float | None = None,
 ) -> None:
     """Inner loop shared by single-scale and pyramid runs."""
     device = renderer.logits.device
@@ -64,7 +66,8 @@ def _optimize_scale(
     opt = torch.optim.Adam(renderer.parameters(), lr=lr)
     save_steps = int(cfg.get("save_steps", 50))
     tau_min, tau_max = cfg.get("tau_min", 0.5), cfg.get("tau_max", 1.5)
-    anchor_weight = float(cfg.get("anchor_weight", 0.0))
+    anchor_fn = ANCHORS[cfg.get("anchor_type", "l1")]
+    t_max = float(cfg.get("t_max", 0.98)) if t_max is None else t_max
     init_hard = renderer(mode="hard").detach().clone()
 
     metrics_path = out_dir / "metrics.csv"
@@ -85,12 +88,12 @@ def _optimize_scale(
             guidance_scale=float(cfg.get("guidance_scale", 40.0)),
             grad_scale=float(cfg.get("grad_scale", 1.0)),
             t_min=float(cfg.get("t_min", 0.02)),
-            t_max=float(cfg.get("t_max", 0.98)),
+            t_max=t_max,
         )
 
         anchor = torch.zeros((), device=device)
-        if anchor_weight > 0 and reference_small is not None:
-            anchor = lowpass_l1_anchor(renderer(tau=1.0, mode="softmax"), reference_small)
+        if anchor_weight > 0 and anchor_ref is not None:
+            anchor = anchor_fn(renderer(tau=1.0, mode="softmax"), anchor_ref)
 
         (sds + anchor_weight * anchor).backward()
         if cfg.get("clip_grad", True):
@@ -130,7 +133,10 @@ def run(cfg: dict, out_dir: Path) -> None:
         renderer.init_from_image(reference_small, distance=cfg.get("init_distance", "l1"))
 
     guidance = _build_guidance(cfg, device)
-    _optimize_scale(renderer, guidance, cfg, out_dir, int(cfg["steps"]), reference_small, float(cfg.get("lr", 0.025)))
+    _optimize_scale(
+        renderer, guidance, cfg, out_dir, int(cfg["steps"]), float(cfg.get("lr", 0.025)),
+        anchor_ref=reference_small, anchor_weight=float(cfg.get("anchor_weight", 0.0)),
+    )
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard_1x.png", resize=None)
     print(f"Done -> {out_dir}", flush=True)
 
@@ -144,7 +150,13 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     scales: list[int] = [int(s) for s in cfg["scales"]]
     steps_list: list[int] = [int(s) for s in cfg["steps_per_scale"]]
     assert len(scales) == len(steps_list), "scales and steps_per_scale must align"
-    lrs = cfg.get("lr_per_scale") or [cfg.get("lr", 0.025)] * len(scales)
+    n = len(scales)
+    lrs = cfg.get("lr_per_scale") or [cfg.get("lr", 0.025)] * n
+    aw = cfg.get("anchor_weight", 0.0)
+    anchor_weights = aw if isinstance(aw, list) else [float(aw)] * n
+    tm = cfg.get("t_max_per_scale")
+    t_maxes = [float(x) for x in tm] if tm else [float(cfg.get("t_max", 0.98))] * n
+    anchor_mode = cfg.get("anchor_mode", "carry")  # 'carry' = previous level result; 'source' = downsampled source
 
     palette = load_hex_palette(cfg["palette"]).to(device)
     source = _load_image(cfg["image"], device)
@@ -160,8 +172,12 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
         renderer = PaletteRenderer(size, size, palette, init_std=cfg.get("init_std", 1.0)).to(device)
         renderer.init_from_image(init_img, distance=cfg.get("init_distance", "l1"))
 
-        print(f"=== level {i}: {size}x{size}, {steps} steps ===", flush=True)
-        _optimize_scale(renderer, guidance, cfg, level_dir, steps, reference_small, float(lrs[i]))
+        anchor_ref = init_img if anchor_mode == "carry" else reference_small
+        print(f"=== level {i}: {size}x{size}, {steps} steps, anchor_w={anchor_weights[i]}, t_max={t_maxes[i]} ===", flush=True)
+        _optimize_scale(
+            renderer, guidance, cfg, level_dir, steps, float(lrs[i]),
+            anchor_ref=anchor_ref, anchor_weight=float(anchor_weights[i]), t_max=t_maxes[i],
+        )
 
         carry = renderer(tau=1.0, mode="softmax").detach()
 

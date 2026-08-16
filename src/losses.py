@@ -22,3 +22,11 @@ def _gaussian_blur(img_3hw: torch.Tensor, sigma: float) -> torch.Tensor:
 def lowpass_l1_anchor(image_3hw: torch.Tensor, reference_3hw: torch.Tensor, sigma: float = 1.0) -> torch.Tensor:
     """L1 between low-pass versions: anchors layout/colors, leaves detail free."""
     return (_gaussian_blur(image_3hw, sigma) - _gaussian_blur(reference_3hw, sigma)).abs().mean()
+
+
+def l1_anchor(image_3hw: torch.Tensor, reference_3hw: torch.Tensor) -> torch.Tensor:
+    """Plain per-pixel L1: hard structural lock to the reference."""
+    return (image_3hw - reference_3hw).abs().mean()
+
+
+ANCHORS = {"lowpass": lowpass_l1_anchor, "l1": l1_anchor}
