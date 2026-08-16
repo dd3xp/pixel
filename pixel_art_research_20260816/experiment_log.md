@@ -82,10 +82,10 @@
 **基线**: EXP-004（多尺度无锚定，samples/exp004_final.png）。**评判**: 16×16 final 的花瓣结构完整性 + 对源图忠实度 + 无杂散像素 + 层次保留，全部目视对比基线，metrics.csv 辅助。
 
 **队列与状态**:
-- [跑] EXP-006 carry 锚定 L1，权重 [0,0,10,30,100]（GPU0, configs/exp006_carry_anchor.yaml）
-- [跑] EXP-007 无锚定 + t_max 逐级压低 [0.98,0.98,0.9,0.7,0.5]（GPU1, configs/exp007_tmax_restrict.yaml）
-- [待] EXP-008: 006/007 中有效机制的组合或权重扫描
-- [待] EXP-009: anchor_mode=source vs carry 对比
+- [完] EXP-006 carry 锚定 [0,0,10,30,100]：16×16 与基线相当，**32×32 级花瓣明显更饱满连贯**（samples/exp006_*.png）——锚定在中间层起效
+- [完] EXP-007 t_max 压低：**负结果**（samples/exp007_*.png）——低噪声 SDS 只抛光碎片、无力重连断裂花瓣，16×16 更碎。结论：低分辨率级需要"有锚保护的完整重构能力"，不是"被阉割的 SDS"
+- [跑] EXP-008 carry 锚定加强 [0,5,20,60,200]（GPU0）
+- [跑] EXP-009 anchor_mode=source（锚到源图降采样版，权重同 006）（GPU1）
 - [待] EXP-010: carry 降采样方式（bilinear vs nearest/主色池化，需改代码）
 - [待] EXP-011: 多源图验证（找 2-3 张新图：高对比插画/照片/复杂场景）
 - [待] EXP-012: seed 鲁棒性（最优配置 ×3 seed）
