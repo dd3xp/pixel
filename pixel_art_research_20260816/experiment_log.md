@@ -38,6 +38,14 @@
 
 > 另: `workdir/config_petal/`（8-15）应为 EXP-001 的 4 色输出；`logs/petal_train.log`、`logs/train_petal.log`（8-14）为早期尝试日志
 
+### EXP-003 | 2026-08-16 | 自研代码 P0 复刻（对照 EXP-002）
+- 目的: 验证从零实现的 SDS + Gumbel-softmax 渲染器行为正确（P0 出口判据）
+- 代码: 本仓库 `src/` + `scripts/run.py`（commit a5c4f17）；100 步冒烟测试已通过
+- 配置: `configs/petal_16_db32_full.yaml` = 与 EXP-002 同参（16×16, DB32, 10000步, CFG 40, lr 0.025, 同一张蓝白花源图），差异: 无 ControlNet、增强只有 hflip（无 distortion/grayscale）
+- 运行: emnlp GPU1, PID 357089, 日志 `pixel/logs/exp003_replication.log`, 输出 `pixel/workdir/petal_16_db32_full/<时间戳>/`
+- 判据: final_hard 与 EXP-002 final 定性相近（同等"潦草"即算复刻成功）；metrics.csv 应复现出细节退化曲线（colors_used/lum_levels 随步数下降）
+- 结果: （待填）
+
 ---
 
 **下一步（来自 novelty_assessment.md）**: 阶段0验证实验——同一批图，多尺度 vs 单尺度 SD-πXL 直接对比质量
