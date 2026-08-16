@@ -29,6 +29,19 @@ def _resize(image_3hw: torch.Tensor, size: int) -> torch.Tensor:
     return F.interpolate(image_3hw.unsqueeze(0), size=(size, size), mode="bilinear", antialias=True).squeeze(0)
 
 
+def _dominant_downsample(indices_hw: torch.Tensor, palette: torch.Tensor, size: int) -> torch.Tensor:
+    """Mode-pool palette indices per block (pixel-artist style downscale).
+
+    Preserves color identity: thin features keep their color instead of being
+    averaged into mud and re-quantized to background. Requires integer ratio.
+    """
+    H = indices_hw.shape[0]
+    f = H // size
+    idx = indices_hw[: size * f, : size * f].reshape(size, f, size, f).permute(0, 2, 1, 3).reshape(size, size, f * f)
+    mode = idx.mode(dim=-1).values
+    return palette[mode].permute(2, 0, 1)
+
+
 def _save_png(image_3hw: torch.Tensor, path: Path, resize: int | None = 256) -> None:
     arr = (image_3hw.clamp(0, 1) * 255).byte().permute(1, 2, 0).cpu().numpy()
     img = Image.fromarray(arr)
@@ -162,12 +175,19 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     source = _load_image(cfg["image"], device)
     guidance = _build_guidance(cfg, device)
 
+    carry_mode = cfg.get("carry_mode", "bilinear")  # 'bilinear' (soft render) | 'dominant' (mode-pooled hard indices)
     carry = None  # previous level's soft render, full precision
+    carry_indices = None  # previous level's hard palette indices
     renderer = None
     for i, (size, steps) in enumerate(zip(scales, steps_list)):
         level_dir = out_dir / f"level_{i}_{size}"
         reference_small = _resize(source, size)
-        init_img = reference_small if carry is None else _resize(carry, size)
+        if carry is None:
+            init_img = reference_small
+        elif carry_mode == "dominant":
+            init_img = _dominant_downsample(carry_indices, palette, size)
+        else:
+            init_img = _resize(carry, size)
 
         renderer = PaletteRenderer(size, size, palette, init_std=cfg.get("init_std", 1.0)).to(device)
         renderer.init_from_image(init_img, distance=cfg.get("init_distance", "l1"))
@@ -180,6 +200,7 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
         )
 
         carry = renderer(tau=1.0, mode="softmax").detach()
+        carry_indices = renderer.hard_indices()
 
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard.png")
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard_1x.png", resize=None)
