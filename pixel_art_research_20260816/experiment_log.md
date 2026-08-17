@@ -136,11 +136,11 @@
 **队列与状态**:
 - [完] EXP-018 q=1 / EXP-019 q=3：**均无效**——与 017 几乎一致，背景斑驳原封不动（samples/exp018/019_final.png）
 - **诊断（重要）**: prompt 继承自 012，含 "on a blue and white striped background"——**最低层 SDS 还在捍卫条纹**。释放锚定只撤掉了"保忠实"的力，唯一能推平背景的力（SDS）被 prompt 指向了反方向。释放函数与 prompt 目标冲突 → 抽象机制需要 **prompt 层级调度**：高层忠实描述、低层抽象化描述
-- [跑] EXP-020 背景释放 q=3 + prompt 调度（前3层忠实/后6层 "plain flat background, simple pixel art icon"）（GPU0）
-- [跑] EXP-021 仅 prompt 调度、无 mask 释放（GPU1）——分离两个机制的贡献
-- [待] EXP-022: 有效侧 flower1 回归验证
-- [待] EXP-023: 背景显式 TV 平坦化损失对比
-**终止**: 背景释放+prompt调度有效性结论明确，或连续两轮无改进→删 cron 总结。代码新增: prompt_per_scale（逐级换 prompt，只在变化时重编码）。
+- [完] EXP-020 释放+prompt调度 / EXP-021 仅prompt调度：**突破——flower2 16×16 首次可读**（samples/exp020/021_final.png）：背景条纹被磨成均匀灰底，橙黄花心+花瓣团清晰成立，24×24 级雏菊完整背景平坦
+- **归因**: 020≈021 → **prompt 调度是活性成分**，背景释放函数在此 case 增益≈0（锚定对象是 carry，上层被抽象 prompt 改变后 carry 自身已平，释放与否不再关键）。用户"低分辨率背景低忠实"的直觉由 prompt 调度在语义层实现
+- [跑] EXP-022 flower1 回归验证（prompt 调度不应劣化简单图）（GPU0）
+- [跑] EXP-023 EXP-021 配置 seed=1 复验（GPU1）
+**终止**: 下轮收割 022/023 后收摊总结。
 
 **汇总当前方法配方（P2/P2b 探索沉淀）**：密尾调度（p≈2~3）+ 头重脚轻步数 + carry 锚定（低层递增权重）+ 配对 prompt。待补组件：语义抽象机制、正经结构感知降采样、自动 caption、调色板覆盖自适应、seed 鲁棒性验证。
 
