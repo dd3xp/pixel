@@ -119,7 +119,18 @@ def _optimize_scale(
             else:
                 anchor = anchor_fn(renderer(tau=1.0, mode="softmax"), anchor_ref)
 
-        (sds + anchor_weight * anchor).backward()
+        if cfg.get("grad_combine", "sum") == "norm" and anchor_weight > 0 and anchor_ref is not None:
+            # Normalize each gradient before combining: anchor_weight becomes a true
+            # relative strength instead of being drowned by SDS's raw magnitude.
+            sds.backward()
+            g_sds = renderer.logits.grad.detach().clone()
+            renderer.logits.grad = None
+            anchor.backward()
+            g_anc = renderer.logits.grad.detach().clone()
+            renderer.logits.grad = None
+            renderer.logits.grad = g_sds / (g_sds.norm() + 1e-8) + anchor_weight * g_anc / (g_anc.norm() + 1e-8)
+        else:
+            (sds + anchor_weight * anchor).backward()
         if cfg.get("clip_grad", True):
             torch.nn.utils.clip_grad_norm_(renderer.parameters(), cfg.get("max_grad_norm", 1.0))
         opt.step()
