@@ -230,9 +230,15 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
             # dominant background color (palette-projected) — enforces both correct
             # color and flatness by construction
             m = _resize(mask, size).clamp(0, 1)
-            bg_pixels = reference_small[:, m.squeeze(0) < 0.5]
-            med = bg_pixels.median(dim=1).values if bg_pixels.numel() else reference_small.mean((1, 2))
-            flat = palette[(palette - med).abs().sum(1).argmin()].view(3, 1, 1).expand_as(reference_small)
+            bg_pixels = reference_small[:, m.squeeze(0) < 0.5].T  # (N, 3)
+            if bg_pixels.numel() and cfg.get("flatbg_color", "mode") == "mode":
+                # most common palette color among bg pixels — robust to striped/mixed bg
+                d = (bg_pixels.unsqueeze(1) - palette.unsqueeze(0)).abs().sum(-1)
+                flat_color = palette[d.argmin(1).mode().values]
+            else:
+                med = bg_pixels.T.median(dim=1).values if bg_pixels.numel() else reference_small.mean((1, 2))
+                flat_color = palette[(palette - med).abs().sum(1).argmin()]
+            flat = flat_color.view(3, 1, 1).expand_as(reference_small)
             anchor_ref = m * reference_small + (1.0 - m) * flat
         elif anchor_mode == "source":
             anchor_ref = reference_small
