@@ -436,8 +436,10 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
             renderer.logits.data[bg_sel] = sel
 
     if cfg.get("despeckle"):
-        # standard pixel-art cleanup: an index with no same-colored 8-neighbor is
-        # an isolated speckle; replace it with the neighborhood mode
+        # value-aware cleanup: an isolated pixel is removed only when its color is
+        # FAR from every neighbor (a true speckle); ramp-adjacent accents (shading,
+        # highlights near similar tones) are kept
+        far_thresh = float(cfg.get("despeckle_thresh", 0.35))
         with torch.no_grad():
             idx = renderer.hard_indices()
             H, W = idx.shape
@@ -447,9 +449,12 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
                              for xx in range(max(0, x - 1), min(W, x + 2)) if (yy, xx) != (y, x)]
                     neigh_t = torch.stack(neigh)
                     if (neigh_t != idx[y, x]).all():
-                        new_idx = int(neigh_t.mode().values)
-                        renderer.logits.data[y, x, :] = -10.0
-                        renderer.logits.data[y, x, new_idx] = 10.0
+                        own = palette[idx[y, x]]
+                        d_min = (palette[neigh_t] - own).abs().sum(-1).min()
+                        if d_min > far_thresh:
+                            new_idx = int(neigh_t.mode().values)
+                            renderer.logits.data[y, x, :] = -10.0
+                            renderer.logits.data[y, x, new_idx] = 10.0
 
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard.png")
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard_1x.png", resize=None)
