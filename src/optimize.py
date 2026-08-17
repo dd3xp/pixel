@@ -77,6 +77,7 @@ def _optimize_scale(
     anchor_weight: float = 0.0,
     t_max: float | None = None,
     anchor_wmap: torch.Tensor | None = None,  # (1, H, W) per-pixel anchor weight
+    guidance_scale: float | None = None,
 ) -> None:
     """Inner loop shared by single-scale and pyramid runs."""
     device = renderer.logits.device
@@ -105,7 +106,7 @@ def _optimize_scale(
         big = F.interpolate(img.unsqueeze(0), size=guidance.render_size, mode="bilinear")
         sds, t_used = guidance.sds_loss(
             big,
-            guidance_scale=float(cfg.get("guidance_scale", 40.0)),
+            guidance_scale=float(guidance_scale if guidance_scale is not None else cfg.get("guidance_scale", 40.0)),
             grad_scale=float(cfg.get("grad_scale", 1.0)),
             t_min=float(cfg.get("t_min", 0.02)),
             t_max=t_max,
@@ -179,6 +180,8 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     anchor_weights = aw if isinstance(aw, list) else [float(aw)] * n
     tm = cfg.get("t_max_per_scale")
     t_maxes = [float(x) for x in tm] if tm else [float(cfg.get("t_max", 0.98))] * n
+    gs = cfg.get("guidance_scale_per_scale")
+    gs_list = [float(x) for x in gs] if gs else [float(cfg.get("guidance_scale", 40.0))] * n
     anchor_mode = cfg.get("anchor_mode", "carry")  # 'carry' = previous level result; 'source' = downsampled source
 
     palette = load_hex_palette(cfg["palette"]).to(device)
@@ -211,6 +214,15 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
             # subject anchors to the color-true source; background to the carry
             m = _resize(mask, size).clamp(0, 1)
             anchor_ref = m * reference_small + (1.0 - m) * init_img
+        elif anchor_mode == "flatbg" and mask is not None:
+            # subject anchors to source; background to a flat plane of the source's
+            # dominant background color (palette-projected) — enforces both correct
+            # color and flatness by construction
+            m = _resize(mask, size).clamp(0, 1)
+            bg_pixels = reference_small[:, m.squeeze(0) < 0.5]
+            med = bg_pixels.median(dim=1).values if bg_pixels.numel() else reference_small.mean((1, 2))
+            flat = palette[(palette - med).abs().sum(1).argmin()].view(3, 1, 1).expand_as(reference_small)
+            anchor_ref = m * reference_small + (1.0 - m) * flat
         elif anchor_mode == "source":
             anchor_ref = reference_small
         else:
@@ -232,7 +244,7 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
         _optimize_scale(
             renderer, guidance, cfg, level_dir, steps, float(lrs[i]),
             anchor_ref=anchor_ref, anchor_weight=float(anchor_weights[i]), t_max=t_maxes[i],
-            anchor_wmap=wmap,
+            anchor_wmap=wmap, guidance_scale=gs_list[i],
         )
 
         carry = renderer(tau=1.0, mode="softmax").detach()
