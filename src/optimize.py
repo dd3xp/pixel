@@ -34,7 +34,14 @@ def _tone_boost(img: torch.Tensor, mask: torch.Tensor | None, gain: float = 2.0,
     lum = (img * w).sum(0, keepdim=True)
     m = mask if mask is not None else torch.ones_like(lum)
     mean = (lum * m).sum() / m.sum().clamp(min=1e-6)
-    scale = (((lum - mean) * gain + mean) / lum.clamp(min=1e-4)).clamp(0.2, 3.0)
+    delta = lum - mean
+    gain_lo = gain if isinstance(gain, float) else gain  # symmetric fallback
+    if isinstance(gain, (tuple, list)):
+        gain_hi, gain_lo = float(gain[0]), float(gain[1])
+    else:
+        gain_hi = gain_lo = float(gain)
+    boosted = torch.where(delta > 0, gain_hi * delta, gain_lo * delta) + mean
+    scale = (boosted / lum.clamp(min=1e-4)).clamp(0.2, 3.0)
     out = img * scale
     out = out + unsharp * (out - _gaussian_blur(out, sigma))
     out = out.clamp(0, 1)
@@ -248,7 +255,8 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     source = _load_image(cfg["image"], device)
     mask = _load_mask(cfg["mask"], device) if cfg.get("mask") else None
     if cfg.get("tone_gain"):
-        source = _tone_boost(source, mask, gain=float(cfg["tone_gain"]),
+        tg = cfg["tone_gain"]
+        source = _tone_boost(source, mask, gain=tg if isinstance(tg, list) else float(tg),
                              unsharp=float(cfg.get("tone_unsharp", 0.5)))
     bg_release_q = cfg.get("bg_release_q")  # None = spatially uniform anchor
     bg_weight_min = float(cfg.get("bg_weight_min", 0.0))
