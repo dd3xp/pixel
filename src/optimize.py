@@ -12,7 +12,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 
-from .losses import ANCHORS
+from .losses import ANCHORS, _gaussian_blur
 from .metrics import colors_used, highfreq_energy, l1_to_reference, luminance_levels
 from .palette import load_hex_palette
 from .renderer import PaletteRenderer
@@ -23,6 +23,22 @@ def _load_image(path: str, device: str) -> torch.Tensor:
     img = Image.open(path).convert("RGB")
     t = torch.tensor(list(img.getdata()), dtype=torch.float32).view(img.height, img.width, 3) / 255.0
     return t.permute(2, 0, 1).to(device)  # (3, H, W) full resolution
+
+
+def _tone_boost(img: torch.Tensor, mask: torch.Tensor | None, gain: float = 2.0,
+                unsharp: float = 0.5, sigma: float = 4.0) -> torch.Tensor:
+    """Exaggerate subject tonal contrast so shading survives palette quantization
+    (what a pixel artist does by hand: push shadows down a ramp, highlights up).
+    """
+    w = torch.tensor([0.299, 0.587, 0.114], device=img.device).view(3, 1, 1)
+    lum = (img * w).sum(0, keepdim=True)
+    m = mask if mask is not None else torch.ones_like(lum)
+    mean = (lum * m).sum() / m.sum().clamp(min=1e-6)
+    scale = (((lum - mean) * gain + mean) / lum.clamp(min=1e-4)).clamp(0.2, 3.0)
+    out = img * scale
+    out = out + unsharp * (out - _gaussian_blur(out, sigma))
+    out = out.clamp(0, 1)
+    return m * out + (1 - m) * img
 
 
 def _load_mask(path: str, device: str) -> torch.Tensor:
@@ -231,6 +247,9 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     palette = load_hex_palette(cfg["palette"]).to(device)
     source = _load_image(cfg["image"], device)
     mask = _load_mask(cfg["mask"], device) if cfg.get("mask") else None
+    if cfg.get("tone_gain"):
+        source = _tone_boost(source, mask, gain=float(cfg["tone_gain"]),
+                             unsharp=float(cfg.get("tone_unsharp", 0.5)))
     bg_release_q = cfg.get("bg_release_q")  # None = spatially uniform anchor
     bg_weight_min = float(cfg.get("bg_weight_min", 0.0))
     guidance = _build_guidance(cfg, device)
