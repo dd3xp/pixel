@@ -31,8 +31,41 @@ def _load_mask(path: str, device: str) -> torch.Tensor:
     return t.to(device)  # (1, H, W), 1 = subject, 0 = background
 
 
-def _resize(image_3hw: torch.Tensor, size: int) -> torch.Tensor:
+def _resize(image_3hw: torch.Tensor, size: int, mode: str = "bilinear") -> torch.Tensor:
+    if mode == "lanczos":
+        arr = (image_3hw.clamp(0, 1) * 255).byte().permute(1, 2, 0).cpu().numpy()
+        img = Image.fromarray(arr).resize((size, size), Image.LANCZOS)
+        t = torch.tensor(list(img.getdata()), dtype=torch.float32).view(size, size, 3) / 255.0
+        return t.permute(2, 0, 1).to(image_3hw.device)
+    if mode == "kcentroid":
+        return _kcentroid_downsample(image_3hw, size)
     return F.interpolate(image_3hw.unsqueeze(0), size=(size, size), mode="bilinear", antialias=True).squeeze(0)
+
+
+def _kcentroid_downsample(image_3hw: torch.Tensor, size: int, factor: int = 4, iters: int = 4) -> torch.Tensor:
+    """Pixel-artist style content-aware downscale: per output cell, 2-means
+    cluster the cell's pixels and take the dominant cluster's centroid — thin
+    features keep their color instead of being averaged into the background.
+    """
+    inter = F.interpolate(image_3hw.unsqueeze(0), size=(size * factor, size * factor),
+                          mode="bilinear", antialias=True).squeeze(0)
+    cells = inter.reshape(3, size, factor, size, factor).permute(1, 3, 0, 2, 4).reshape(size, size, 3, factor * factor)
+    cells = cells.permute(0, 1, 3, 2)  # (size, size, N, 3)
+
+    lum = cells @ torch.tensor([0.299, 0.587, 0.114], device=cells.device)
+    c0 = torch.gather(cells, 2, lum.argmin(-1)[..., None, None].expand(-1, -1, 1, 3)).squeeze(2)
+    c1 = torch.gather(cells, 2, lum.argmax(-1)[..., None, None].expand(-1, -1, 1, 3)).squeeze(2)
+    for _ in range(iters):
+        d0 = (cells - c0.unsqueeze(2)).abs().sum(-1)
+        d1 = (cells - c1.unsqueeze(2)).abs().sum(-1)
+        assign = (d1 < d0).float().unsqueeze(-1)  # 1 -> cluster1
+        w1 = assign.sum(2).clamp(min=1e-6)
+        w0 = (1 - assign).sum(2).clamp(min=1e-6)
+        c1 = (cells * assign).sum(2) / w1
+        c0 = (cells * (1 - assign)).sum(2) / w0
+    dominant = (assign.sum(2).squeeze(-1) >= cells.shape[2] / 2).unsqueeze(-1)
+    out = torch.where(dominant, c1, c0)  # (size, size, 3)
+    return out.permute(2, 0, 1)
 
 
 def _dominant_downsample(indices_hw: torch.Tensor, palette: torch.Tensor, size: int) -> torch.Tensor:
@@ -224,15 +257,16 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     carry = None  # previous level's soft render, full precision
     carry_indices = None  # previous level's hard palette indices
     renderer = None
+    ds_mode = cfg.get("downsample", "bilinear")  # bilinear | lanczos | kcentroid
     for i, (size, steps) in enumerate(zip(scales, steps_list)):
         level_dir = out_dir / f"level_{i}_{size}"
-        reference_small = _resize(source, size)
+        reference_small = _resize(source, size, mode=ds_mode)
         if carry is None:
             init_img = reference_small
         elif carry_mode == "dominant":
             init_img = _dominant_downsample(carry_indices, palette, size)
         else:
-            init_img = _resize(carry, size)
+            init_img = _resize(carry, size, mode=ds_mode)
 
         renderer = PaletteRenderer(size, size, palette, init_std=cfg.get("init_std", 1.0)).to(device)
         renderer.init_from_image(init_img, distance=cfg.get("init_distance", "l1"))
