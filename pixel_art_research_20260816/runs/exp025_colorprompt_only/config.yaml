@@ -1,0 +1,40 @@
+# EXP-006: anchor each low-res level to the result handed down from the level above.
+# Hypothesis: locking structure lets small SDS budgets refine without eroding.
+seed: 0
+device: cuda
+
+prompt: a white daisy flower with a yellow center on a blue and white striped background
+negative_prompt: ''
+image: assets/test_images/flower2.png
+
+scales: [128, 64, 48, 40, 32, 28, 24, 20, 16]
+steps_per_scale: [400, 150, 100, 100, 100, 100, 100, 100, 100]
+
+anchor_mode: carry        # reference = downsampled previous-level result
+anchor_type: l1
+anchor_weight: [0, 10, 15, 20, 30, 40, 60, 80, 100]
+
+palette: assets/palettes/dawnbringer32.hex
+init_distance: l1
+save_steps: 50
+lr: 0.025
+guidance_scale: 40.0
+grad_scale: 1.0
+t_min: 0.02
+t_max: 0.98
+render_size: 1024
+tau_min: 0.5
+tau_max: 1.5
+hflip_prob: 0.5
+clip_grad: true
+max_grad_norm: 1.0
+prompt_per_scale:
+  - a white daisy flower with a yellow center on a blue and white striped background
+  - a white daisy flower with a yellow center on a blue and white striped background
+  - a white daisy flower with a yellow center on a blue and white striped background
+  - a white daisy flower with a bright yellow center on a plain light blue background, simple pixel art icon
+  - a white daisy flower with a bright yellow center on a plain light blue background, simple pixel art icon
+  - a white daisy flower with a bright yellow center on a plain light blue background, simple pixel art icon
+  - a white daisy flower with a bright yellow center on a plain light blue background, simple pixel art icon
+  - a white daisy flower with a bright yellow center on a plain light blue background, simple pixel art icon
+  - a white daisy flower with a bright yellow center on a plain light blue background, simple pixel art icon

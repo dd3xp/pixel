@@ -1,0 +1,27 @@
+# P0 replication target: same case as server EXP-002 (blue-white petal, 16x16, DB32)
+seed: 0
+device: cuda
+
+prompt: a single flower petal, blue and white, simple, centered
+negative_prompt: ''
+image: pixel_art_research_20260816/samples/db32_select_sample.png
+
+image_size: 16
+palette: assets/palettes/dawnbringer32.hex
+init_distance: l1
+
+steps: 100
+save_steps: 50
+lr: 0.025
+guidance_scale: 40.0
+grad_scale: 1.0
+t_min: 0.02
+t_max: 0.98
+render_size: 1024
+tau_min: 0.5
+tau_max: 1.5
+hflip_prob: 0.5
+clip_grad: true
+max_grad_norm: 1.0
+
+anchor_weight: 0.0     # P2 territory; plumbing exists
