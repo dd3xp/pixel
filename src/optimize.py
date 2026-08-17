@@ -278,12 +278,30 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     if cfg.get("bg_snap") and mask is not None and flat_color is not None:
         # final compositing pass: snap background-region pixels to the flat bg color
         # (the pixel-artist "lay down the background" step)
-        m_final = _resize(mask, scales[-1]).squeeze(0)
+        m_final = _resize(mask, scales[-1]).reshape(scales[-1], scales[-1])
         flat_idx = (palette - flat_color).abs().sum(1).argmin()
         with torch.no_grad():
             bg_sel = m_final < float(cfg.get("bg_snap_threshold", 0.3))
-            renderer.logits[bg_sel, :] = -10.0
-            renderer.logits[bg_sel, flat_idx] = 10.0
+            sel = renderer.logits.data[bg_sel]  # (N, K)
+            sel.fill_(-10.0)
+            sel[:, int(flat_idx)] = 10.0
+            renderer.logits.data[bg_sel] = sel
+
+    if cfg.get("despeckle"):
+        # standard pixel-art cleanup: an index with no same-colored 8-neighbor is
+        # an isolated speckle; replace it with the neighborhood mode
+        with torch.no_grad():
+            idx = renderer.hard_indices()
+            H, W = idx.shape
+            for y in range(H):
+                for x in range(W):
+                    neigh = [idx[yy, xx] for yy in range(max(0, y - 1), min(H, y + 2))
+                             for xx in range(max(0, x - 1), min(W, x + 2)) if (yy, xx) != (y, x)]
+                    neigh_t = torch.stack(neigh)
+                    if (neigh_t != idx[y, x]).all():
+                        new_idx = int(neigh_t.mode().values)
+                        renderer.logits.data[y, x, :] = -10.0
+                        renderer.logits.data[y, x, new_idx] = 10.0
 
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard.png")
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard_1x.png", resize=None)
