@@ -25,6 +25,12 @@ def _load_image(path: str, device: str) -> torch.Tensor:
     return t.permute(2, 0, 1).to(device)  # (3, H, W) full resolution
 
 
+def _load_mask(path: str, device: str) -> torch.Tensor:
+    img = Image.open(path).convert("L")
+    t = torch.tensor(list(img.getdata()), dtype=torch.float32).view(1, img.height, img.width) / 255.0
+    return t.to(device)  # (1, H, W), 1 = subject, 0 = background
+
+
 def _resize(image_3hw: torch.Tensor, size: int) -> torch.Tensor:
     return F.interpolate(image_3hw.unsqueeze(0), size=(size, size), mode="bilinear", antialias=True).squeeze(0)
 
@@ -70,6 +76,7 @@ def _optimize_scale(
     anchor_ref: torch.Tensor | None = None,
     anchor_weight: float = 0.0,
     t_max: float | None = None,
+    anchor_wmap: torch.Tensor | None = None,  # (1, H, W) per-pixel anchor weight
 ) -> None:
     """Inner loop shared by single-scale and pyramid runs."""
     device = renderer.logits.device
@@ -106,7 +113,10 @@ def _optimize_scale(
 
         anchor = torch.zeros((), device=device)
         if anchor_weight > 0 and anchor_ref is not None:
-            anchor = anchor_fn(renderer(tau=1.0, mode="softmax"), anchor_ref)
+            if anchor_wmap is not None:
+                anchor = (anchor_wmap * (renderer(tau=1.0, mode="softmax") - anchor_ref).abs()).mean()
+            else:
+                anchor = anchor_fn(renderer(tau=1.0, mode="softmax"), anchor_ref)
 
         (sds + anchor_weight * anchor).backward()
         if cfg.get("clip_grad", True):
@@ -173,6 +183,9 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
 
     palette = load_hex_palette(cfg["palette"]).to(device)
     source = _load_image(cfg["image"], device)
+    mask = _load_mask(cfg["mask"], device) if cfg.get("mask") else None
+    bg_release_q = cfg.get("bg_release_q")  # None = spatially uniform anchor
+    bg_weight_min = float(cfg.get("bg_weight_min", 0.0))
     guidance = _build_guidance(cfg, device)
 
     carry_mode = cfg.get("carry_mode", "bilinear")  # 'bilinear' (soft render) | 'dominant' (mode-pooled hard indices)
@@ -193,10 +206,22 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
         renderer.init_from_image(init_img, distance=cfg.get("init_distance", "l1"))
 
         anchor_ref = init_img if anchor_mode == "carry" else reference_small
-        print(f"=== level {i}: {size}x{size}, {steps} steps, anchor_w={anchor_weights[i]}, t_max={t_maxes[i]} ===", flush=True)
+
+        wmap = None
+        beta = 1.0
+        if mask is not None and bg_release_q is not None:
+            S0, T = scales[0], scales[-1]
+            frac = (size - T) / (S0 - T) if S0 > T else 0.0
+            beta = max(frac, 0.0) ** float(bg_release_q) if size > T else bg_weight_min
+            beta = max(beta, bg_weight_min)
+            mask_s = _resize(mask, size).clamp(0, 1)
+            wmap = mask_s + (1.0 - mask_s) * beta
+
+        print(f"=== level {i}: {size}x{size}, {steps} steps, anchor_w={anchor_weights[i]}, t_max={t_maxes[i]}, bg_beta={beta:.3f} ===", flush=True)
         _optimize_scale(
             renderer, guidance, cfg, level_dir, steps, float(lrs[i]),
             anchor_ref=anchor_ref, anchor_weight=float(anchor_weights[i]), t_max=t_maxes[i],
+            anchor_wmap=wmap,
         )
 
         carry = renderer(tau=1.0, mode="softmax").detach()
