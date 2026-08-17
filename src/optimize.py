@@ -275,6 +275,16 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
         carry = renderer(tau=1.0, mode="softmax").detach()
         carry_indices = renderer.hard_indices()
 
+    if cfg.get("bg_snap") and mask is not None and flat_color is not None:
+        # final compositing pass: snap background-region pixels to the flat bg color
+        # (the pixel-artist "lay down the background" step)
+        m_final = _resize(mask, scales[-1]).squeeze(0)
+        flat_idx = (palette - flat_color).abs().sum(1).argmin()
+        with torch.no_grad():
+            bg_sel = m_final < float(cfg.get("bg_snap_threshold", 0.3))
+            renderer.logits[bg_sel, :] = -10.0
+            renderer.logits[bg_sel, flat_idx] = 10.0
+
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard.png")
     _save_png(renderer(mode="hard").detach(), out_dir / "final_hard_1x.png", resize=None)
     print(f"Done -> {out_dir}", flush=True)
