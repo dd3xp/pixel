@@ -5,7 +5,7 @@ DeepFloyd, pixel-art LoRA) can be added later with the same interface.
 """
 import torch
 import torch.nn.functional as F
-from diffusers import AutoencoderTiny, DDPMScheduler, UNet2DConditionModel
+from diffusers import AutoencoderTiny, ControlNetModel, DDPMScheduler, UNet2DConditionModel
 from transformers import CLIPTextModel, CLIPTextModelWithProjection, CLIPTokenizer
 
 
@@ -17,6 +17,7 @@ class SDXLGuidance:
         device: str = "cuda",
         dtype: torch.dtype = torch.float16,
         render_size: int = 1024,
+        controlnet_id: str | None = None,
     ):
         self.device, self.dtype, self.render_size = device, dtype, render_size
 
@@ -30,11 +31,22 @@ class SDXLGuidance:
         self.scheduler = DDPMScheduler.from_pretrained(model_id, subfolder="scheduler")
         self.alphas_cumprod = self.scheduler.alphas_cumprod.to(device)
 
+        self.controlnet = None
+        if controlnet_id:
+            self.controlnet = ControlNetModel.from_pretrained(controlnet_id, torch_dtype=dtype).to(device)
+            self.controlnet.requires_grad_(False).eval()
+
         for m in (self.text_encoder, self.text_encoder_2, self.unet, self.vae):
             m.requires_grad_(False).eval()
 
         self.num_train_timesteps = self.scheduler.config.num_train_timesteps
         self._embeds = None
+        self._control = None
+
+    @torch.no_grad()
+    def set_control_image(self, image_3hw: torch.Tensor) -> None:
+        """Structure conditioning (e.g. canny edges of the source), at render_size, [0,1]."""
+        self._control = image_3hw.unsqueeze(0).to(self.device, self.dtype)
 
     @torch.no_grad()
     def set_prompt(self, prompt: str, negative_prompt: str = "") -> None:
@@ -64,6 +76,7 @@ class SDXLGuidance:
         grad_scale: float = 1.0,
         t_min: float = 0.02,
         t_max: float = 0.98,
+        controlnet_scale: float = 0.0,
     ) -> tuple[torch.Tensor, int]:
         assert self._embeds is not None, "call set_prompt() first"
         latents = self.vae.encode(image.float() * 2.0 - 1.0).latents.to(self.dtype)
@@ -78,11 +91,24 @@ class SDXLGuidance:
 
         with torch.no_grad():
             e = self._embeds
+            added = {"text_embeds": e["pooled"], "time_ids": e["time_ids"]}
+            unet_kwargs = {}
+            if self.controlnet is not None and self._control is not None and controlnet_scale > 0:
+                down, mid = self.controlnet(
+                    torch.cat([noisy] * 2), t.repeat(2),
+                    encoder_hidden_states=e["prompt_embeds"],
+                    controlnet_cond=torch.cat([self._control] * 2),
+                    conditioning_scale=controlnet_scale,
+                    added_cond_kwargs=added,
+                    return_dict=False,
+                )
+                unet_kwargs = {"down_block_additional_residuals": down, "mid_block_additional_residual": mid}
             eps = self.unet(
                 torch.cat([noisy] * 2),
                 t.repeat(2),
                 encoder_hidden_states=e["prompt_embeds"],
-                added_cond_kwargs={"text_embeds": e["pooled"], "time_ids": e["time_ids"]},
+                added_cond_kwargs=added,
+                **unet_kwargs,
             ).sample
             eps_uncond, eps_text = eps.chunk(2)
             eps_pred = eps_uncond + guidance_scale * (eps_text - eps_uncond)

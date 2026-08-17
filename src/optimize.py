@@ -171,9 +171,21 @@ def _build_guidance(cfg: dict, device: str) -> SDXLGuidance:
         model_id=cfg.get("model_id", "stabilityai/stable-diffusion-xl-base-1.0"),
         device=device,
         render_size=int(cfg.get("render_size", 1024)),
+        controlnet_id=cfg.get("controlnet_id"),
     )
     guidance.set_prompt(cfg["prompt"], cfg.get("negative_prompt", ""))
     return guidance
+
+
+def _canny_control(source_3hw: torch.Tensor, size: int) -> torch.Tensor:
+    import cv2
+    import numpy as np
+    arr = (source_3hw.clamp(0, 1) * 255).byte().permute(1, 2, 0).cpu().numpy()
+    arr = cv2.resize(arr, (size, size))
+    edges = cv2.Canny(cv2.cvtColor(arr, cv2.COLOR_RGB2GRAY), 100, 200)
+    edges = cv2.GaussianBlur(edges, (3, 3), 0)
+    t = torch.from_numpy(np.asarray(edges)).float() / 255.0
+    return t.unsqueeze(0).repeat(3, 1, 1).to(source_3hw.device)
 
 
 def _optimize_scale(
@@ -213,13 +225,15 @@ def _optimize_scale(
         if random.random() < cfg.get("hflip_prob", 0.5):
             img = img.flip(-1)
 
-        big = F.interpolate(img.unsqueeze(0), size=guidance.render_size, mode="bilinear")
+        big = F.interpolate(img.unsqueeze(0), size=guidance.render_size,
+                            mode=cfg.get("upscale_mode", "bilinear"))
         sds, t_used = guidance.sds_loss(
             big,
             guidance_scale=float(guidance_scale if guidance_scale is not None else cfg.get("guidance_scale", 40.0)),
             grad_scale=float(cfg.get("grad_scale", 1.0)),
             t_min=float(cfg.get("t_min", 0.02)),
             t_max=t_max,
+            controlnet_scale=float(cfg.get("controlnet_scale", 0.0)),
         )
 
         anchor = torch.zeros((), device=device)
@@ -321,6 +335,8 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     bg_release_q = cfg.get("bg_release_q")  # None = spatially uniform anchor
     bg_weight_min = float(cfg.get("bg_weight_min", 0.0))
     guidance = _build_guidance(cfg, device)
+    if cfg.get("controlnet_scale", 0) and cfg.get("controlnet_id"):
+        guidance.set_control_image(_canny_control(source, guidance.render_size))
 
     prompts = cfg.get("prompt_per_scale") or [cfg["prompt"]] * n
     assert len(prompts) == n, "prompt_per_scale must align with scales"
