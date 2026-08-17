@@ -207,7 +207,14 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
         renderer = PaletteRenderer(size, size, palette, init_std=cfg.get("init_std", 1.0)).to(device)
         renderer.init_from_image(init_img, distance=cfg.get("init_distance", "l1"))
 
-        anchor_ref = init_img if anchor_mode == "carry" else reference_small
+        if anchor_mode == "mixed" and mask is not None:
+            # subject anchors to the color-true source; background to the carry
+            m = _resize(mask, size).clamp(0, 1)
+            anchor_ref = m * reference_small + (1.0 - m) * init_img
+        elif anchor_mode == "source":
+            anchor_ref = reference_small
+        else:
+            anchor_ref = init_img
 
         wmap = None
         beta = 1.0
