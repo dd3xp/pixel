@@ -18,6 +18,9 @@ class SDXLGuidance:
         dtype: torch.dtype = torch.float16,
         render_size: int = 1024,
         controlnet_id: str | None = None,
+        lora_id: str | None = None,
+        lora_weight_name: str | None = None,
+        lora_scale: float = 1.0,
     ):
         self.device, self.dtype, self.render_size = device, dtype, render_size
 
@@ -30,6 +33,20 @@ class SDXLGuidance:
         self.vae = AutoencoderTiny.from_pretrained(taesd_id, torch_dtype=torch.float32).to(device)
         self.scheduler = DDPMScheduler.from_pretrained(model_id, subfolder="scheduler")
         self.alphas_cumprod = self.scheduler.alphas_cumprod.to(device)
+
+        if lora_id:
+            # Fuse a style LoRA into the teacher (e.g. pixel-art-xl): the SDS
+            # prior itself then "draws like a pixel artist".
+            from diffusers import StableDiffusionXLPipeline
+            pipe = StableDiffusionXLPipeline(
+                vae=self.vae, text_encoder=self.text_encoder, text_encoder_2=self.text_encoder_2,
+                tokenizer=self.tokenizer, tokenizer_2=self.tokenizer_2,
+                unet=self.unet, scheduler=DDPMScheduler.from_pretrained(model_id, subfolder="scheduler"),
+            )
+            kw = {"weight_name": lora_weight_name} if lora_weight_name else {}
+            pipe.load_lora_weights(lora_id, **kw)
+            pipe.fuse_lora(lora_scale=lora_scale)
+            del pipe
 
         self.controlnet = None
         if controlnet_id:

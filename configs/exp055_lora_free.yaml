@@ -1,0 +1,54 @@
+# EXP-014: dense-tail scale schedule (p~2: [128,64,48,32,24,16]) + carry anchor.
+# Hypothesis: most information loss happens at small scales, so sample them densely;
+# each small hop transfers structure with little loss and needs only a short refine.
+seed: 0
+device: cuda
+
+prompt: a single flower petal, blue and white, simple, centered
+negative_prompt: ''
+image: pixel_art_research_20260816/samples/db32_select_sample.png
+
+scales: [128, 64, 48, 32, 24, 16]
+steps_per_scale: [400, 200, 150, 120, 120, 120]
+
+anchor_mode: flatbg
+anchor_type: l1
+anchor_weight: [0, 0.3, 0.5, 0.7, 0.8, 1.0]
+
+palette: assets/palettes/dawnbringer32.hex
+init_distance: l1
+save_steps: 50
+lr: 0.025
+guidance_scale: 40.0
+grad_scale: 1.0
+t_min: 0.02
+t_max: 0.98
+render_size: 1024
+tau_min: 0.5
+tau_max: 1.5
+hflip_prob: 0.0
+clip_grad: true
+max_grad_norm: 1.0
+grad_combine: norm
+flatbg_color: mode
+mask: assets/masks/flower1_mask.png
+guidance_scale_per_scale: [40, 40, 20, 20, 20, 20]
+prompt_per_scale:
+  - a single flower petal, blue and white, simple, centered
+  - a single flower petal, blue and white, simple, centered
+  - a pale blue and white flower, plain background, simple pixel art icon
+  - a pale blue and white flower, plain background, simple pixel art icon
+  - a pale blue and white flower, plain background, simple pixel art icon
+  - a pale blue and white flower, plain background, simple pixel art icon
+bg_snap: true
+despeckle: true
+downsample: kcentroid
+tone_gain: [2.2, 1.3]
+tone_unsharp: 0.6
+coherence_weight: 0.0
+upscale_mode: nearest
+controlnet_id: diffusers/controlnet-canny-sdxl-1.0-mid
+controlnet_scale: 0.6
+lora_id: nerijs/pixel-art-xl
+lora_weight_name: pixel-art-xl.safetensors
+lora_scale: 1.0

@@ -172,6 +172,9 @@ def _build_guidance(cfg: dict, device: str) -> SDXLGuidance:
         device=device,
         render_size=int(cfg.get("render_size", 1024)),
         controlnet_id=cfg.get("controlnet_id"),
+        lora_id=cfg.get("lora_id"),
+        lora_weight_name=cfg.get("lora_weight_name"),
+        lora_scale=float(cfg.get("lora_scale", 1.0)),
     )
     guidance.set_prompt(cfg["prompt"], cfg.get("negative_prompt", ""))
     return guidance
