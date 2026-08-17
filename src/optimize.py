@@ -48,6 +48,36 @@ def _tone_boost(img: torch.Tensor, mask: torch.Tensor | None, gain: float = 2.0,
     return m * out + (1 - m) * img
 
 
+def _cluster_reference(ref_3hw: torch.Tensor, mask_1hw: torch.Tensor, palette: torch.Tensor,
+                       k: int = 4, sigma: float = 1.0, iters: int = 8) -> torch.Tensor:
+    """Hue-aware coherent reference: blur, k-means the subject pixels in RGB
+    (so the blue center keeps its own cluster), snap each cluster to its nearest
+    palette color. Yields clean shading regions without destroying hue."""
+    img = _gaussian_blur(ref_3hw, sigma)
+    subject = mask_1hw.reshape(img.shape[1], img.shape[2]) > 0.5
+    out = ref_3hw.clone()
+    px = img[:, subject].T  # (N, 3)
+    if px.shape[0] < k:
+        return out
+    w = torch.tensor([0.299, 0.587, 0.114], device=px.device)
+    order = (px @ w).argsort()
+    seeds = px[order[torch.linspace(0, px.shape[0] - 1, k, device=px.device).long()]]
+    for _ in range(iters):
+        assign = (px.unsqueeze(1) - seeds.unsqueeze(0)).abs().sum(-1).argmin(1)
+        for c in range(k):
+            sel = assign == c
+            if sel.any():
+                seeds[c] = px[sel].mean(0)
+    amap = torch.zeros(img.shape[1], img.shape[2], dtype=torch.long, device=img.device)
+    amap[subject] = assign
+    for c in range(k):
+        sel = subject & (amap == c)
+        if sel.any():
+            color = palette[(palette - seeds[c]).abs().sum(1).argmin()]
+            out[:, sel] = color.view(3, 1)
+    return out
+
+
 def _posterize_shading(ref_3hw: torch.Tensor, mask_1hw: torch.Tensor, palette: torch.Tensor,
                        bands: int = 3, sigma: float = 1.0) -> torch.Tensor:
     """Rebuild the subject as coherent tone bands (pixel-art ramp shading):
@@ -322,6 +352,9 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
         if shading_bands and mask is not None:
             m_s = _resize(mask, size).reshape(1, size, size)
             reference_small = _posterize_shading(reference_small, m_s, palette, bands=int(shading_bands))
+        if cfg.get("cluster_ref_k") and mask is not None:
+            m_s = _resize(mask, size).reshape(1, size, size)
+            reference_small = _cluster_reference(reference_small, m_s, palette, k=int(cfg["cluster_ref_k"]))
         if carry is None:
             init_img = reference_small
         elif carry_mode == "dominant":
