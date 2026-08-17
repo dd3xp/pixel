@@ -188,6 +188,8 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     bg_weight_min = float(cfg.get("bg_weight_min", 0.0))
     guidance = _build_guidance(cfg, device)
 
+    prompts = cfg.get("prompt_per_scale") or [cfg["prompt"]] * n
+    assert len(prompts) == n, "prompt_per_scale must align with scales"
     carry_mode = cfg.get("carry_mode", "bilinear")  # 'bilinear' (soft render) | 'dominant' (mode-pooled hard indices)
     carry = None  # previous level's soft render, full precision
     carry_indices = None  # previous level's hard palette indices
@@ -217,6 +219,8 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
             mask_s = _resize(mask, size).clamp(0, 1)
             wmap = mask_s + (1.0 - mask_s) * beta
 
+        if i == 0 or prompts[i] != prompts[i - 1]:
+            guidance.set_prompt(prompts[i], cfg.get("negative_prompt", ""))
         print(f"=== level {i}: {size}x{size}, {steps} steps, anchor_w={anchor_weights[i]}, t_max={t_maxes[i]}, bg_beta={beta:.3f} ===", flush=True)
         _optimize_scale(
             renderer, guidance, cfg, level_dir, steps, float(lrs[i]),

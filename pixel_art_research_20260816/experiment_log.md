@@ -134,11 +134,13 @@
 **评判**: flower2 16×16 上"背景是否变干净 + 主体是否更凸显"，基线 = EXP-017（同调度无 mask，samples/exp017_final.png）。
 
 **队列与状态**:
-- [跑] EXP-018 q=1（线性释放）flower2 + p≈3 九级 + 锚定（GPU0）
-- [跑] EXP-019 q=3（激进释放）同上（GPU1）
-- [待] EXP-020: 有效则 flower1 上回归验证（简单图不应劣化）
-- [待] EXP-021: 背景加显式平坦化损失（TV）与纯释放对比
-**终止**: 背景释放有效性结论明确 + 最优 q 方向确定，或连续两轮无改进→删 cron 总结。
+- [完] EXP-018 q=1 / EXP-019 q=3：**均无效**——与 017 几乎一致，背景斑驳原封不动（samples/exp018/019_final.png）
+- **诊断（重要）**: prompt 继承自 012，含 "on a blue and white striped background"——**最低层 SDS 还在捍卫条纹**。释放锚定只撤掉了"保忠实"的力，唯一能推平背景的力（SDS）被 prompt 指向了反方向。释放函数与 prompt 目标冲突 → 抽象机制需要 **prompt 层级调度**：高层忠实描述、低层抽象化描述
+- [跑] EXP-020 背景释放 q=3 + prompt 调度（前3层忠实/后6层 "plain flat background, simple pixel art icon"）（GPU0）
+- [跑] EXP-021 仅 prompt 调度、无 mask 释放（GPU1）——分离两个机制的贡献
+- [待] EXP-022: 有效侧 flower1 回归验证
+- [待] EXP-023: 背景显式 TV 平坦化损失对比
+**终止**: 背景释放+prompt调度有效性结论明确，或连续两轮无改进→删 cron 总结。代码新增: prompt_per_scale（逐级换 prompt，只在变化时重编码）。
 
 **汇总当前方法配方（P2/P2b 探索沉淀）**：密尾调度（p≈2~3）+ 头重脚轻步数 + carry 锚定（低层递增权重）+ 配对 prompt。待补组件：语义抽象机制、正经结构感知降采样、自动 caption、调色板覆盖自适应、seed 鲁棒性验证。
 
