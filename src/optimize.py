@@ -48,6 +48,30 @@ def _tone_boost(img: torch.Tensor, mask: torch.Tensor | None, gain: float = 2.0,
     return m * out + (1 - m) * img
 
 
+def _posterize_shading(ref_3hw: torch.Tensor, mask_1hw: torch.Tensor, palette: torch.Tensor,
+                       bands: int = 3, sigma: float = 1.0) -> torch.Tensor:
+    """Rebuild the subject as coherent tone bands (pixel-art ramp shading):
+    blur luminance -> quantile-split into bands -> each band gets the palette
+    color nearest its mean color. Turns mushy gradients into clean shading regions.
+    """
+    w = torch.tensor([0.299, 0.587, 0.114], device=ref_3hw.device).view(3, 1, 1)
+    lum = _gaussian_blur((ref_3hw * w).sum(0, keepdim=True).repeat(3, 1, 1), sigma)[0]
+    subject = mask_1hw.squeeze(0) > 0.5
+    out = ref_3hw.clone()
+    ls = lum[subject]
+    if ls.numel() < bands:
+        return out
+    qs = torch.quantile(ls, torch.linspace(0, 1, bands + 1, device=ls.device)[1:-1])
+    band_of = torch.bucketize(lum, qs)  # (H, W) in [0, bands-1]
+    for b in range(bands):
+        sel = subject & (band_of == b)
+        if sel.any():
+            mean_color = ref_3hw[:, sel].mean(1)
+            color = palette[(palette - mean_color).abs().sum(1).argmin()]
+            out[:, sel] = color.view(3, 1)
+    return out
+
+
 def _load_mask(path: str, device: str) -> torch.Tensor:
     img = Image.open(path).convert("L")
     t = torch.tensor(list(img.getdata()), dtype=torch.float32).view(1, img.height, img.width) / 255.0
@@ -174,6 +198,12 @@ def _optimize_scale(
                 anchor = (anchor_wmap * (renderer(tau=1.0, mode="softmax") - anchor_ref).abs()).mean()
             else:
                 anchor = anchor_fn(renderer(tau=1.0, mode="softmax"), anchor_ref)
+            cw = float(cfg.get("coherence_weight", 0.0))
+            if cw > 0:
+                # spatial coherence: neighboring pixels should agree on palette choice
+                p = F.softmax(renderer.logits, dim=-1)
+                tv = (p[1:, :] - p[:-1, :]).abs().mean() + (p[:, 1:] - p[:, :-1]).abs().mean()
+                anchor = anchor + cw * tv
 
         if cfg.get("grad_combine", "sum") == "norm" and anchor_weight > 0 and anchor_ref is not None:
             # Normalize each gradient before combining: anchor_weight becomes a true
@@ -285,9 +315,13 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     carry_indices = None  # previous level's hard palette indices
     renderer = None
     ds_mode = cfg.get("downsample", "bilinear")  # bilinear | lanczos | kcentroid
+    shading_bands = cfg.get("shading_bands")
     for i, (size, steps) in enumerate(zip(scales, steps_list)):
         level_dir = out_dir / f"level_{i}_{size}"
         reference_small = _resize(source, size, mode=ds_mode)
+        if shading_bands and mask is not None:
+            m_s = _resize(mask, size).reshape(1, size, size)
+            reference_small = _posterize_shading(reference_small, m_s, palette, bands=int(shading_bands))
         if carry is None:
             init_img = reference_small
         elif carry_mode == "dominant":
