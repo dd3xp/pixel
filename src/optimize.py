@@ -501,6 +501,11 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
             init_img = _dominant_downsample(carry_indices, palette, size)
         else:
             init_img = _resize(carry, size, mode=ds_mode)
+        skip = float(cfg.get("init_source_blend", 0.0))
+        if carry is not None and skip > 0:
+            # residual skip-connection: every level's init is pulled toward the
+            # DIRECT source downsample, so drift cannot compound down the chain
+            init_img = (1 - skip) * init_img + skip * reference_small
 
         renderer = PaletteRenderer(size, size, palette, init_std=cfg.get("init_std", 1.0)).to(device)
         renderer.init_from_image(init_img, distance=cfg.get("init_distance", "l1"),
