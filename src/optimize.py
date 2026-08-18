@@ -111,6 +111,8 @@ def _valley_expand(img: torch.Tensor, mask: torch.Tensor | None, kernel: int = 3
     lum = (img * w).sum(0, keepdim=True)
     local_mean = _gaussian_blur(lum.repeat(3, 1, 1), sigma)[:1]
     valley = (local_mean - lum).clamp(min=0)  # positive where darker than surroundings
+    # gate: only thin valleys BETWEEN bright regions (petal gaps), not dark areas themselves
+    valley = valley * (local_mean > 0.55).float()
     pad = kernel // 2
     valley = F.max_pool2d(valley.unsqueeze(0), kernel, stride=1, padding=pad).squeeze(0)
     out = (img - gain * valley).clamp(0, 1)
