@@ -151,13 +151,18 @@ def _auto_crop(source: torch.Tensor, mask: torch.Tensor | None,
     subject fills the frame — the pixel-artist's 'zoom to subject' move. Subject
     detected as pixels differing from the border-median background color."""
     C, H, W = source.shape
-    border = torch.cat([source[:, 0, :], source[:, -1, :], source[:, :, 0], source[:, :, -1]], dim=1)
-    bg = border.median(dim=1).values
-    diff = (source - bg.view(3, 1, 1)).abs().sum(0) > thresh
-    if not diff.any():
+    # chroma-based subject detection: neutral backgrounds (gray/beige walls, even
+    # with illumination gradients) have near-zero chroma; subjects are chromatic.
+    chroma = source.max(0).values - source.min(0).values
+    border_chroma = torch.cat([chroma[0, :], chroma[-1, :], chroma[:, 0], chroma[:, -1]]).median()
+    diff = (chroma > border_chroma + 0.12).float()
+    # occupancy-based bbox: robust to scattered noise
+    rows = (diff.mean(1) > 0.02).nonzero()
+    cols = (diff.mean(0) > 0.02).nonzero()
+    if rows.numel() == 0 or cols.numel() == 0:
         return source, mask
-    ys, xs = torch.where(diff)
-    y0, y1, x0, x1 = int(ys.min()), int(ys.max()), int(xs.min()), int(xs.max())
+    y0, y1 = int(rows.min()), int(rows.max())
+    x0, x1 = int(cols.min()), int(cols.max())
     side = max(y1 - y0, x1 - x0)
     pad = int(side * pad_frac)
     side = side + 2 * pad
