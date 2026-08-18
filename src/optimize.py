@@ -398,12 +398,18 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
                              unsharp=float(cfg.get("tone_unsharp", 0.5)))
     if cfg.get("gap_gain"):
         bg_col = None
+        gmask = mask
         if mask is not None:
             bg_px = source[:, mask.squeeze(0) < 0.5].T
             if bg_px.shape[0] > 50_000:
                 bg_px = bg_px[torch.randperm(bg_px.shape[0], device=bg_px.device)[:50_000]]
             bg_col = bg_px.median(dim=0).values
-        source = _gap_tophat(source, mask, kernel=int(cfg.get("gap_kernel", 41)),
+            gme = int(cfg.get("gap_mask_erode", 0))
+            if gme > 0:
+                # carve only deep inside the subject; keeps boundary-adjacent bg
+                # texture (e.g. stripes) out of the top-hat's reach
+                gmask = -F.max_pool2d(-mask.unsqueeze(0), gme * 2 + 1, stride=1, padding=gme).squeeze(0)
+        source = _gap_tophat(source, gmask, kernel=int(cfg.get("gap_kernel", 41)),
                              gain=float(cfg["gap_gain"]), cap=float(cfg.get("gap_cap", 0.8)),
                              target_color=bg_col)
     elif cfg.get("valley_gain"):
