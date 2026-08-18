@@ -39,7 +39,10 @@ def main() -> None:
         guidance_scale=7.5,
         generator=torch.Generator("cuda").manual_seed(0),
     ).images[0]
-    out.save(out_path)
+    # flatten fine dither texture (it aliases into streaky noise when downsampled);
+    # median filter keeps outlines and flat regions, kills pixel-level texture
+    flat = cv2.medianBlur(np.array(out), 7)
+    Image.fromarray(flat).save(out_path)
     print(f"stylized -> {out_path}")
 
 
