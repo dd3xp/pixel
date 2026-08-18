@@ -286,3 +286,4 @@
 - V3轮3: res_apple **128级花屏治愈**(全层锚定+平涂源,漂亮的描边苹果),16级保持;res_flower1糊(风格化源的抖动纹理在128混叠成条纹)→stylize加中值滤波平坦化,flower1重制中;res_cat上卡
 - V3轮4: **res_cat猫首次可辨**(耳/粉内耳/白胸/坐姿,最难题材被风格桥接+残差救回);flower1平坦化风格源质量佳,res_flower1b压缩中
 - V3轮5: flower1b仍糊→**真凶=prompt颜色中毒**(faithful prompt的blue and white在CFG40+LoRA+低层弱锚下把蓝刷上白瓣;历史所有flower1蓝移同源)。修正精确描色prompt→res_flower1c上卡。教训:prompt颜色词=强效颜料,必须逐色精确
+- V3轮6: c版仍糊→prompt诊断错误,**真凶=auto_crop在彩色背景误裁**(色度检测把蓝底图的高色度花心当主体,裁剪放大花心→128的放射糊即花心特写;苹果灰底所以正常)。res_flower1d(关crop)上卡。待办:主体检测需bg中性假设失效时的回退
