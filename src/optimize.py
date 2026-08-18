@@ -145,6 +145,35 @@ def _gap_tophat(img: torch.Tensor, mask: torch.Tensor | None, kernel: int = 41,
     return out
 
 
+def _auto_crop(source: torch.Tensor, mask: torch.Tensor | None,
+               pad_frac: float = 0.10, thresh: float = 0.22) -> tuple[torch.Tensor, torch.Tensor | None]:
+    """Recompose: crop to the subject bounding box (+padding, squared) so the
+    subject fills the frame — the pixel-artist's 'zoom to subject' move. Subject
+    detected as pixels differing from the border-median background color."""
+    C, H, W = source.shape
+    border = torch.cat([source[:, 0, :], source[:, -1, :], source[:, :, 0], source[:, :, -1]], dim=1)
+    bg = border.median(dim=1).values
+    diff = (source - bg.view(3, 1, 1)).abs().sum(0) > thresh
+    if not diff.any():
+        return source, mask
+    ys, xs = torch.where(diff)
+    y0, y1, x0, x1 = int(ys.min()), int(ys.max()), int(xs.min()), int(xs.max())
+    side = max(y1 - y0, x1 - x0)
+    pad = int(side * pad_frac)
+    side = side + 2 * pad
+    cy, cx = (y0 + y1) // 2, (x0 + x1) // 2
+    y0 = max(0, min(H - side, cy - side // 2))
+    x0 = max(0, min(W - side, cx - side // 2))
+    side = min(side, H - y0, W - x0)
+    crop = source[:, y0:y0 + side, x0:x0 + side]
+    crop = F.interpolate(crop.unsqueeze(0), size=(H, W), mode="bilinear", antialias=True).squeeze(0)
+    m_out = mask
+    if mask is not None:
+        m = mask[:, y0:y0 + side, x0:x0 + side]
+        m_out = F.interpolate(m.unsqueeze(0), size=(H, W), mode="bilinear").squeeze(0)
+    return crop, m_out
+
+
 def _load_mask(path: str, device: str) -> torch.Tensor:
     img = Image.open(path).convert("L")
     t = torch.tensor(list(img.getdata()), dtype=torch.float32).view(1, img.height, img.width) / 255.0
@@ -392,6 +421,8 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     palette = load_hex_palette(cfg["palette"]).to(device)
     source = _load_image(cfg["image"], device)
     mask = _load_mask(cfg["mask"], device) if cfg.get("mask") else None
+    if cfg.get("auto_crop"):
+        source, mask = _auto_crop(source, mask)
     me = int(cfg.get("mask_erode", 0))
     if mask is not None and me > 0:
         # shrink subject region: boundary ring becomes background (flat-anchored,

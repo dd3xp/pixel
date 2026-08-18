@@ -57,3 +57,4 @@ despeckle_thresh: 0.9
 gap_gain: 1.6
 gap_kernel: 41
 gap_cap: 0.8
+auto_crop: true
