@@ -39,6 +39,13 @@
 
 **seed 鲁棒性**: res_apple seed0≈seed1 ✓（双花此前已过双 seed）
 
+## Baseline 对比（同源图苹果）
+
+| 方法 | 16×16 结果 | 耗时 |
+|---|---|---|
+| SD-piXL 原版（image模式,4000步） | 方块状小苹果,无叶形/无高光,背景撕裂成双色（runs/baseline_sdpixl_apple） | ~2.5h |
+| **本方法 V3** | 圆形果身+高光+绿叶+果柄,背景干净（runs/res_apple） | ~20min（含风格化） |
+
 ## 全程关键发现（论文素材索引）
 
 1. 单尺度 SDS 在 16×16 主动破坏细节（EXP-002/003）
@@ -56,7 +63,6 @@
 
 - auto_crop 彩色背景误裁（需亮度回退或分割模型）；mask 仍是 oracle 椭圆（需 SAM/U2-Net）
 - prompt 表手写（需 BLIP 自动 caption + 逐色精确描述）
-- SD-piXL baseline 同图对比未跑（排队中）
 - 测试集 8 图,需扩到 30+ 并做用户研究/定量指标（DINO 相似度、色阶存活率已有脚本）
 - seed 鲁棒性仅双花验证,V3 配方需全测试集 ×3 seed
 - 单张端到端耗时 ~20 分钟（stylize 1min + 压缩 15min+）,P3 自适应停止可压缩
