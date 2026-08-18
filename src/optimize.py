@@ -121,6 +121,30 @@ def _valley_expand(img: torch.Tensor, mask: torch.Tensor | None, kernel: int = 3
     return out
 
 
+def _gap_tophat(img: torch.Tensor, mask: torch.Tensor | None, kernel: int = 41,
+                gain: float = 1.2, cap: float = 0.8,
+                target_color: torch.Tensor | None = None) -> torch.Tensor:
+    """Thin-structure-selective gap carving via morphological black top-hat:
+    closing(lum) - lum is large ONLY for structures narrower than the kernel
+    (petal gaps), ~zero inside wide dark regions (flower center). Gap pixels are
+    blended TOWARD the background color (the artist's separator), not to black."""
+    w = torch.tensor([0.299, 0.587, 0.114], device=img.device).view(3, 1, 1)
+    lum = (img * w).sum(0, keepdim=True).unsqueeze(0)  # (1,1,H,W)
+    pad = kernel // 2
+    dilated = F.max_pool2d(lum, kernel, stride=1, padding=pad)
+    closing = -F.max_pool2d(-dilated, kernel, stride=1, padding=pad)
+    tophat = (closing - lum).clamp(min=0).squeeze(0)  # thin dark lines only
+    a = (gain * tophat).clamp(0, cap)  # blend strength, capped
+    if target_color is None:
+        target = torch.zeros_like(img)
+    else:
+        target = target_color.view(3, 1, 1).expand_as(img)
+    out = (img * (1 - a) + target * a).clamp(0, 1)
+    if mask is not None:
+        out = mask * out + (1 - mask) * img
+    return out
+
+
 def _load_mask(path: str, device: str) -> torch.Tensor:
     img = Image.open(path).convert("L")
     t = torch.tensor(list(img.getdata()), dtype=torch.float32).view(1, img.height, img.width) / 255.0
@@ -372,7 +396,17 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
         tg = cfg["tone_gain"]
         source = _tone_boost(source, mask, gain=tg if isinstance(tg, list) else float(tg),
                              unsharp=float(cfg.get("tone_unsharp", 0.5)))
-    if cfg.get("valley_gain"):
+    if cfg.get("gap_gain"):
+        bg_col = None
+        if mask is not None:
+            bg_px = source[:, mask.squeeze(0) < 0.5].T
+            if bg_px.shape[0] > 50_000:
+                bg_px = bg_px[torch.randperm(bg_px.shape[0], device=bg_px.device)[:50_000]]
+            bg_col = bg_px.median(dim=0).values
+        source = _gap_tophat(source, mask, kernel=int(cfg.get("gap_kernel", 41)),
+                             gain=float(cfg["gap_gain"]), cap=float(cfg.get("gap_cap", 0.8)),
+                             target_color=bg_col)
+    elif cfg.get("valley_gain"):
         source = _valley_expand(source, mask, kernel=int(cfg.get("valley_kernel", 33)),
                                 gain=float(cfg["valley_gain"]))
     bg_release_q = cfg.get("bg_release_q")  # None = spatially uniform anchor
