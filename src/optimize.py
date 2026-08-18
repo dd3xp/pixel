@@ -164,6 +164,10 @@ def _auto_crop(source: torch.Tensor, mask: torch.Tensor | None,
     y0, y1 = int(rows.min()), int(rows.max())
     x0, x1 = int(cols.min()), int(cols.max())
     side = max(y1 - y0, x1 - x0)
+    # sanity bounds: implausibly small bbox = failed detection (e.g. colored bg
+    # breaks the chroma heuristic); near-full bbox = subject already fills frame
+    if side < 0.15 * H or side > 0.92 * H:
+        return source, mask
     pad = int(side * pad_frac)
     side = side + 2 * pad
     cy, cx = (y0 + y1) // 2, (x0 + x1) // 2
@@ -472,6 +476,9 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     flat_color = None
     if mask is not None and anchor_mode == "flatbg":
         bg_px = source[:, mask.squeeze(0) < 0.5].T  # (N, 3)
+        if bg_px.shape[0] == 0:
+            # degenerate mask: fall back to the image border as background sample
+            bg_px = torch.cat([source[:, 0, :], source[:, -1, :], source[:, :, 0], source[:, :, -1]], dim=1).T
         if bg_px.shape[0] > 100_000:
             bg_px = bg_px[torch.randperm(bg_px.shape[0], device=bg_px.device)[:100_000]]
         if cfg.get("flatbg_color", "mode") == "mode":
