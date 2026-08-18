@@ -33,9 +33,11 @@
 | 全配方 | 基准（runs/res_apple） |
 | −LoRA | ≈无差 → **风格桥接吸收了 LoRA 的职能**（V3 前 LoRA 是关键,V3 后冗余） |
 | −ControlNet | ≈无差 → 同上 |
-| −nearest（→bilinear） | 待填 |
-| −末级长步（2000→120） | 待填 |
+| −nearest（→bilinear） | 轻度劣化（灰块侵入右缘）→ 小增益组件 |
+| −末级长步（2000→120） | 明显劣化（果身裂成红棕两半）→ 真增益组件 |
 | −风格桥接 | = V2 时代全部结果（runs/ts_ts1_apple_plain 等）,差距显著 |
+
+**seed 鲁棒性**: res_apple seed0≈seed1 ✓（双花此前已过双 seed）
 
 ## 全程关键发现（论文素材索引）
 
