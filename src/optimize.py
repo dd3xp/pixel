@@ -102,6 +102,23 @@ def _posterize_shading(ref_3hw: torch.Tensor, mask_1hw: torch.Tensor, palette: t
     return out
 
 
+def _valley_expand(img: torch.Tensor, mask: torch.Tensor | None, kernel: int = 33,
+                   gain: float = 1.5, sigma: float = 8.0) -> torch.Tensor:
+    """PixelOE-style outline expansion: thin dark valleys (inter-petal shadows,
+    contour lines) are detected and thickened so they survive extreme downscaling
+    as 1px separators — the pixel-artist's 'carve the gaps' move."""
+    w = torch.tensor([0.299, 0.587, 0.114], device=img.device).view(3, 1, 1)
+    lum = (img * w).sum(0, keepdim=True)
+    local_mean = _gaussian_blur(lum.repeat(3, 1, 1), sigma)[:1]
+    valley = (local_mean - lum).clamp(min=0)  # positive where darker than surroundings
+    pad = kernel // 2
+    valley = F.max_pool2d(valley.unsqueeze(0), kernel, stride=1, padding=pad).squeeze(0)
+    out = (img - gain * valley).clamp(0, 1)
+    if mask is not None:
+        out = mask * out + (1 - mask) * img
+    return out
+
+
 def _load_mask(path: str, device: str) -> torch.Tensor:
     img = Image.open(path).convert("L")
     t = torch.tensor(list(img.getdata()), dtype=torch.float32).view(1, img.height, img.width) / 255.0
@@ -335,6 +352,9 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
         tg = cfg["tone_gain"]
         source = _tone_boost(source, mask, gain=tg if isinstance(tg, list) else float(tg),
                              unsharp=float(cfg.get("tone_unsharp", 0.5)))
+    if cfg.get("valley_gain"):
+        source = _valley_expand(source, mask, kernel=int(cfg.get("valley_kernel", 33)),
+                                gain=float(cfg["valley_gain"]))
     bg_release_q = cfg.get("bg_release_q")  # None = spatially uniform anchor
     bg_weight_min = float(cfg.get("bg_weight_min", 0.0))
     guidance = _build_guidance(cfg, device)
