@@ -133,10 +133,13 @@ def _resize(image_3hw: torch.Tensor, size: int, mode: str = "bilinear") -> torch
         return t.permute(2, 0, 1).to(image_3hw.device)
     if mode == "kcentroid":
         return _kcentroid_downsample(image_3hw, size)
+    if mode == "kcentroid_dither":
+        return _kcentroid_downsample(image_3hw, size, dither=True)
     return F.interpolate(image_3hw.unsqueeze(0), size=(size, size), mode="bilinear", antialias=True).squeeze(0)
 
 
-def _kcentroid_downsample(image_3hw: torch.Tensor, size: int, factor: int = 4, iters: int = 4) -> torch.Tensor:
+def _kcentroid_downsample(image_3hw: torch.Tensor, size: int, factor: int = 4, iters: int = 4,
+                          dither: bool = False) -> torch.Tensor:
     """Pixel-artist style content-aware downscale: per output cell, 2-means
     cluster the cell's pixels and take the dominant cluster's centroid — thin
     features keep their color instead of being averaged into the background.
@@ -157,8 +160,23 @@ def _kcentroid_downsample(image_3hw: torch.Tensor, size: int, factor: int = 4, i
         w0 = (1 - assign).sum(2).clamp(min=1e-6)
         c1 = (cells * assign).sum(2) / w1
         c0 = (cells * (1 - assign)).sum(2) / w0
-    dominant = (assign.sum(2).squeeze(-1) >= cells.shape[2] / 2).unsqueeze(-1)
+    frac1 = assign.mean(2).squeeze(-1)  # weight of cluster 1 per cell
+    dominant = (frac1 >= 0.5).unsqueeze(-1)
     out = torch.where(dominant, c1, c0)  # (size, size, 3)
+    if dither:
+        # cells straddling a gradient encode it as a checkerboard of the two tones
+        # (pixel-art dithering) instead of collapsing to one color
+        w = torch.tensor([0.299, 0.587, 0.114], device=out.device)
+        dark_first = (c0 @ w <= c1 @ w).unsqueeze(-1)
+        c_dark = torch.where(dark_first, c0, c1)
+        c_light = torch.where(dark_first, c1, c0)
+        color_dist = (c0 - c1).abs().sum(-1)
+        mixed = (frac1 > 0.35) & (frac1 < 0.65) & (color_dist > 0.12)
+        yy, xx = torch.meshgrid(torch.arange(size, device=out.device),
+                                torch.arange(size, device=out.device), indexing="ij")
+        pick_dark = ((yy + xx) % 2 == 0).unsqueeze(-1)
+        dithered = torch.where(pick_dark, c_dark, c_light)
+        out = torch.where(mixed.unsqueeze(-1), dithered, out)
     return out.permute(2, 0, 1)
 
 
