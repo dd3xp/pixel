@@ -283,3 +283,4 @@
 - scripts/stylize_source.py 实现; **苹果验证成功**: 风格化源→16×16 得到真正的游戏精灵观感(红身/高光/绿叶/果柄),与照片直压判若两物; 24×24 更佳
 - flower1 风格化完成待压缩; 猫(最难题材)风格化中
 - V3轮2: 用户诊断128级花屏(=无锚级Gumbel抖动)+16漂移(=链式无skip),提出**残差架构**；实现 init_source_blend(前向残差)+全层锚定；flower1风格化压缩曾因彩色bg破坏chroma裁剪崩溃,已加bbox边界+空bg回退守卫；res_flower1/res_apple上卡
+- V3轮3: res_apple **128级花屏治愈**(全层锚定+平涂源,漂亮的描边苹果),16级保持;res_flower1糊(风格化源的抖动纹理在128混叠成条纹)→stylize加中值滤波平坦化,flower1重制中;res_cat上卡
