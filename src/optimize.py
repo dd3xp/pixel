@@ -392,6 +392,11 @@ def run_pyramid(cfg: dict, out_dir: Path) -> None:
     palette = load_hex_palette(cfg["palette"]).to(device)
     source = _load_image(cfg["image"], device)
     mask = _load_mask(cfg["mask"], device) if cfg.get("mask") else None
+    me = int(cfg.get("mask_erode", 0))
+    if mask is not None and me > 0:
+        # shrink subject region: boundary ring becomes background (flat-anchored,
+        # snapped) — keeps bg texture fragments out of the subject reference
+        mask = -F.max_pool2d(-mask.unsqueeze(0), me * 2 + 1, stride=1, padding=me).squeeze(0)
     if cfg.get("tone_gain"):
         tg = cfg["tone_gain"]
         source = _tone_boost(source, mask, gain=tg if isinstance(tg, list) else float(tg),
