@@ -1,0 +1,56 @@
+# EXP-014: dense-tail scale schedule (p~2: [128,64,48,32,24,16]) + carry anchor.
+# Hypothesis: most information loss happens at small scales, so sample them densely;
+# each small hop transfers structure with little loss and needs only a short refine.
+seed: 0
+device: cuda
+
+prompt: a shiny red apple with a green leaf, plain light gray background, centered, product photo
+negative_prompt: ''
+image: assets/stylized/apple_px.png
+
+scales: [128, 64, 48, 32, 24, 16]
+steps_per_scale: [400, 200, 150, 120, 150, 2000]
+
+anchor_mode: flatbg
+anchor_type: l1
+anchor_weight: [0.5, 0.7, 0.9, 1.2, 1.8, 2.5]
+
+palette: assets/palettes/dawnbringer32.hex
+init_distance: l1
+save_steps: 50
+lr: 0.025
+guidance_scale: 40.0
+grad_scale: 1.0
+t_min: 0.02
+t_max: 0.98
+render_size: 1024
+tau_min: 0.5
+tau_max: 1.5
+hflip_prob: 0.0
+clip_grad: true
+max_grad_norm: 1.0
+grad_combine: norm
+flatbg_color: mode
+mask: assets/masks/ts1_apple_mask.png
+guidance_scale_per_scale: [40, 40, 20, 20, 20, 20]
+prompt_per_scale:
+  - a shiny red apple with a green leaf, plain light gray background, centered, product photo
+  - a shiny red apple with a green leaf, plain light gray background, centered, product photo
+  - a simple pixel art icon of a red apple, plain background
+  - a simple pixel art icon of a red apple, plain background
+  - a simple pixel art icon of a red apple, plain background
+  - a simple pixel art icon of a red apple, plain background
+bg_snap: true
+despeckle: true
+downsample: kcentroid_outline
+coherence_weight: 0.0
+upscale_mode: nearest
+controlnet_id: diffusers/controlnet-canny-sdxl-1.0-mid
+controlnet_scale: 0.6
+lora_id: nerijs/pixel-art-xl
+lora_weight_name: pixel-art-xl.safetensors
+lora_scale: 1.0
+init_sharpness: 5.0
+despeckle_thresh: 0.9
+auto_crop: true
+init_source_blend: 0.4

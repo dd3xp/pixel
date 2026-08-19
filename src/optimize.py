@@ -199,11 +199,13 @@ def _resize(image_3hw: torch.Tensor, size: int, mode: str = "bilinear") -> torch
         return _kcentroid_downsample(image_3hw, size)
     if mode == "kcentroid_dither":
         return _kcentroid_downsample(image_3hw, size, dither=True)
+    if mode == "kcentroid_outline":
+        return _kcentroid_downsample(image_3hw, size, outline_priority=True)
     return F.interpolate(image_3hw.unsqueeze(0), size=(size, size), mode="bilinear", antialias=True).squeeze(0)
 
 
 def _kcentroid_downsample(image_3hw: torch.Tensor, size: int, factor: int = 4, iters: int = 4,
-                          dither: bool = False) -> torch.Tensor:
+                          dither: bool = False, outline_priority: bool = False) -> torch.Tensor:
     """Pixel-artist style content-aware downscale: per output cell, 2-means
     cluster the cell's pixels and take the dominant cluster's centroid — thin
     features keep their color instead of being averaged into the background.
@@ -227,6 +229,16 @@ def _kcentroid_downsample(image_3hw: torch.Tensor, size: int, factor: int = 4, i
     frac1 = assign.mean(2).squeeze(-1)  # weight of cluster 1 per cell
     dominant = (frac1 >= 0.5).unsqueeze(-1)
     out = torch.where(dominant, c1, c0)  # (size, size, 3)
+    if outline_priority:
+        # pixel-artist rule: dark linework wins the cell even as a minority,
+        # so outlines survive extreme downscales instead of being averaged away
+        w_lum = torch.tensor([0.299, 0.587, 0.114], device=out.device)
+        lum0, lum1 = c0 @ w_lum, c1 @ w_lum
+        dark_c = torch.where((lum0 <= lum1).unsqueeze(-1), c0, c1)
+        dark_lum = torch.minimum(lum0, lum1)
+        dark_frac = torch.where(lum0 <= lum1, 1 - frac1, frac1)
+        keep_dark = (dark_lum < 0.35) & (dark_frac > 0.18)
+        out = torch.where(keep_dark.unsqueeze(-1), dark_c, out)
     if dither:
         # cells straddling a gradient encode it as a checkerboard of the two tones
         # (pixel-art dithering) instead of collapsing to one color
