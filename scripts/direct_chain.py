@@ -14,8 +14,20 @@ from src.optimize import _auto_crop, _load_image, _resize, _save_png  # noqa: E4
 from src.palette import load_hex_palette, pixel_palette_distances  # noqa: E402
 
 
-def project(img_3hw: torch.Tensor, palette: torch.Tensor) -> torch.Tensor:
-    d = pixel_palette_distances(img_3hw.permute(1, 2, 0), palette)
+def project(img_3hw: torch.Tensor, palette: torch.Tensor, hue_weighted: bool = True) -> torch.Tensor:
+    if not hue_weighted:
+        d = pixel_palette_distances(img_3hw.permute(1, 2, 0), palette)
+        return palette[d.argmin(-1)].permute(2, 0, 1)
+    # hue-weighted projection: match chromaticity first, luminance second — a dark
+    # red maps to the palette RED (not to a luminance-matched brown)
+    px = img_3hw.permute(1, 2, 0)  # (H, W, 3)
+    eps = 1e-4
+    pc = px / (px.sum(-1, keepdim=True) + eps)          # chromaticity
+    qc = palette / (palette.sum(-1, keepdim=True) + eps)
+    d_chroma = (pc.unsqueeze(-2) - qc).abs().sum(-1)     # (H, W, K)
+    w = torch.tensor([0.299, 0.587, 0.114])
+    d_lum = ((px @ w).unsqueeze(-1) - (palette @ w)).abs()
+    d = 2.0 * d_chroma + 0.8 * d_lum
     return palette[d.argmin(-1)].permute(2, 0, 1)
 
 
