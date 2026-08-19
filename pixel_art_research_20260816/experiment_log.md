@@ -293,3 +293,4 @@
 打分榜（/10,9=真人手绘游戏图标线）: direct蘑菇24=5.5(茎底杂色,斑点不清) direct苹果24=4(阴影半边烂棕=DB32失配) 全部16=3
 - 轮1: 粗粒度prompt变体(chunky 16x16 sprite/big pixels/bright red替代暗红调)×苹果+蘑菇,风格化中
 - 轮1收: chunky prompt对粒度无效(判负);亮色词助蘑菇。**轮2: 色相加权投影(chroma为主lum为辅)大幅提分**——苹果16: 4→6(烂棕痊愈);苹果24: 6.5-7;蘑菇24: **7/10新高**(白斑清晰)。扣分点: 苹果bg两色split、蘑菇底座浊点。图: showcase/*_v3_strip.png, runs/direct_hue/
+- 轮3(v4: bg铺平+彩底crop守卫): **猫24=7.5~8(新王,真精灵观感)** 苹果24=7(split修复) 蘑菇24=7 flower1 24=6.5/16=6(crop彩底bug修复)。16级整体仍落后24约1分。图: showcase/*_v4_strip.png, runs/v4_direct/

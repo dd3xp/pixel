@@ -155,6 +155,9 @@ def _auto_crop(source: torch.Tensor, mask: torch.Tensor | None,
     # with illumination gradients) have near-zero chroma; subjects are chromatic.
     chroma = source.max(0).values - source.min(0).values
     border_chroma = torch.cat([chroma[0, :], chroma[-1, :], chroma[:, 0], chroma[:, -1]]).median()
+    if border_chroma > 0.15:
+        # colored background: the chroma heuristic is invalid — do not crop
+        return source, mask
     diff = (chroma > border_chroma + 0.12).float()
     # occupancy-based bbox: robust to scattered noise
     rows = (diff.mean(1) > 0.02).nonzero()
