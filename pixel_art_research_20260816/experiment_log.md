@@ -288,3 +288,7 @@
 - V3轮5: flower1b仍糊→**真凶=prompt颜色中毒**(faithful prompt的blue and white在CFG40+LoRA+低层弱锚下把蓝刷上白瓣;历史所有flower1蓝移同源)。修正精确描色prompt→res_flower1c上卡。教训:prompt颜色词=强效颜料,必须逐色精确
 - V3轮6: c版仍糊→prompt诊断错误,**真凶=auto_crop在彩色背景误裁**(色度检测把蓝底图的高色度花心当主体,裁剪放大花心→128的放射糊即花心特写;苹果灰底所以正常)。res_flower1d(关crop)上卡。待办:主体检测需bg中性假设失效时的回退
 - V3轮7-8: 消融完整——LoRA/CNet桥接后冗余、nearest小增益、长末级真增益、**风格桥接=主导因子**;results_summary.md成稿;SD-piXL baseline(4000步,GPU1)+res_apple seed1(GPU0)收尾中
+
+## 质量冲刺（2026-08-19,唯一标准=像不像,每轮强制自评打分）
+打分榜（/10,9=真人手绘游戏图标线）: direct蘑菇24=5.5(茎底杂色,斑点不清) direct苹果24=4(阴影半边烂棕=DB32失配) 全部16=3
+- 轮1: 粗粒度prompt变体(chunky 16x16 sprite/big pixels/bright red替代暗红调)×苹果+蘑菇,风格化中
