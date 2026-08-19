@@ -294,3 +294,4 @@
 - 轮1: 粗粒度prompt变体(chunky 16x16 sprite/big pixels/bright red替代暗红调)×苹果+蘑菇,风格化中
 - 轮1收: chunky prompt对粒度无效(判负);亮色词助蘑菇。**轮2: 色相加权投影(chroma为主lum为辅)大幅提分**——苹果16: 4→6(烂棕痊愈);苹果24: 6.5-7;蘑菇24: **7/10新高**(白斑清晰)。扣分点: 苹果bg两色split、蘑菇底座浊点。图: showcase/*_v3_strip.png, runs/direct_hue/
 - 轮3(v4: bg铺平+彩底crop守卫): **猫24=7.5~8(新王,真精灵观感)** 苹果24=7(split修复) 蘑菇24=7 flower1 24=6.5/16=6(crop彩底bug修复)。16级整体仍落后24约1分。图: showcase/*_v4_strip.png, runs/v4_direct/
+- 轮4(马赛克引导+网格对齐): nn中间采样判负;**马赛克引导风格化=突破**——LoRA把32格马赛克清理成原生32粒度精灵。打分: **猫32=8/10(触线!)** 苹果32=7.5 猫16(16格引导)=7(耳尖/白胸/尾,16史上最佳) 苹果16=6。配方收敛为: 预马赛克(目标粒度)→img2img风格化(strength0.45-0.5)→网格中心采样→色相投影→清理。图: showcase/*_v5_strip.png, runs/v5_gridsnap/

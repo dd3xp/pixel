@@ -204,17 +204,26 @@ def _resize(image_3hw: torch.Tensor, size: int, mode: str = "bilinear") -> torch
         return _kcentroid_downsample(image_3hw, size, dither=True)
     if mode == "kcentroid_outline":
         return _kcentroid_downsample(image_3hw, size, outline_priority=True)
+    if mode == "kcentroid_outline_nn":
+        return _kcentroid_downsample(image_3hw, size, outline_priority=True, inter_mode="nearest")
     return F.interpolate(image_3hw.unsqueeze(0), size=(size, size), mode="bilinear", antialias=True).squeeze(0)
 
 
 def _kcentroid_downsample(image_3hw: torch.Tensor, size: int, factor: int = 4, iters: int = 4,
-                          dither: bool = False, outline_priority: bool = False) -> torch.Tensor:
+                          dither: bool = False, outline_priority: bool = False,
+                          inter_mode: str = "bilinear") -> torch.Tensor:
     """Pixel-artist style content-aware downscale: per output cell, 2-means
     cluster the cell's pixels and take the dominant cluster's centroid — thin
     features keep their color instead of being averaged into the background.
     """
-    inter = F.interpolate(image_3hw.unsqueeze(0), size=(size * factor, size * factor),
-                          mode="bilinear", antialias=True).squeeze(0)
+    if inter_mode == "nearest":
+        # grid-preserving: keeps the stylized sprite's flat cells and outlines
+        # crisp going into per-cell clustering (bilinear smears them)
+        inter = F.interpolate(image_3hw.unsqueeze(0), size=(size * factor, size * factor),
+                              mode="nearest").squeeze(0)
+    else:
+        inter = F.interpolate(image_3hw.unsqueeze(0), size=(size * factor, size * factor),
+                              mode="bilinear", antialias=True).squeeze(0)
     cells = inter.reshape(3, size, factor, size, factor).permute(1, 3, 0, 2, 4).reshape(size, size, 3, factor * factor)
     cells = cells.permute(0, 1, 3, 2)  # (size, size, N, 3)
 
