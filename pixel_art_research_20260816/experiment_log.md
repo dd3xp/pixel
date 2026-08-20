@@ -318,3 +318,4 @@
 - V6-002 16×16线 step18000: **7.5/10——主战场破7分线**(帽/鸭/鲨/盔造型清晰,眼镜语法稳定,背景平整)。核心主张首块硬证据: 原生16×16生成质量碾压压缩时代全部16级结果。32线18.4k/loss0.014;OGA 25G续传中
 - **服务器路径变更**: /mnt/data/kw/RoundSquisheen/texture → /mnt/data/kw/RoundSquisheen/pixel（用户腾名）;运行中训练经inode存活验证无恙(20.6k/25k续跑);cron已换新路径重建
 - **V6-002 16×16线收敛(30k): 8/10**——安全帽/皇冠/墨镜/格纹/鹰/鸡,多数格达手工水准,噪点近零。核心主张兑现: 原生16×16生成质量远超一切压缩/优化路线。32线22.4k续跑;OGA 30G续传。图: runs/v6a_nouns16/v6a16_final.png
+- V6-003 条件通道v1启动: UNet2DConditionModel(~15M级,cross_attn_dim=512)+冻结CLIP text @32×32,LPC前视图(128四视图取左上64→32),5万条结构化caption,10% dropout做CFG,GPU1,30k步。评估prompt=8条属性组合(含训练分布外组合)。日志 logs/v6c_train.log
