@@ -304,3 +304,7 @@
 32级: 猫8 蘑菇7.5 苹果7.5 花7 | 16级: 猫7 花6.5 苹果6 蘑菇5.5
 **终版配方**: auto_crop(中性bg) → 预马赛克(目标粒度) → img2img风格化(pixel-art LoRA, strength0.45-0.6, best-of-3) → 网格中心采样 → 色相加权投影 → 连通bg铺平 → 色彩感知despeckle。全链~3分钟/张,无SDS。
 **到9分的差距(诚实)**: ①16级微特征(脸/细茎)需符号化重画,超出压缩范式 ②风格化采样方差大(best-of-N治标) ③DB32色域限制 ④根治路径=用真实精灵数据集微调生成器(网格对齐训练)或人工在环——均超本轮范围
+
+## V6 开工（2026-08-20,cron 驱动）
+- 方案定稿见 v6_survey.md;范式从压缩转为条件生成,双模型（A=TinyUNet DDPM 锚点,B=离散扩散主角）
+- V6-001: Model A 无条件训练启动——diffusers UNet2DModel(~10M级,3层64/128/256,attn@16/8) @32×32,数据 jiovine/pixel-art-nouns(49.9k CC0),bs256 lr1e-4 30k步,GPU0,日志 logs/v6a_train.log
