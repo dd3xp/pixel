@@ -309,3 +309,4 @@
 - 方案定稿见 v6_survey.md;范式从压缩转为条件生成,双模型（A=TinyUNet DDPM 锚点,B=离散扩散主角）
 - V6-001: Model A 无条件训练启动——diffusers UNet2DModel(~10M级,3层64/128/256,attn@16/8) @32×32,数据 jiovine/pixel-art-nouns(49.9k CC0),bs256 lr1e-4 30k步,GPU0,日志 logs/v6a_train.log
 - V6-001 首批样本(step2000/30000): **6.5/10**——64格几乎全部可辨认为Nouns头像,方框眼镜语法已涌现,构图正确,多样性好;缺陷=胸口彩噪/部分头糊。域语法学习验证成功,轨迹强正。图: runs/v6a_nouns/v6a_s2000.png
+- V6-001 step6000(20%): **7.5/10,阶段a达标**——头型清晰多样(海盗船/王冠/蘑菇/鸭),眼镜成型,细节干净。解锁阶段b: LPC-4view + OGA-CC0 下载启动(logs/v6_data_download.log)。训练续至30k。图: runs/v6a_nouns/v6a_s6000.png
