@@ -1,3 +1,5 @@
+> **路径迁移（2026-08-20）**: 所有结果图统一收进 runs/ —— 旧 samples/ → runs/_early_samples/，showcase/ → runs/_strips/，stylized/ → runs/_stylized_sources/。正文中旧路径按此对应。**今后约定：每次实验的最终图+中间产物一律直接入 runs/<实验名>/，对比条入 runs/_strips/，不再新开目录。**
+
 # 实验记录
 
 > 归档原来只存了调研结论，缺实验元数据。此文件补记，以后每个实验往下追加一条。
