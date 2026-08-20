@@ -322,3 +322,4 @@
 - **V6-001 32线收敛(30k): 9/10**——多数格与真Nouns无法区分(蛋糕蜡烛/帆船/Gameboy级细节)。无条件阶段完美收官: 32=9, 16=8。条件线v6c至1.4k;OGA 89%(49G)。图: runs/v6a_nouns/v6a32_final.png
 - V6-003 step2000(7%): 3.5/10——噪雾中形体浮现,**条件跟随已见雏形**(gold armor prompt位→金铠骑士,绿裙位→绿裙),cross-attn生效,待收敛。OGA 65G续传
 - **磁盘事件**: /mnt/data 99%满(实验室共享盘,大头是他人TB级数据;我们仅84G)。OGA下载止于82G/46个2D_Art zip(足量)。启动就地提取(≤64px精灵PNG,逐zip处理),验证后删原始包,足迹将收敛至<15G。用户新项目已入驻 texture/(wood texture probe在跑,未触碰)
+- 轮收: v6c step6000=5/10(金甲骑士/蓝袍/白裙各就各位,条件跟随明确增强);OGA提取v1仅2880张(过滤器丢了大表单,且包含Sound包)→v2表单切割版(alpha连通域切sheet,scipy.label)启动
