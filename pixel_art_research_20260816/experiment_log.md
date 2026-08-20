@@ -320,3 +320,4 @@
 - **V6-002 16×16线收敛(30k): 8/10**——安全帽/皇冠/墨镜/格纹/鹰/鸡,多数格达手工水准,噪点近零。核心主张兑现: 原生16×16生成质量远超一切压缩/优化路线。32线22.4k续跑;OGA 30G续传。图: runs/v6a_nouns16/v6a16_final.png
 - V6-003 条件通道v1启动: UNet2DConditionModel(~15M级,cross_attn_dim=512)+冻结CLIP text @32×32,LPC前视图(128四视图取左上64→32),5万条结构化caption,10% dropout做CFG,GPU1,30k步。评估prompt=8条属性组合(含训练分布外组合)。日志 logs/v6c_train.log
 - **V6-001 32线收敛(30k): 9/10**——多数格与真Nouns无法区分(蛋糕蜡烛/帆船/Gameboy级细节)。无条件阶段完美收官: 32=9, 16=8。条件线v6c至1.4k;OGA 89%(49G)。图: runs/v6a_nouns/v6a32_final.png
+- V6-003 step2000(7%): 3.5/10——噪雾中形体浮现,**条件跟随已见雏形**(gold armor prompt位→金铠骑士,绿裙位→绿裙),cross-attn生效,待收敛。OGA 65G续传
