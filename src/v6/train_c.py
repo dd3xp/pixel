@@ -44,7 +44,7 @@ class LPCFront(torch.utils.data.Dataset):
     def __getitem__(self, i):
         name, text = self.rows[i]
         im = Image.open(self.img_dir / name).convert("RGB")
-        im = im.crop((0, 0, im.width // 2, im.height // 2))  # front view (top-left)
+        im = im.crop((0, im.height // 2, im.width // 2, im.height))  # front view (bottom-left; TL is back)
         im = im.resize((self.size, self.size), Image.NEAREST)
         t = torch.frombuffer(bytearray(im.tobytes()), dtype=torch.uint8)
         t = t.view(self.size, self.size, 3).permute(2, 0, 1).float() / 127.5 - 1.0
