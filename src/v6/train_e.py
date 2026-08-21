@@ -135,7 +135,10 @@ def main():
     p.add_argument("--init", default=None, help="state_dict to fine-tune from")
     p.add_argument("--extra", default=None, help="extra source: img_dir,captions_csv,repeat")
     p.add_argument("--seed", type=int, default=0, help="fixed eval sampling seed")
+    p.add_argument("--bs_scale", type=float, default=1.0, help="multiply per-bucket batch sizes (memory knob)")
     args = p.parse_args()
+    for k in BATCH:
+        BATCH[k] = max(8, int(BATCH[k] * args.bs_scale))
     device = "cuda"
     out = Path(args.out)
     (out / "samples").mkdir(parents=True, exist_ok=True)
