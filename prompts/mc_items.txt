@@ -1,0 +1,16 @@
+a pixel art golden sword
+a pixel art iron pickaxe
+a pixel art stone axe
+a pixel art wooden shovel
+a pixel art bow and arrow
+a pixel art gold ingot
+a pixel art iron ingot
+a pixel art blue diamond gem
+a pixel art green emerald gem
+a pixel art loaf of bread
+a pixel art raw steak
+a pixel art orange carrot
+a pixel art red book
+a pixel art potion bottle with red liquid
+a pixel art iron bucket of water
+a pixel art kettle
