@@ -1,0 +1,8 @@
+a pixel art golden sword
+a pixel art iron pickaxe
+a pixel art stone axe
+a pixel art wooden shovel
+a pixel art bow and arrow
+a pixel art gold ingot
+a pixel art iron ingot
+a pixel art blue diamond gem
