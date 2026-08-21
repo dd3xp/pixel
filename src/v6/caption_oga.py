@@ -5,14 +5,15 @@ BLIP sees crisp pixel shapes. Output: data/oga_captions.csv (path,text).
 Usage: CUDA_VISIBLE_DEVICES=0 python src/v6/caption_oga.py
 """
 import csv
+import sys
 from pathlib import Path
 
 import torch
 from PIL import Image
 from transformers import BlipForConditionalGeneration, BlipProcessor
 
-SRC = Path("data/oga_clean")
-OUT = Path("data/oga_captions.csv")
+SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "data/oga_clean")
+OUT = Path(sys.argv[2] if len(sys.argv) > 2 else "data/oga_captions.csv")
 BS = 64
 
 device = "cuda"

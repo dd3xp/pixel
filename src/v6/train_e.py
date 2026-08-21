@@ -47,23 +47,28 @@ def to_tensor(im, side):
 
 
 class NativeSprites(torch.utils.data.Dataset):
-    def __init__(self, img_dir, captions_csv):
-        self.img_dir = Path(img_dir)
+    """sources: list of (img_dir, captions_csv, repeat)."""
+
+    def __init__(self, sources):
         self.rows, self.bucket_of = [], []
-        with open(captions_csv, newline="", encoding="utf-8") as f:
-            for row in csv.DictReader(f):
-                self.rows.append((row["path"], row["text"]))
-        for name, _ in self.rows:  # header-only open, fast
-            s = max(Image.open(self.img_dir / name).size)
-            self.bucket_of.append(next((i for i, b in enumerate(BUCKETS) if b >= s), len(BUCKETS) - 1))
+        for img_dir, captions_csv, repeat in sources:
+            img_dir = Path(img_dir)
+            with open(captions_csv, newline="", encoding="utf-8") as f:
+                rows = [(img_dir / row["path"], row["text"]) for row in csv.DictReader(f)]
+            for path, _ in rows:  # header-only open, fast
+                s = max(Image.open(path).size)
+                b = next((i for i, b in enumerate(BUCKETS) if b >= s), len(BUCKETS) - 1)
+                self.bucket_of.extend([b] * repeat)
+            self.rows.extend(rows * repeat)
+            print(f"source {img_dir}: {len(rows)} x{repeat}", flush=True)
 
     def __len__(self):
         return len(self.rows)
 
     def __getitem__(self, i):
-        name, text = self.rows[i]
+        path, text = self.rows[i]
         b = self.bucket_of[i]
-        im = Image.open(self.img_dir / name).convert("RGBA")
+        im = Image.open(path).convert("RGBA")
         return to_tensor(im, BUCKETS[b]), text, b
 
 
@@ -127,12 +132,19 @@ def main():
     p.add_argument("--lr", type=float, default=1e-4)
     p.add_argument("--out", default="workdir/v6e_multires")
     p.add_argument("--sample_every", type=int, default=2000)
+    p.add_argument("--init", default=None, help="state_dict to fine-tune from")
+    p.add_argument("--extra", default=None, help="extra source: img_dir,captions_csv,repeat")
+    p.add_argument("--seed", type=int, default=0, help="fixed eval sampling seed")
     args = p.parse_args()
     device = "cuda"
     out = Path(args.out)
     (out / "samples").mkdir(parents=True, exist_ok=True)
 
-    ds = NativeSprites("data/oga_clean", "data/oga_captions.csv")
+    sources = [("data/oga_clean", "data/oga_captions.csv", 1)]
+    if args.extra:
+        d, c, r = args.extra.split(",")
+        sources.append((d, c, int(r)))
+    ds = NativeSprites(sources)
     counts = [ds.bucket_of.count(b) for b in range(len(BUCKETS))]
     print(f"dataset: {len(ds)} buckets {dict(zip(BUCKETS, counts))}", flush=True)
     loader = torch.utils.data.DataLoader(ds, batch_sampler=BucketSampler(ds.bucket_of, args.steps), num_workers=8)
@@ -149,6 +161,9 @@ def main():
         num_class_embeds=len(BUCKETS),
     ).to(device)
     print(f"params: {sum(q.numel() for q in model.parameters()) / 1e6:.1f}M", flush=True)
+    if args.init:
+        model.load_state_dict(torch.load(args.init, map_location=device))
+        print(f"init from {args.init}", flush=True)
 
     scheduler = DDPMScheduler(num_train_timesteps=1000, beta_schedule="squaredcos_cap_v2")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr)
@@ -173,6 +188,7 @@ def main():
         if step % args.sample_every == 0 or step == args.steps:
             model.eval()
             for s in EVAL_SIZES:
+                torch.manual_seed(args.seed)  # fixed seed -> comparable grids across checkpoints
                 make_grid(sample(model, scheduler, eval_cond, eval_uncond, s)).save(
                     out / "samples" / f"step_{step:06d}_s{s}.png")
             torch.save(model.state_dict(), out / "model_latest.pt")
