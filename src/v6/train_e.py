@@ -161,6 +161,7 @@ def main():
     p.add_argument("--extra", default=None, help="extra source: img_dir,captions_csv,repeat")
     p.add_argument("--seed", type=int, default=0, help="fixed eval sampling seed")
     p.add_argument("--bs_scale", type=float, default=1.0, help="multiply per-bucket batch sizes (memory knob)")
+    p.add_argument("--ema", type=float, default=0.0, help="EMA decay for eval/save weights (0=off, e.g. 0.999)")
     p.add_argument("--ms_aug", action="store_true", help="also feed 32+ sprites downscaled into the 16 bucket")
     p.add_argument("--ms_up", action="store_true", help="also feed <=16px sprites x2 NEAREST-upscaled into the 32 bucket")
     p.add_argument("--extra2", default=None, help="second extra source: img_dir,captions_csv,repeat")
@@ -201,6 +202,10 @@ def main():
 
     scheduler = DDPMScheduler(num_train_timesteps=1000, beta_schedule="squaredcos_cap_v2")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr)
+    ema = None
+    if args.ema > 0:
+        import copy
+        ema = copy.deepcopy(model).eval().requires_grad_(False)
     eval_cond = embed(EVAL_PROMPTS, tokenizer, text_encoder, device)
     eval_uncond = embed([""] * len(EVAL_PROMPTS), tokenizer, text_encoder, device)
 
@@ -217,15 +222,20 @@ def main():
         loss.backward()
         opt.step()
         step += 1
+        if ema is not None:
+            with torch.no_grad():
+                for pe, pm in zip(ema.parameters(), model.parameters()):
+                    pe.lerp_(pm, 1.0 - args.ema)
         if step % 200 == 0:
             print(f"[{step}/{args.steps}] loss={loss.item():.4f} bucket={BUCKETS[int(b[0])]}", flush=True)
         if step % args.sample_every == 0 or step == args.steps:
-            model.eval()
+            net = ema if ema is not None else model
+            net.eval()
             for s in EVAL_SIZES:
                 torch.manual_seed(args.seed)  # fixed seed -> comparable grids across checkpoints
-                make_grid(sample(model, scheduler, eval_cond, eval_uncond, s)).save(
+                make_grid(sample(net, scheduler, eval_cond, eval_uncond, s)).save(
                     out / "samples" / f"step_{step:06d}_s{s}.png")
-            torch.save(model.state_dict(), out / "model_latest.pt")
+            torch.save(net.state_dict(), out / "model_latest.pt")
             model.train()
     print(f"Done -> {out}", flush=True)
 

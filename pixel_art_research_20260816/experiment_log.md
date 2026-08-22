@@ -431,3 +431,4 @@
 2. 数据: 32 档原生工具图标(OGA 32px 武器包)补齐;弓/锹/桶定向补;caption 质量升级(BLIP-2 或 VLM 重标, 剔除 20% 退化 caption)。
 3. 模型: 统一模型在 16 档比专用模型(v6d 7.5)低 ~1.5 分→加容量/加步数/EMA;64 档考虑 16→64 coarse-to-fine 引导(回到多尺度思想)。
 4. 工程: 固定 seed 多样本评估脚本、best-of-N 筛选(CLIP 打分)可直接提升交付质量。
+- **V6-014 v6e10 启动(EMA+加步数)**(GPU1, workdir/v6e10_ema, 30k 步 lr 3e-5 全批): train_e.py 新增 --ema(评估/保存用 EMA 0.999 权重), init=v6e8, extra_all×1 + tool_candidates×2, ms_aug+ms_up。目的: 验证阶段总结里"统一模型加步数+EMA 能否缩小与专用模型的 16 档差距"
