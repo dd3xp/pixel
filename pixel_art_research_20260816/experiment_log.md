@@ -378,3 +378,4 @@
 - **当前最佳模型判定**: 三条线汇总 | 模型 | 人评 16/32/64 | MC16 | FID 16/32/64 | → v6e3 6.3/6.5/3.8 | 5.8 | 45.5/60.8/- ; v6e4 5.6/6.9/5.8 | 5.3 | 54.4/53.6/84.6 ; v6e5 5.8/6.3/5.3 | 5.6 | 50.6/57.8/80.6。**16 档交付(MC 材质主用途)= v6e3**;**统一多分辨率展示 = v6e5**(三档最均衡, 64 档 FID 最好)。v6e4 在 32 档最强但 16 档有 tile 回流。
 - [2026-08-22 12:40] **武器/工具专项数据**: OGA CC0 四源(CC0 Sword Icons 多作者合集 / CC0 Axe Icons / Wyrmsun CC0 900+ items / DENZI CC0)76 个文件 18M → extract_weapons.py(≤64 整图保留, 大图 alpha 连通域切割 8-64px, 镂空过滤)→ **4,483 张**;BLIP 标注 + **文件名语义并入 caption**(sword_roman_dark→"a pixel art sword roman dark, ...")→ 工具子集 **1,628 张**。预览 runs/v6_data/weapon_items_preview.png(剑/斧/匕首/弓密集, 约 1/3 噪声: 怪物/特效/碎片)。
 - **V6-010 v6e6 启动**(GPU1, workdir/v6e6_weapons, 15k 步 lr 3e-5 全批): init=v6e5, +weapon_tools×4 +weapon_all×1, ms_aug。目标: MC 连测工具四项(剑/镐/斧/锹)过 6 分
+- [2026-08-22 13:20] 基线 #7 铁锭: 失败(2/10)——蓝灰/绿/棕混杂的团块, 锭不可辨。基线 7 条: 7,6,6,2,3,6,2。v6e6 至 4k
