@@ -51,6 +51,9 @@ def downscale_rgba(im, side):
 def to_tensor(im, side):
     if max(im.size) > side:  # oversize (rare pad overflow) or multi-scale aug copy
         im = downscale_rgba(im, side)
+    elif max(im.size) * 2 <= side:  # ms_up copy: lossless integer NEAREST upscale
+        f = side // max(im.size)
+        im = im.resize((im.width * f, im.height * f), Image.NEAREST)
     canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
     canvas.paste(im, ((side - im.width) // 2, (side - im.height) // 2))
     a = np.array(canvas).astype(np.float32)
@@ -62,7 +65,7 @@ def to_tensor(im, side):
 class NativeSprites(torch.utils.data.Dataset):
     """sources: list of (img_dir, captions_csv, repeat)."""
 
-    def __init__(self, sources, ms_aug=False):
+    def __init__(self, sources, ms_aug=False, ms_up=False):
         self.rows, self.bucket_of = [], []
         for img_dir, captions_csv, repeat in sources:
             img_dir = Path(img_dir)
@@ -77,6 +80,10 @@ class NativeSprites(torch.utils.data.Dataset):
                 if ms_aug and b >= 2:  # 32+ sprite -> extra 16px copy (multi-scale augmentation)
                     self.rows.extend([(path, text)] * repeat)
                     self.bucket_of.extend([0] * repeat)
+                    n_aug += repeat
+                if ms_up and s <= 16:  # <=16px sprite -> extra x2 NEAREST copy in the 32 bucket
+                    self.rows.extend([(path, text)] * repeat)
+                    self.bucket_of.extend([2] * repeat)
                     n_aug += repeat
             print(f"source {img_dir}: {len(rows)} x{repeat} (+{n_aug} ms-aug@16)", flush=True)
 
@@ -155,6 +162,7 @@ def main():
     p.add_argument("--seed", type=int, default=0, help="fixed eval sampling seed")
     p.add_argument("--bs_scale", type=float, default=1.0, help="multiply per-bucket batch sizes (memory knob)")
     p.add_argument("--ms_aug", action="store_true", help="also feed 32+ sprites downscaled into the 16 bucket")
+    p.add_argument("--ms_up", action="store_true", help="also feed <=16px sprites x2 NEAREST-upscaled into the 32 bucket")
     p.add_argument("--extra2", default=None, help="second extra source: img_dir,captions_csv,repeat")
     args = p.parse_args()
     for k in BATCH:
@@ -170,7 +178,7 @@ def main():
     if args.extra2:
         d, c, r = args.extra2.split(",")
         sources.append((d, c, int(r)))
-    ds = NativeSprites(sources, ms_aug=args.ms_aug)
+    ds = NativeSprites(sources, ms_aug=args.ms_aug, ms_up=args.ms_up)
     counts = [ds.bucket_of.count(b) for b in range(len(BUCKETS))]
     print(f"dataset: {len(ds)} buckets {dict(zip(BUCKETS, counts))}", flush=True)
     loader = torch.utils.data.DataLoader(ds, batch_sampler=BucketSampler(ds.bucket_of, args.steps), num_workers=8)
