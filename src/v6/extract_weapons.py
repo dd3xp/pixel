@@ -5,6 +5,7 @@ alpha-connected components 8-64px (2px pad). Hollow filter: alpha fill
 
 Usage: python src/v6/extract_weapons.py
 """
+import sys
 import zipfile
 from pathlib import Path
 
@@ -12,8 +13,8 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-SRC = Path("data/oga_weapons")
-OUT = Path("data/weapon_items")
+SRC = Path(sys.argv[1] if len(sys.argv) > 1 else "data/oga_weapons")
+OUT = Path(sys.argv[2] if len(sys.argv) > 2 else "data/weapon_items")
 OUT.mkdir(parents=True, exist_ok=True)
 
 for zp in SRC.glob("*.zip"):
