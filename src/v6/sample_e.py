@@ -15,7 +15,7 @@ from diffusers import DDPMScheduler, UNet2DConditionModel
 from PIL import Image
 from transformers import CLIPTextModel, CLIPTokenizer
 
-BUCKETS = [16, 24, 32, 48, 64]
+BUCKETS = [16, 24, 32, 48, 64]  # overridden by --buckets
 
 
 def build_model(device):
@@ -79,8 +79,12 @@ def main():
     p.add_argument("--cfg", type=float, default=4.0)
     p.add_argument("--steps", type=int, default=100)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--buckets", default=None, help="comma list, e.g. 12,16,20,24,32,48,64 for v7 models")
     p.add_argument("--out", required=True)
     args = p.parse_args()
+    if args.buckets:
+        BUCKETS.clear()
+        BUCKETS.extend(int(v) for v in args.buckets.split(","))
     device = "cuda"
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)

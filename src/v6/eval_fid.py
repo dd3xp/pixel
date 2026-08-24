@@ -36,8 +36,12 @@ def main():
     p.add_argument("--n", type=int, default=1000)
     p.add_argument("--up", type=int, default=64)
     p.add_argument("--bs", type=int, default=100)
+    p.add_argument("--buckets", default=None, help="comma list for v7 models")
     p.add_argument("--out", default="workdir/fid")
     args = p.parse_args()
+    if args.buckets:
+        BUCKETS.clear()
+        BUCKETS.extend(int(v) for v in args.buckets.split(","))
     device = "cuda"
     tag = f"{Path(args.ckpt).parent.name}_s{args.size}"
     real_dir, fake_dir = Path(args.out) / f"real_s{args.size}", Path(args.out) / f"fake_{tag}"
