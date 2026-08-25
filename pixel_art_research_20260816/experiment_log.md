@@ -469,3 +469,4 @@
 ### 交付
 - **模型: workdir/v7_lowres/model_latest.pt**;采样: `python src/v6/sample_e.py --ckpt workdir/v7_lowres/model_latest.pt --buckets 12,16,20,24,32,48,64 --prompts <txt> --sizes 12 16 20 24 --n <N> --out <dir>`。
 - 全部图: runs/v7_lowres/(训练过程四档), runs/mc_items/(mc/showcase/compare 每档), runs/baseline_sdpixl/(基线 12/16/20/24 全部 32 张)。
+- [2026-08-25 10:30] 静默值守: GPU0/1 空闲正常;/mnt/data 又满(100%, 剩 132G)。我方足迹 89G, 其中 83G=OGA 原始 zip(提取早已验证完成, **删除仍等用户确认**——回来后说一声即可释放 83G);其余临时产物均 <1G 不足挂齿。未做任何删除
