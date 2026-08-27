@@ -94,14 +94,16 @@ def grid(images, rows, cols, scale, refs=None):
         for x in range((cols + extra) * w):
             v = 209 if ((y // cell + x // cell) % 2) else 240
             px[x, y] = (v, v, v, 255)
-    if refs:
-        for r, rp in enumerate(refs):
-            thumb = Image.open(rp).convert("RGBA").resize((w, h), Image.BICUBIC)
-            out.alpha_composite(thumb, (0, r * h))
     for i, im in enumerate(images):
         r, c = divmod(i, cols)
         out.alpha_composite(im, ((c + extra) * w, r * h))
-    return out.resize((out.width * scale, out.height * scale), Image.NEAREST)
+    out = out.resize((out.width * scale, out.height * scale), Image.NEAREST)
+    if refs:  # paste references AFTER upscaling, so they stay full resolution
+        cw, ch = w * scale, h * scale
+        for r, rp in enumerate(refs):
+            out.alpha_composite(Image.open(rp).convert("RGBA").resize((cw, ch), Image.LANCZOS),
+                                (0, r * ch))
+    return out
 
 
 def main():
