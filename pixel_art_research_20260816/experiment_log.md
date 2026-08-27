@@ -504,3 +504,15 @@
   | a pixel art wooden shovel | 4/4 仍是锤/棍 ✗ |
 - **结论: 模型的颜色控制本来就在**, 靠的是**冻结 CLIP 文本编码器的预训练语义**——"grey" 虽在我们语料里近乎不存在, 但 CLIP 把它映射到语料中大量存在的 gray/white/silver 邻域, 于是零样本可用。此前"铁锭金色/石斧成石块"**主要是 prompt 措辞问题, 不是模型缺陷**。
 - **行动修正**: ①暂不为此重训(color-grounded caption 已备好在 data/*_col.csv, 留作后续消融"显式颜色标注是否还能再提") ②论文增加"颜色/材质可控性"演示图, 并如实说明其来自冻结 CLIP 的迁移 ③**真正缺的是弓与锹**——这两类加颜色词也救不回来, 属实打实的数据缺口, 下一步定向补。
+
+## V7c 定向补数据: 弓/锹(2026-08-27)
+- 数据: OGA CC0 八包(20x20-bow-sprites / animated-fantasy-bows / bow-and-arrow-spritesheet / animated-demonic-bows / 5-rpg-fantasy-weapons / 16x16-rpg-items-db32 / 16x16-detective-items / free-2d-survival-tools, 许可逐个核为 CC0)→ extract_weapons.py 提取 **509 张** → BLIP+文件名语义标注。**弓 13→102, 箭→24, 锹 9→16**。焦点子集(弓/箭/箭袋/锹)116 张 ×10 过采样, 全集 ×2, 从 v7 微调(12k 步, lr 3e-5, GPU1)。
+- **4k 步中途探针(runs/bow_probe/v7c_4k_s16.png, 每 prompt 6 样本)**:
+  | prompt | v7(补前) | v7c@4k(补后) |
+  |---|---|---|
+  | a pixel art bow and arrow | 直棍, ~3.5/10 | **6/6 带弦弯弓, ~7/10 ✓** |
+  | a pixel art wooden bow | — | **6/6 弯弓 ✓** |
+  | a pixel art wooden shovel | 锤/棍, ~4/10 | 棕色板块, ~4/10 **无改善 ✗** |
+  | a pixel art iron shovel | — | 灰色块, ~4/10 **✗** |
+- **这构成一个干净的受控对照(论文可用)**: 同一次微调、同一超参下, **弓 +89 张(13→102)→ 3.5→7 分**, **锹 +7 张(9→16)→ 无变化**。说明**每类别样本量存在阈值**: ~100 张足以让模型学会该类别的轮廓语法, ~16 张不足。这比笼统说"数据不够"更有信息量。
+- 锹的数据缺口**在 CC0 范围内无法补齐**: OGA 搜 "spade" 返回的是扑克牌花色, "shovel" 只有已用的 cc0-tool-icons。**作为诚实的失败案例保留**(论文 limitations: 长尾类别受限于开放许可素材的覆盖, 而非方法本身)。

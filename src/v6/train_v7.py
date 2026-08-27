@@ -186,6 +186,8 @@ def main():
     p.add_argument("--bs_scale", type=float, default=1.0)
     p.add_argument("--csv_suffix", default="",
                    help='e.g. "_col" to use the colour-grounded caption files')
+    p.add_argument("--extra", action="append", default=[],
+                   help="additional source as img_dir,captions_csv,repeat (repeatable)")
     args = p.parse_args()
     for k in BATCH:
         BATCH[k] = max(8, int(BATCH[k] * args.bs_scale))
@@ -199,6 +201,9 @@ def main():
         ("data/extra_all", f"data/extra_all{suf}.csv", 1),
         ("data/oga_clean", f"data/tool_candidates{suf}.csv", 2),
     ]
+    for spec in args.extra:
+        d, c, rep = spec.split(",")
+        sources.append((d, c, int(rep)))
     ds = NativeSprites(sources)
     counts = [ds.bucket_of.count(b) for b in range(len(BUCKETS))]
     print(f"dataset: {len(ds)} buckets {dict(zip(BUCKETS, counts))}", flush=True)
