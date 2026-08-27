@@ -184,6 +184,8 @@ def main():
     p.add_argument("--ema", type=float, default=0.999)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--bs_scale", type=float, default=1.0)
+    p.add_argument("--csv_suffix", default="",
+                   help='e.g. "_col" to use the colour-grounded caption files')
     args = p.parse_args()
     for k in BATCH:
         BATCH[k] = max(8, int(BATCH[k] * args.bs_scale))
@@ -191,10 +193,11 @@ def main():
     out = Path(args.out)
     (out / "samples").mkdir(parents=True, exist_ok=True)
 
+    suf = args.csv_suffix
     sources = [
-        ("data/oga_clean", "data/oga_captions.csv", 1),
-        ("data/extra_all", "data/extra_all.csv", 1),
-        ("data/oga_clean", "data/tool_candidates.csv", 2),
+        ("data/oga_clean", f"data/oga_captions{suf}.csv", 1),
+        ("data/extra_all", f"data/extra_all{suf}.csv", 1),
+        ("data/oga_clean", f"data/tool_candidates{suf}.csv", 2),
     ]
     ds = NativeSprites(sources)
     counts = [ds.bucket_of.count(b) for b in range(len(BUCKETS))]
