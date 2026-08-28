@@ -661,3 +661,14 @@ v7c 的 GAP≈0 验证了指标可信(无信息时匹配=错配);**v8 是地板�
 - **v9 续训 bug 修复**: `--init` 加载 v9 检查点必崩——ip processor 注册为 UNet 子模块, 所以 ck["unet"] 里带 `attn2.processor.*`, 而 `install_ip_attn` 写在 `load_state_dict` **之后**, 每个 processor key 都是 unexpected。改为: 检测到 processor key 就先装 ip 再加载(v8 检查点无此 key, 走原路径)。
 - v9 尾段 13.2k→15k 写入独立目录 workdir/v9_tail, 完成后显式改名 model_step015000.pt。**注意诚实标注**: `--init` 只恢复权重, `step` 归零, 故尾段的 LR schedule 是重新开始的, 与一次跑满 15k 不完全等价, 报告时需注明。
 - **教训**: 长跑任务必须自带"产出校验 + 资源前置检查", 否则失败静默累积; 远程后台任务必须在 tmux 里, nohup 不够。
+
+## 2026-08-28 16:27 集体死亡真凶: 用户自己的 gpu_killer.py(**推翻此前两次判断**)
+- **抓捕方法**: 普通信号处理器拿不到发送者。写 `src/v6/sentinel.py`——阻塞 SIGTERM 并用 `signal.sigwaitinfo()` 读 `siginfo_t.si_pid`。CPU 版哨兵挂了 6 分钟毫发无损, 于是写 `src/v6/sentinel_gpu.py`(先占 256MB 显存再等信号), **上线同一秒即被杀**, 直接报出凶手。
+- **凶手**: `/mnt/data/kw/anaconda3/envs/ga_vllm/bin/python -u /mnt/data/kw/monas/gpu_killer.py`(pid 4127165, uid 1001, 已 daemon 化, 父进程 init)。用户自己的 GPU 资源保护脚本, 文件头注明"根据梁老师授权, 为保障本组训练任务的 GPU 资源"。
+- **机制**: 每 2 秒 `nvidia-smi --query-compute-apps=pid` 扫一遍, 对当前用户的 GPU 进程连同**整个进程组**发 SIGTERM, 宽限 3 秒后 SIGKILL, 并持续处理被脚本重新拉起的新 PID(所以重启循环也无效)。白名单按可执行文件路径判定: `DEFAULT_PROTECTED_PREFIXES = ("/mnt/data/kw/anaconda3/envs/ga_vllm",)`, 启动时未带 `--protect-prefix`, 故只保护 ga_vllm。我们全部工作在 `envs/SD-piXL`, 必死。
+- **推翻的两个判断(均为我的误诊, 明确纠正)**:
+  1. ~~"nohup 任务被 ssh 会话收割"~~ —— 错。迁 tmux 后照样被杀, 每个 pane 都打印 `Terminated`。
+  2. ~~"SDXL 卡在 .to('cuda') 是磁盘 I/O 被拖垮"~~ —— 错。`.to('cuda')` 一旦分配显存就进入 nvidia-smi 计算进程列表, 2 秒内被 SIGTERM, 表现为"卡住"实为被杀; CPU-only 加载 2.2s 正常, 正因为没碰 GPU。
+  磁盘满(99%, 算完写不出图)与 hf-mirror 超时是**另外两个真实问题**, 害掉了最早的 12 档 p6/p7/p8, 与本条无关。
+- **现状**: GPU 侧全部停摆(v9 差 200 步收 15k; pairs 一张未出; 基线队列 24 条未动, 已完成的 8 条不受影响)。**解法在用户手里**: 以 `--protect-prefix /mnt/data/kw/anaconda3/envs/SD-piXL` 重启 gpu_killer, 或 `--exclude <pid>`, 或暂停它。**不擅自改动用户的资源保护守护进程。**
+- **工程沉淀**: `sentinel.py` / `sentinel_gpu.py` 这套 siginfo 抓捕法值得保留——以后再遇到"进程静默消失", 先挂哨兵而不是猜。
