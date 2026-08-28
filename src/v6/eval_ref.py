@@ -30,6 +30,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from sample_v8 import (BUCKETS, build_model, embed_text, load_ref, sample,  # noqa: E402
                        to_rgba, CLIP_MEAN, CLIP_STD)
 from diffusers import DDPMScheduler  # noqa: E402
+from ip_attn import install_ip_attn  # noqa: E402
 from transformers import (CLIPModel, CLIPTextModel, CLIPTokenizer,  # noqa: E402
                           CLIPVisionModel)
 
@@ -80,6 +81,9 @@ def main():
         model = build_model(device)
         img_proj = nn.Sequential(nn.LayerNorm(768), nn.Linear(768, 512)).to(device)
         ck = torch.load(ckpt, map_location=device)
+        if isinstance(ck, dict) and "ip" in ck:      # v9: decoupled cross-attention
+            ip_mods = install_ip_attn(model, cross_dim=512, text_len=77)
+            ip_mods.load_state_dict(ck["ip"])
         if args.text_only:
             model.load_state_dict(ck if not isinstance(ck, dict) or "unet" not in ck else ck["unet"])
         else:

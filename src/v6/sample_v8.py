@@ -16,6 +16,7 @@ Usage:
       --refs data/refs --prompts prompts/refs.txt --sizes 12 16 20 24 --n 4 --out runs_out/v8
 """
 import argparse
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -24,6 +25,9 @@ import torch.nn as nn
 from diffusers import DDPMScheduler, UNet2DConditionModel
 from PIL import Image
 from transformers import CLIPTextModel, CLIPTokenizer, CLIPVisionModel
+
+sys.path.insert(0, str(Path(__file__).parent))
+from ip_attn import install_ip_attn  # noqa: E402
 
 BUCKETS = [12, 16, 20, 24, 32, 48, 64]
 CLIP_MEAN = torch.tensor([0.48145466, 0.4578275, 0.40821073]).view(3, 1, 1)
@@ -128,6 +132,9 @@ def main():
     img_proj = nn.Sequential(nn.LayerNorm(768), nn.Linear(768, 512)).to(device)
     ck = torch.load(args.ckpt, map_location=device)
     if isinstance(ck, dict) and "unet" in ck:
+        if "ip" in ck:                               # v9: decoupled cross-attention
+            ip_mods = install_ip_attn(model, cross_dim=512, text_len=77)
+            ip_mods.load_state_dict(ck["ip"])
         model.load_state_dict(ck["unet"])
         img_proj.load_state_dict(ck["img_proj"])
     else:
