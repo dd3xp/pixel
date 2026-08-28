@@ -98,26 +98,50 @@ def to_tensor(im, side):
     return torch.from_numpy(a).permute(2, 0, 1) / 127.5 - 1.0
 
 
-def cond_view(im):
+def cond_view(im, strong=False):
     """Sprite -> a 224px 'reference render' the way an SDXL output would look:
     white background, upscaled with a random filter, blurred, colour-jittered.
-    The blur/jitter is what stops the model from learning a copy shortcut."""
+    The degradation is what stops the model from learning a copy shortcut.
+
+    strong=True widens every knob and adds crop/scale jitter plus a
+    resample-roundtrip.  Rationale: with the mild schedule the model drifts
+    towards the in-domain embedding distribution as training proceeds (v8:
+    out-of-domain transfer peaked at 15k then fell back), so the conditioning
+    view has to look less and less like our own sprites."""
     side = max(im.size)
     sq = Image.new("RGBA", (side, side), (0, 0, 0, 0))
     sq.paste(im, ((side - im.width) // 2, (side - im.height) // 2))
     bg = Image.new("RGBA", sq.size, (255, 255, 255, 255))
     rgb = Image.alpha_composite(bg, sq).convert("RGB")
+    if strong and random.random() < 0.7:           # framing jitter: refs are not centred crops
+        m = int(side * random.uniform(0.02, 0.18))
+        box = (random.randint(0, m), random.randint(0, m),
+               side - random.randint(0, m), side - random.randint(0, m))
+        rgb = rgb.crop(box)
     rgb = rgb.resize((224, 224), random.choice(RESAMPLE))
-    if random.random() < 0.8:
-        rgb = rgb.filter(ImageFilter.GaussianBlur(random.uniform(0.5, 3.0)))
+    if strong and random.random() < 0.6:           # resample roundtrip = a different render pipeline
+        k = random.choice([32, 48, 64, 96])
+        rgb = rgb.resize((k, k), random.choice(RESAMPLE)).resize((224, 224), random.choice(RESAMPLE))
+    blur_p, blur_hi = (0.9, 5.0) if strong else (0.8, 3.0)
+    if random.random() < blur_p:
+        rgb = rgb.filter(ImageFilter.GaussianBlur(random.uniform(0.5, blur_hi)))
     t = torch.from_numpy(np.array(rgb)).permute(2, 0, 1).float() / 255.0
-    if random.random() < 0.7:                      # mild photometric jitter
+    if strong:
+        if random.random() < 0.9:                  # wider photometric jitter
+            t = (t * random.uniform(0.7, 1.3) + random.uniform(-0.12, 0.12)).clamp(0, 1)
+        if random.random() < 0.3:                  # desaturate: colour must not be the only cue
+            g = t.mean(0, keepdim=True)
+            t = (t * (1 - 0.6) + g * 0.6).clamp(0, 1)
+        if random.random() < 0.3:                  # sensor-ish noise
+            t = (t + torch.randn_like(t) * random.uniform(0.01, 0.05)).clamp(0, 1)
+    elif random.random() < 0.7:
         t = (t * random.uniform(0.85, 1.15) + random.uniform(-0.06, 0.06)).clamp(0, 1)
     return (t - CLIP_MEAN) / CLIP_STD
 
 
 class NativeSprites(torch.utils.data.Dataset):
-    def __init__(self, sources):
+    def __init__(self, sources, strong_aug=False):
+        self.strong_aug = strong_aug
         self.rows, self.bucket_of = [], []
         for img_dir, captions_csv, repeat in sources:
             img_dir = Path(img_dir)
@@ -143,7 +167,7 @@ class NativeSprites(torch.utils.data.Dataset):
         path, text = self.rows[i]
         b = self.bucket_of[i]
         im = Image.open(path).convert("RGBA")
-        return to_tensor(im, BUCKETS[b]), text, b, cond_view(im)
+        return to_tensor(im, BUCKETS[b]), text, b, cond_view(im, self.strong_aug)
 
 
 class BucketSampler(torch.utils.data.Sampler):
@@ -215,6 +239,8 @@ def main():
     p.add_argument("--bs_scale", type=float, default=1.0)
     p.add_argument("--p_img", type=float, default=0.5, help="fraction of batches carrying image tokens")
     p.add_argument("--csv_suffix", default="")
+    p.add_argument("--strong_aug", action="store_true",
+                   help="wider conditioning-view degradation (counters self-conditioning drift)")
     args = p.parse_args()
     for k in BATCH:
         BATCH[k] = max(8, int(BATCH[k] * args.bs_scale))
@@ -231,7 +257,7 @@ def main():
         ("data/bowtool_items", "data/bowtool_captions.csv", 2),
     ]
     sources = [s for s in sources if Path(s[1]).exists()]
-    ds = NativeSprites(sources)
+    ds = NativeSprites(sources, strong_aug=args.strong_aug)
     counts = [ds.bucket_of.count(b) for b in range(len(BUCKETS))]
     print(f"dataset: {len(ds)} buckets {dict(zip(BUCKETS, counts))}", flush=True)
     loader = torch.utils.data.DataLoader(
