@@ -672,3 +672,12 @@ v7c 的 GAP≈0 验证了指标可信(无信息时匹配=错配);**v8 是地板�
   磁盘满(99%, 算完写不出图)与 hf-mirror 超时是**另外两个真实问题**, 害掉了最早的 12 档 p6/p7/p8, 与本条无关。
 - **现状**: GPU 侧全部停摆(v9 差 200 步收 15k; pairs 一张未出; 基线队列 24 条未动, 已完成的 8 条不受影响)。**解法在用户手里**: 以 `--protect-prefix /mnt/data/kw/anaconda3/envs/SD-piXL` 重启 gpu_killer, 或 `--exclude <pid>`, 或暂停它。**不擅自改动用户的资源保护守护进程。**
 - **工程沉淀**: `sentinel.py` / `sentinel_gpu.py` 这套 siginfo 抓捕法值得保留——以后再遇到"进程静默消失", 先挂哨兵而不是猜。
+
+## 2026-08-29 迁移到 a100-node09(绕开 gpu_killer)
+- **动因**: emnlp(a100-node03)上 `gpu_killer.py` 每 2 秒杀光本账号非 ga_vllm 环境的 GPU 进程, 且**不按 GPU 过滤**(换卡也躲不掉), 白名单按 `/proc/<pid>/exe` 路径判定, 我们在 `envs/SD-piXL` 必死。该脚本属于共享账号上的其他人, **不擅自改动**。
+- **勘察**: ssh config 共 5 台, 只有 `kw`(a100-node09)与 `emnlp`(a100-node03)有卡; soft/squishy/server 均不可达。node09: 8×A100-80G(他人占用约 40G/卡, 余 40G), 磁盘余 **1.3T**(emnlp 仅余 100+G), **无 gpu_killer**, 且已有 `envs/SD-piXL` 与 14G SDXL 缓存。
+- **两节点 /mnt/data 不共享**, 且 node09 无法直连 emnlp(TCP 不可达), 只能经本地中转。
+- **搬运** (仅必需项 1.3G, 而非全部 9.8G——workdir 8G 多为历史检查点, data 中 LPC 等为弃用数据): src/prompts/baseline + oga_clean/extra_all/bowtool_items/refs + inception + 20 个 CSV + `v9_ipattn/model_latest.pt` + `v7c_bow/model_latest.pt` + SD-piXL 仓库。下载 6m22s, 上传 3m11s。
+- **坑**: `data/extra_all` 内是 **5,853 个绝对路径符号链接**(指向 weapon_items 4483 / kenney_items 1016 / tool_items2 354), tar 只搬链接不搬目标, 首次启动即 FileNotFoundError。补传三目录(25M)后断链归零。
+- **路径同构**: node09 上放在 `/mnt/data/kw/RoundSquisheen/pixel/`(与 emnlp 完全相同的绝对路径, 用户要求不占用其 `texture/` 目录), 因此所有 yaml/脚本中的硬编码路径无需修改。
+- **验证**: v9 尾段在 node09 正常训练(200/1800, 未被杀); make_pairs 正在补下 SDXL 权重后开跑。**这是 make_pairs 第一次真正有机会运行**——在 emnlp 上它每次刚 `.to('cuda')` 分配显存就被 SIGTERM, 表现为"卡在加载"。
