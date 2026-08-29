@@ -681,3 +681,13 @@ v7c 的 GAP≈0 验证了指标可信(无信息时匹配=错配);**v8 是地板�
 - **坑**: `data/extra_all` 内是 **5,853 个绝对路径符号链接**(指向 weapon_items 4483 / kenney_items 1016 / tool_items2 354), tar 只搬链接不搬目标, 首次启动即 FileNotFoundError。补传三目录(25M)后断链归零。
 - **路径同构**: node09 上放在 `/mnt/data/kw/RoundSquisheen/pixel/`(与 emnlp 完全相同的绝对路径, 用户要求不占用其 `texture/` 目录), 因此所有 yaml/脚本中的硬编码路径无需修改。
 - **验证**: v9 尾段在 node09 正常训练(200/1800, 未被杀); make_pairs 正在补下 SDXL 权重后开跑。**这是 make_pairs 第一次真正有机会运行**——在 emnlp 上它每次刚 `.to('cuda')` 分配显存就被 SIGTERM, 表现为"卡在加载"。
+
+## 2026-08-29 配对数据(v10 前置)四轮扫描: **sprite→SDXL img2img 路线不可用**
+产物图见 `runs/v10_pairs/`(pair_check / pair_sweep / pair_sweep2 / pair_sweep3_large / pair_sweep4_guidance / pair_check_final)。
+- **轮1(strength 0.6, caption 提示词)**: 参考图**仍是像素画**(剑/斧/字母 C 与原图几乎一致)。等于把 cond_view 的毛病重做一遍, 不可用。发现 caption 质量极差("a pixel with a pixel in the middle"), 而 img2img 中提示词随强度上升而主导, 垃圾 caption 会主动把图带偏。
+- **轮2(强度 × 提示词)**: s0.5 全是方块; s0.85 内容被摧毁(石斧→放大镜, 金剑→抽象色带); **s0.7 对细节丰富的大精灵有效**(士兵/怪物平滑且身份保住), 对小道具无效。
+- **轮3(NEAREST vs LANCZOS 上采样)**: 推翻我在 `sprite_to_canvas` 里的注释"用 NEAREST 保持方块锐利好让 img2img 平滑它"——**锐利方块边缘正是中等强度下最容易被保留的大尺度结构**。LANCZOS 对石斧有效, 但对金剑全档失败(像素太少, 一模糊就没有信号重建"剑", SDXL 只能编)。大精灵抽样(跨度取样 6 张)显示**仍不稳**: 多数被渲成发亮的抽象 3D 块。
+- **轮4(降引导)**: "发亮抽象块"确认为**提示词过度引导**所致, 非 img2img 固有极限——guidance 6.0 + "smooth digital illustration, product shot" 把每张图都拽向产品渲染图。改中性提示词 + guidance 1.5~3.0 后**身份保持明显改善**(黑色生物、士兵可用)。据此定稿: 中性提示词/guidance 2.0/strength 0.75/NEAREST/仅取 ≥32px 且 ≥24 色的精灵。
+- **定稿设置实测仍不可用**: 6 组抽检中 1 组几乎未变(水晶剑仍为方块), 4 组被**糊成抹开的色块或变成无关物体**, 仅 1 组勉强。**结论: sprite→SDXL img2img 无法稳定产出"同一物体、仅换画风"的配对**。根因推测: 512px 放大的像素图对 SDXL 是分布外输入(块状、平涂、纯白底), 其去噪不会把它映射成干净渲染图, 而是产生涂抹伪影。
+- **不用中途/樱桃挑选的样例下结论**: 前几轮里"成功"的行(士兵/怪物)是少数, 跨度抽样后整体不成立。
+- **下一步候选**: ① **ControlNet(canny/scribble)+ text2img** ——"保结构、换画风"的正确工具, img2img 本就不擅长此事; ② 放弃配对路线, 把图像条件按"可用但有限的增强"写入论文(现有数据支持: GAP 为地板 10 倍, v9 最优)。
