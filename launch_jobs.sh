@@ -41,8 +41,8 @@ start bq1 1 bash "$ROOT/baseline/bq_worker.sh" 1
 # Two more workers once the ablation freed its GPUs: contention had stretched a
 # single 10k run from ~4.5h to ~7.5h, which put the 21 remaining runs at ~79h.
 # The queue uses heartbeat locks, so extra workers just drain it faster.
-start bq2 3 bash "$ROOT/baseline/bq_worker.sh" 3
-start bq3 5 bash "$ROOT/baseline/bq_worker.sh" 5
+start bq2 4 bash "$ROOT/baseline/bq_worker.sh" 3
+start bq3 6 bash "$ROOT/baseline/bq_worker.sh" 5
 
 # --- sentinel: names whoever SIGTERMs our GPU jobs (worked on node03) ---
 start gsent 2 "$PY" src/v6/sentinel_gpu.py
