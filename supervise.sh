@@ -41,8 +41,29 @@ rm -f "$ROOT/logs/${NAME}.FAILING"
 # them every 60s for nine hours while looking, from the outside, like progress.
 # So distinguish "killed mid-run" (restart, that is the point) from "cannot even
 # start" (back off, then raise a file that a status check cannot miss).
+need_mb=${NEED_MB:-16000}
+wait_for_memory() {
+  # Other users' jobs regularly fill these cards; starting into 21MiB of free
+  # memory just produces an OOM traceback and burns a fast-fail strike, so the
+  # supervisor waits for room instead of failing.  Waiting is not a stall: it is
+  # logged, and the job starts the moment the card frees up.
+  local waited=0
+  while true; do
+    local free
+    free=$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits -i "$GPU" 2>/dev/null | head -1)
+    [ -z "$free" ] && return 0                     # cannot tell: try anyway
+    [ "$free" -ge "$need_mb" ] && return 0
+    if [ $((waited % 600)) = 0 ]; then
+      echo "[$(date +%m%d-%H:%M)] waiting for gpu$GPU: ${free}MB free, need ${need_mb}MB" >> "$SUP"
+    fi
+    sleep 60
+    waited=$((waited + 60))
+  done
+}
+
 fast_fails=0
 while true; do
+  wait_for_memory
   echo "[$(date +%m%d-%H:%M)] starting $NAME" >> "$SUP"
   t0=$(date +%s)
   CUDA_VISIBLE_DEVICES=$GPU setsid --wait "$@" >> "$LOG" 2>&1

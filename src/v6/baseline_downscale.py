@@ -167,6 +167,12 @@ def main():
     }
 
     for pi, p in enumerate(prompts):
+        # Skip prompts already rendered.  This node clears GPU jobs every few
+        # hours, and a 237-prompt distillation run that restarts from zero each
+        # time never finishes; the matted 1024px file is written last for a
+        # prompt, so its presence means that prompt is complete.
+        if (out / "big" / f"{pi:02d}_matted.png").exists():
+            continue
         cands = []
         for k in range(args.n):
             big = pipe(prompt=f"{p}, {STYLE}", negative_prompt=NEG,
