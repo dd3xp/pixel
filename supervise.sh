@@ -50,6 +50,10 @@ while true; do
   ran=$(( $(date +%s) - t0 ))
   echo "[$(date +%m%d-%H:%M)] $NAME exited rc=$rc after ${ran}s" >> "$SUP"
   if [ "$rc" = "0" ]; then
+    # Mark completion, so re-running the launcher does not spend a GPU redoing
+    # finished work: the launcher's only other signal is "is a supervisor alive",
+    # and a finished job has none.
+    date +%Y-%m-%dT%H:%M > "$ROOT/logs/${NAME}.done"
     echo "[$(date +%m%d-%H:%M)] $NAME done, supervisor exiting" >> "$SUP"
     break
   fi

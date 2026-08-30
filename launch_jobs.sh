@@ -17,6 +17,10 @@ start() {   # name gpu command...
     echo "already running: $name"
     return
   fi
+  if [ -f "$ROOT/logs/${name}.done" ]; then
+    echo "already finished: $name  (rm logs/${name}.done to redo)"
+    return
+  fi
   setsid nohup bash "$ROOT/supervise.sh" "$@" </dev/null >/dev/null 2>&1 &
   disown
   echo "started: $name (gpu $2)"
@@ -40,6 +44,12 @@ start gsent 2 "$PY" src/v6/sentinel_gpu.py
 
 # --- how much can the text-only model already draw? 100 everyday objects ---
 start coverage16 6 "$PY" src/v6/coverage.py --size 16 --out runs_out/coverage16
+
+# --- pseudo-labels for distillation: SDXL has the object vocabulary our corpus
+# lacks, and the coverage run showed the gap is vocabulary, not rendering.
+# Reuses the downscale-baseline pipeline, which already produces 12/16/20/24.
+start distill 7 "$PY" src/v6/baseline_downscale.py \
+      --prompts prompts/vocab_distill.txt --out runs_out/distill_v1 --n 4
 
 sleep 3
 echo "--- supervisors now running ---"

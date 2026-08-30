@@ -1,0 +1,243 @@
+# Objects for pseudo-label distillation, weighted toward the categories the
+# coverage measurement found weak: modern electronics, precision tools, musical
+# instruments, sports and clothing.  Categories the model already handles well
+# (food, nature, fantasy items) are represented only lightly -- pseudo-labels are
+# lower quality than our real sprites, so they should only be paid for where the
+# vocabulary is actually missing.
+smartphone
+laptop computer
+desktop monitor
+computer mouse
+keyboard
+headphones
+earbuds
+television set
+radio receiver
+microphone
+video game controller
+digital camera
+camera lens
+film projector
+flashlight
+light bulb
+desk lamp
+ceiling fan
+electric kettle
+coffee machine
+toaster
+microwave oven
+refrigerator
+washing machine
+vacuum cleaner
+hair dryer
+electric fan
+air conditioner
+power drill
+circular saw
+screwdriver
+wrench
+pliers
+scissors
+tape measure
+spirit level
+paint brush
+paint roller
+watering can
+garden shovel
+rake
+wheelbarrow
+ladder
+toolbox
+nail
+screw
+bolt and nut
+spring
+gear wheel
+magnet
+battery
+light switch
+power plug
+extension cord
+soldering iron
+multimeter
+microscope
+telescope
+binoculars
+magnifying glass
+compass
+stopwatch
+wristwatch
+alarm clock
+hourglass
+thermometer
+barometer
+calculator
+abacus
+typewriter
+printer
+scanner
+fax machine
+telephone
+rotary phone
+mailbox
+envelope
+postage stamp
+notebook
+pencil
+fountain pen
+eraser
+ruler
+stapler
+paper clip
+push pin
+scissors and glue
+briefcase
+backpack
+suitcase
+handbag
+wallet
+umbrella
+walking cane
+top hat
+baseball cap
+sunglasses
+eyeglasses
+necktie
+bow tie
+scarf
+glove
+mitten
+sock
+sneaker
+boot
+high heel shoe
+sandal
+t-shirt
+jacket
+raincoat
+apron
+belt
+button
+zipper
+sewing needle
+spool of thread
+thimble
+acoustic guitar
+electric guitar
+violin
+cello
+harp
+piano keyboard
+accordion
+trumpet
+trombone
+saxophone
+flute
+clarinet
+drum
+snare drum
+tambourine
+maracas
+xylophone
+harmonica
+banjo
+ukulele
+soccer ball
+basketball
+baseball
+baseball bat
+tennis racket
+tennis ball
+golf club
+golf ball
+bowling pin
+bowling ball
+hockey stick
+ice skate
+roller skate
+skateboard
+surfboard
+snowboard
+ski poles
+fishing rod
+dumbbell
+jump rope
+boxing glove
+whistle
+trophy
+medal
+dice
+playing card
+chess piece
+domino
+jigsaw puzzle piece
+kite
+yo-yo
+spinning top
+teddy bear
+balloon
+party hat
+gift box
+candle
+birthday cake
+lantern
+torch
+matchbox
+fire extinguisher
+traffic cone
+traffic light
+road sign
+street lamp
+fire hydrant
+park bench
+trash can
+shopping cart
+baggage trolley
+bicycle
+motorcycle
+scooter
+race car
+pickup truck
+bus
+tractor
+bulldozer
+crane truck
+ambulance
+police car
+fire engine
+train engine
+tram
+sailboat
+canoe
+submarine
+helicopter
+airplane
+hot air balloon
+rocket ship
+satellite
+anchor
+life ring
+ship wheel
+lighthouse
+windmill
+water well
+wooden barrel
+clay pot
+glass bottle
+tin can
+paper bag
+basket
+birdcage
+fish bowl
+flower vase
+picture frame
+wall clock
+mirror
+hairbrush
+comb
+toothbrush
+soap bar
+towel
+bucket
+mop
+broom
