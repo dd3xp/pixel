@@ -69,6 +69,13 @@ start v11_r45 6 "$PY" src/v6/train_v7.py --steps 8000 --sample_every 2000 \
       --init workdir/v7c_bow/model_latest.pt \
       --extra data/pseudo,data/pseudo.csv,45 --out workdir/v11_r45
 
+# --- v12: same distillation, but with the pseudo-labels corrected first.
+# v11 gained vocabulary and lost colour.  Measuring both corpora showed the
+# pseudo-labels had a quarter of the real saturation and 2.3x the palette size,
+# i.e. they were teaching the opposite of pixel art; fix_pseudo.py brings both
+# back into range.  Weight 15, the better of the two v11 settings.
+start v12 7 "$PY" src/v6/train_v7.py --steps 8000 --sample_every 2000       --init workdir/v7c_bow/model_latest.pt       --extra data/pseudo_fix,data/pseudo_fix.csv,15 --out workdir/v12
+
 # --- pseudo-labels for distillation: SDXL has the object vocabulary our corpus
 # lacks, and the coverage run showed the gap is vocabulary, not rendering.
 # Reuses the downscale-baseline pipeline, which already produces 12/16/20/24.
