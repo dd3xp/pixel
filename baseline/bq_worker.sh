@@ -53,9 +53,17 @@ run_one() {                    # size idx prompt -> 0 if the png landed in $RES
   cd $ROOT/../SD-piXL || return 1
   setsid --wait python main.py -c $ROOT/baseline/sdpixl_db32_10k.yaml \
       --size=$size,$size -pt "$prompt" > /tmp/bq_${GPU}_${size}_${idx}.out 2>&1
+  # Take the directory from the run's own output rather than guessing by
+  # timestamp: with several workers on one queue, "newest matching directory"
+  # can belong to somebody else's run.
   local d
-  d=$(find $ROOT/baseline/sdpixl_db32_10k -maxdepth 1 -type d -name "*im${size}x${size}*" \
-        -newermt "@$before" 2>/dev/null | sort | tail -1)
+  d=$(grep -aoE 'Configuration written to [^ ]+/config\.yaml' \
+        /tmp/bq_${GPU}_${size}_${idx}.out 2>/dev/null | tail -1 \
+        | sed 's|Configuration written to ||; s|/config\.yaml$||')
+  if [ -z "$d" ] || [ ! -d "$d" ]; then      # fall back to the old heuristic
+    d=$(find $ROOT/baseline/sdpixl_db32_10k -maxdepth 1 -type d -name "*im${size}x${size}*" \
+          -newermt "@$before" 2>/dev/null | sort | tail -1)
+  fi
   if [ -n "$d" ] && [ -f "$d/final_argmax.png" ]; then
     cp "$d/final_argmax.png" "$RES/10k_s${size}_p${idx}.png"; return 0
   fi
