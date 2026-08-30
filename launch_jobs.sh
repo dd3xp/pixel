@@ -27,7 +27,7 @@ start() {   # name gpu command...
 }
 
 # --- resolution-conditioning ablation: ladder vs per-resolution specialists ---
-start abl_ladder 3 "$PY" src/v6/train_v7.py --steps 20000 --sample_every 5000 \
+start abl_ladder 7 "$PY" src/v6/train_v7.py --steps 20000 --sample_every 5000 \
       --only_buckets 12,16,20,24 --init workdir/abl_ladder/model_latest.pt \
       --out workdir/abl_ladder
 start abl_s12 4 "$PY" src/v6/train_v7.py --steps 20000 --sample_every 5000 \
