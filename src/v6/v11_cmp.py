@@ -17,7 +17,7 @@ from PIL import Image, ImageDraw
 ROOT = Path("/mnt/data/kw/RoundSquisheen/pixel/pixel")
 MODELS = [("v7c", "runs_out/coverage16/best"),
           ("r15", "runs_out/coverage16_r15/best"),
-          ("r45", "runs_out/coverage16_r45/best")]
+          ("v12", "runs_out/coverage16_v12/best")]
 # 5 in-domain controls, then objects from the categories coverage found weak
 WANT = ["golden_sword", "iron_pickaxe", "health_potion", "gold_coin", "red_apple",
         "smartphone", "laptop_computer", "coffee_machine", "camera", "scissors",

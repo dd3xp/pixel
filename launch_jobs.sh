@@ -76,6 +76,11 @@ start v11_r45 6 "$PY" src/v6/train_v7.py --steps 8000 --sample_every 2000 \
 # back into range.  Weight 15, the better of the two v11 settings.
 start v12 7 "$PY" src/v6/train_v7.py --steps 8000 --sample_every 2000       --init workdir/v7c_bow/model_latest.pt       --extra data/pseudo_fix,data/pseudo_fix.csv,15 --out workdir/v12
 
+# --- v12 coverage evaluation.  Runs through the supervisor, not inline in a
+# heartbeat: an evaluation launched as a child of an ssh session dies with that
+# session, which truncated the first attempt at 10 of 100 objects.
+start cov_v12 7 "$PY" src/v6/coverage.py --ckpt workdir/v12/model_latest.pt       --size 16 --out runs_out/coverage16_v12
+
 # --- pseudo-labels for distillation: SDXL has the object vocabulary our corpus
 # lacks, and the coverage run showed the gap is vocabulary, not rendering.
 # Reuses the downscale-baseline pipeline, which already produces 12/16/20/24.
