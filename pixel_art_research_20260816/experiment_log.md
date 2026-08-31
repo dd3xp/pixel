@@ -893,3 +893,5 @@ v7c 的 GAP≈0 验证了指标可信(无信息时匹配=错配);**v8 是地板�
 - **用户决定与执行**: ①用密码登录, **只追加**我方公钥到 authorized_keys(未动 `.bak`、未动 `.disabled`、未删任何人)→ 密钥登录已恢复; ②把成果全部拉回本地(见下); ③**不重启任何 GPU 任务, 等对方用完 8 卡再跑**; ④已查明是谁。
 - **拉回本地(tar over ssh, 目标 c:/Codes/pixel 同名路径, 大目录已 gitignore)**: `workdir/`(10 个检查点 2.8G: v7c_bow, v9_ipattn(+15k), v9_tail, v11_r15/r45, v12, abl_s12/s16/ladder)、`runs_out/`(11 个子目录 516M, 含 distill_v1 8058 张伪标签)、`logs/`(17M)、`baseline/results`(13 张 10k 基线原图)、`baseline/sdpixl_db32_{3k,10k}` 完整运行目录(1.8G)、`data/`(生成数据集 330M: pairs/pseudo_fix/extra_all 等)。**注意**: v6/v7 系列检查点在 node03, 不在此列。
 - **教训**: 共享账号上的成果必须持续同步到本地; 密码明文写在 ssh config 注释里, 事毕应提醒用户改密码并删注释。
+- **[13:50 收尾] 拉取全部完成并核对**: 10 个检查点与服务器字节级一致(7×290,195,033 + 3×311,727,019), runs_out 11 目录 500M, baseline/results 13 张, sdpixl_db32_{3k,10k} 完整, data/ 全部(extra_all 的 5,853 个软链接 Windows 无法建立, 已按服务器链接表以文件拷贝重建, 0 缺失)。基线脚本(bq_worker/backfill/chain10k 等)与 13 张结果原图入 git。
+- **对方已开始使用**: 13:50 时 8 卡各占 445 MiB(TP8 服务启动中)。**继续不跑**, 等其结束后再恢复 16/24 档基线与消融。

@@ -1,0 +1,24 @@
+12|6|a pixel art gold ingot
+12|7|a pixel art iron ingot
+12|8|a pixel art blue diamond gem
+20|4|a pixel art wooden shovel
+20|5|a pixel art bow and arrow
+20|6|a pixel art gold ingot
+20|7|a pixel art iron ingot
+20|8|a pixel art blue diamond gem
+16|1|a pixel art golden sword
+16|2|a pixel art iron pickaxe
+16|3|a pixel art stone axe
+16|4|a pixel art wooden shovel
+16|5|a pixel art bow and arrow
+16|6|a pixel art gold ingot
+16|7|a pixel art iron ingot
+16|8|a pixel art blue diamond gem
+24|1|a pixel art golden sword
+24|2|a pixel art iron pickaxe
+24|3|a pixel art stone axe
+24|4|a pixel art wooden shovel
+24|5|a pixel art bow and arrow
+24|6|a pixel art gold ingot
+24|7|a pixel art iron ingot
+24|8|a pixel art blue diamond gem
