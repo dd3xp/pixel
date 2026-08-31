@@ -6,3 +6,8 @@ workdir/
 *.pth
 wandb/
 .DS_Store
+runs_out/
+logs/
+baseline/sdpixl_db32_*/
+baseline/locks/
+data/
