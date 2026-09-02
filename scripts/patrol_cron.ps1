@@ -23,10 +23,15 @@ if (Test-Path $lock) {
 New-Item -ItemType File -Force $lock | Out-Null
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $log = "C:\Codes\pixel\logs_local\patrol_$stamp.log"
-$prompt = Get-Content -Raw -Encoding UTF8 "C:\Codes\pixel\scripts\patrol_prompt.txt"
 Add-Content "C:\Codes\pixel\logs_local\patrol.log" ("[{0}] patrol start -> {1}" -f (Get-Date -Format 'MM-dd HH:mm'), (Split-Path $log -Leaf))
 try {
-  & claude -p $prompt --dangerously-skip-permissions --output-format text --max-turns 60 2>&1 | Out-File -Encoding utf8 $log
+  # Feed the prompt on stdin, not as an argument: the prompt contains shell
+  # snippets like "wc -l" that PowerShell would otherwise mis-parse as claude
+  # options (error: unknown option '-l)').  claude -p with no positional
+  # prompt reads stdin.
+  Get-Content -Raw -Encoding UTF8 "C:\Codes\pixel\scripts\patrol_prompt.txt" |
+    & claude -p --dangerously-skip-permissions --output-format text --max-turns 60 2>&1 |
+    Out-File -Encoding utf8 $log
 } finally {
   Remove-Item -Force $lock -ErrorAction SilentlyContinue
   Add-Content "C:\Codes\pixel\logs_local\patrol.log" ("[{0}] patrol done" -f (Get-Date -Format 'MM-dd HH:mm'))

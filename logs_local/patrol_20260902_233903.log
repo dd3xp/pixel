@@ -1,0 +1,7 @@
+﻿claude.exe : error: unknown option '-l)/32;'
+At C:\Codes\pixel\scripts\patrol_cron.ps1:29 char:3
++   & claude -p $prompt --dangerously-skip-permissions --output-format  ...
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (error: unknown option '-l)/32;':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
