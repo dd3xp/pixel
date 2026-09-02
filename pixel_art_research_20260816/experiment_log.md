@@ -895,3 +895,11 @@ v7c 的 GAP≈0 验证了指标可信(无信息时匹配=错配);**v8 是地板�
 - **教训**: 共享账号上的成果必须持续同步到本地; 密码明文写在 ssh config 注释里, 事毕应提醒用户改密码并删注释。
 - **[13:50 收尾] 拉取全部完成并核对**: 10 个检查点与服务器字节级一致(7×290,195,033 + 3×311,727,019), runs_out 11 目录 500M, baseline/results 13 张, sdpixl_db32_{3k,10k} 完整, data/ 全部(extra_all 的 5,853 个软链接 Windows 无法建立, 已按服务器链接表以文件拷贝重建, 0 缺失)。基线脚本(bq_worker/backfill/chain10k 等)与 13 张结果原图入 git。
 - **对方已开始使用**: 13:50 时 8 卡各占 445 MiB(TP8 服务启动中)。**继续不跑**, 等其结束后再恢复 16/24 档基线与消融。
+
+## 2026-09-02 **基线在 node03 GPU3 恢复(用户指示: 只用空闲的那一张卡)**
+- **算力现状**: node09 仍被 ljq 的 TP8 任务整机占用(8 卡各 33GB, `tc_draft_graph.py` ×8, 还在活跃迭代)——继续等。node03: 7/8 卡被他人 vLLM/sgl_diffusion 推理占用, **GPU3 空闲**; `gpu_killer.py` 脚本仍在(8/28 版)但**进程未运行**。
+- **用户决定**: 在 node03 的空闲卡上恢复基线, **只用这一张**。已知风险并接受: killer 随时可能回来, SD-πXL 10k 不可断点续跑, 被杀即损失该条(监工会自动重试)。
+- **执行**: 把 node09 版(修好定位 bug 的)bq_worker.sh、supervise.sh、queue.txt、13 张已完成结果同步到 node03, 清陈旧锁, tmux(px)+setsid 起单 worker bq0@GPU3。
+- **新坑 ①(node03 特有)**: 共享账号 `~/.local/lib/python3.10` 里有一个 torch, **遮蔽了 SD-piXL conda 环境的 torch**(报 `torchvision::nms does not exist`)。修法: worker 里 `export PYTHONNOUSERSITE=1`。
+- **新坑 ②(自伤, 日志里早有记载还是踩了)**: 同一条 ssh 里既有 `pgrep -f` 又有含匹配字面量的启动命令(tmux 串里的 `bash baseline/bq_worker.sh 3`), 括号写法救不了**别处的字面量**——pgrep 匹配到自己的 shell, kill 把自己的 ssh 会话杀了(连续三次 exit 255)。修法: **"杀"与"含启动字面量的命令"必须拆成两条独立 ssh**。
+- **状态**: bq0 认领 s20 p6(gold ingot), GPU3 16GB/100%。剩余队列 19 条(s20 p6-p8, s16 ×8, s24 ×8), 单卡约 4.5h/条 ≈ 3.5 天; node09 空出后可再扩 worker。备份: v7_lowres/v6e10_ema/v6e7 检查点正从 node03 拉回本地。

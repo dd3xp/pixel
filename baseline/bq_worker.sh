@@ -18,6 +18,7 @@ RES=$ROOT/baseline/results
 LOCK=$ROOT/baseline/locks
 STALE=600                      # a claim whose heartbeat is this old is dead
 mkdir -p "$RES" "$LOCK"
+export PYTHONNOUSERSITE=1   # node03: a torch in the shared ~/.local shadows the env torch (torchvision::nms missing)
 source /mnt/data/kw/anaconda3/etc/profile.d/conda.sh && conda activate SD-piXL
 export HF_ENDPOINT=https://hf-mirror.com
 export HF_HUB_ETAG_TIMEOUT=120 HF_HUB_DOWNLOAD_TIMEOUT=120
