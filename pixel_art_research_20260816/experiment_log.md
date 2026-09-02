@@ -918,3 +918,9 @@ v7c 的 GAP≈0 验证了指标可信(无信息时匹配=错配);**v8 是地板�
 - **node09 假空闲一例**: 22:42 探测 8 卡 0 MiB, 但 ljq 的 `tc_draft_graph.py` mtime 距探测仅 18 秒——他在两次短运行之间, **没用完**。free 判定已加"其目录 60 分钟无改动"条件防误报。蒸馏链/修正版 worker/13 张结果已同步到 node09, 真空闲时一条命令点火。
 - 会话内另挂 15 分钟后台 tick(sleep 900+状态收集)作为我自己的唤醒, 与 PixelWatch 互为冗余。
 - **[用户指令 2026-09-02] 只用 node03 GPU3, ljq 的 node09 一律不碰(包括空闲时)。** 执行: PixelWatch 移除 node09 探测与扩容提示; 新增**自动接力**——基线 32/32 收官且 worker 退出后, PixelWatch 直接 ssh 在 GPU3 点火 `run_distill_v2.sh`(distill2 监工, 幂等: 有 .done 或已在跑则跳过), 弹通知告知。GPU3 单卡排期: 基线 19 条 ≈3.5 天 → 蒸馏链(SDXL 生成 413 物体 + v13 微调 10k + 覆盖率复测)≈1.5 天。
+
+## 2026-09-02 **cron 真相纠正: 能用的 cron 是被我删掉的 headless `claude -p`, 不是 CronCreate**
+- **用户纠正 + git 取证**: 8/16–8/27 驱动自主推进的 cron **不是** CronCreate(会话内注入), 而是 **Windows 计划任务跑 `scripts/v6_cron.ps1`** → `claude -p $prompt --dangerously-skip-permissions --max-turns 60`(git a1a641a)。其 prompt(`v6_cron_prompt.md`)首句自证: "你是无人值守的定时任务, 每30分钟运行一次, **每次是全新会话**, 状态只能从文件和服务器获取"。锁文件防重叠——用户记忆的"对话完成后才触发"即此。
+- **它怎么没的(根因)**: commit `36cc092` "remove unused OS-level cron scripts" —— **是我把这个能用的机制当成"没用的脚本"删了**。删后只剩 CronCreate(依赖会话、崩溃即清空、本环境今日多次测试零触发), 这才是"cron 不再推进"的真因。**与 2.1.247 升级无因果**——我此前那句是武断, 已撤销。
+- **我今日的连环误判**: ①把能用的 cron 记成 CronCreate 并归咎于升级(错); ②建 PixelWatch 纯日志脚本冒充"自动干活"(错, 它推进不了任何研究); ③又反过来说"只有 CronCreate 能拉起对话、headless 不算"(错, 用户历史上用的正是 headless)。三次都是没查历史就下结论。
+- **还原**: `scripts/patrol_cron.ps1`(照 v6_cron.ps1 原样: 锁文件 + 清 CLAUDECODE 嵌套保护 + 读 `scripts/patrol_prompt.txt` + `claude -p --max-turns 60`), 内容更新为当前状态(GPU3-only、基线队列→蒸馏链、踩坑清单)。删除 PixelWatch 及其 ps1/vbs。计划任务每 15 分钟拉起一个全新无头 Claude 干一轮。正做端到端实跑验证。

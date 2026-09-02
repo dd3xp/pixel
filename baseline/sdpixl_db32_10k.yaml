@@ -1,0 +1,92 @@
+seed: 0
+image: null
+automatic_caption: false
+saving_resize: 256
+prompt: a single flower petal, blue and white, simple, centered
+negative_prompt: ''
+generator:
+  image_H: 16
+  image_W: 16
+  std: 1.0
+  initialize_renderer: true
+  initialization_method: palette-bilinear
+  kmeans_nb_colors: 32
+  init_distance: l1
+  palette: assets/palettes/lospec/dawnbringer32.hex
+  softmax_regularizer: 1.0
+  smooth_softmax: true
+  gumbel: true
+  tau: 1.0
+training:
+  steps: 10001
+  save_steps: 1000
+  learning_rate: 0.025
+  lr_scheduler: constant_with_warmup
+  lr_warmup_steps: 250
+  lr_step_rules: 0.05:25,0.1:50,0.2:75,0.3:100,0.4:125,0.5:150,0.6:175,0.7:200,0.8:225,0.9:250,1:1000,0.75:1500,0.5:2000,0.375:2500,0.25:3000,0.125:4000,0.1
+  lr_cycles: 5
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_weight_decay: 0.01
+  adam_epsilon: 1.0e-08
+  clip_grad: true
+  max_grad_norm: 1.0
+  resize_mode: bilinear
+  fft_scale: 20.0
+  tv_scale: 0.0
+  laplacian_scale: 0.0
+  laplacian_sigma: 0.75
+  laplacian_kernel: 5
+  laplacian_mode: l1
+  gradient_loss_scale: 0.0
+  bilateral_scale: 0.0
+  bilateral_sigma_color: 1.0
+  bilateral_sigma_space: 1.0
+  bilateral_max_distance: 3
+  augmentation:
+    grayscale_prob: 0.2
+    hflip_prob: 0.5
+    distorsion_prob: 0.5
+    distorsion_scale: 0.3
+    random_tau: true
+    random_tau_min: 0.5
+    random_tau_max: 1.5
+diffusion:
+  model_id: sdxl
+  vae_id: taesdxl
+  lora_path: null
+  lora_scale: 1.0
+  ldm_speed_up: false
+  enable_xformers: true
+  gradient_checkpoint: false
+  num_inference_steps: 50
+  guidance_scale: 7.5
+  num_references: 10
+controlnet:
+  use_controlnet: true
+  models_id:
+  - canny_mid
+  controlnet_conditioning_scale:
+  - 0.15
+  canny_threshold1: 100
+  canny_threshold2: 200
+  canny_blur: true
+  canny_blur_radius: 1
+  control_guidance_start: 0.0
+  control_guidance_end: 1.0
+caption:
+  blip_model_id: Salesforce/blip2-opt-2.7b
+  min_new_tokens: 20
+  max_new_tokens: 75
+  query: ''
+  skip_special_tokens: true
+sd:
+  guidance_scale: 40.0
+  grad_scale: 1.0
+  t_min: 0.02
+  t_max: 0.98
+  t_bound_max: 0.8
+  t_bound_reached: 0.5
+  sampling_method_t: bounded_max
+  im_size: null
+  w_mode: cumprod
