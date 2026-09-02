@@ -1,4 +1,4 @@
-# Every-15-min progress watchdog. Registered as Windows scheduled task
+﻿# Every-15-min progress watchdog. Registered as Windows scheduled task
 # PixelWatch; survives Claude sessions, VSCode, and reboots.
 #
 # Scope, by the user's standing order of 2026-09-02: node03 GPU3 ONLY.
