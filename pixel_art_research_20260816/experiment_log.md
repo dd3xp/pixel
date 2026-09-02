@@ -911,3 +911,9 @@ v7c 的 GAP≈0 验证了指标可信(无信息时匹配=错配);**v8 是地板�
 - `baseline/run_distill_v2.sh`: 自含可续跑链——SDXL 生成(跳过已完成)→ prep → fix_pseudo(v12 版调色板+门控饱和度修正)→ **v13**(从 v7c_bow 起, 两轮伪标签各 ×15, 10k 步, 与 v11/v12 同基底可比)→ coverage 100 物体复测。已推 node03, 语法通过。
 - **点火条件**: 任一空闲 GPU(node09 的 ljq 用完, 或基线队列 19 条跑完腾出 node03 GPU3)。启动: `setsid nohup bash supervise.sh distill2 <gpu> bash baseline/run_distill_v2.sh &`(经监工, 防中途被杀)。
 - 未解决项保持诚实: 药水类高饱和物体在 v12 仍发白; 若 v13 复现该问题, 下一步按计划试"对高饱和域内类别降低伪标签采样权重"。
+
+## 2026-09-02 **CronCreate 判死 → 系统级 PixelWatch 上线; node09 是"间歇空"不是"用完"**
+- **cron 尸检(用户指出"早期完全没问题", 属实)**: 转录统计 CronCreate 注入 8/16–8/27 共 ~150 次、赴港期间每小时稳定心跳; **8/28 之后骤停**(8/30 1 次、8/31 2-3 次、此后为零), 与 Claude Code 扩展 2.1.237→2.1.247 升级及会话频繁崩溃(任务只存内存)时间吻合。今日两轮 1 分钟测试均零触发, **弃用**。
+- **替代(用户要的"永久")**: Windows 计划任务 `PixelWatch` 每 15 分钟跑 `scripts/watch_progress.ps1`——ssh 查 node03(结果数/监工/FAILING/GPU3)与 node09(显存+ljq 目录 60 分钟活动数), 写 `logs_local/watch.log`, **仅在**新结果落地/FAILING/监工消失/node09 真空闲时弹 Windows 通知。独立于 Claude 会话与 VSCode, 重启后仍在。首跑验证通过(22:42 行已落)。
+- **node09 假空闲一例**: 22:42 探测 8 卡 0 MiB, 但 ljq 的 `tc_draft_graph.py` mtime 距探测仅 18 秒——他在两次短运行之间, **没用完**。free 判定已加"其目录 60 分钟无改动"条件防误报。蒸馏链/修正版 worker/13 张结果已同步到 node09, 真空闲时一条命令点火。
+- 会话内另挂 15 分钟后台 tick(sleep 900+状态收集)作为我自己的唤醒, 与 PixelWatch 互为冗余。
