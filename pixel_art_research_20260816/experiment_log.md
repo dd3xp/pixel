@@ -917,3 +917,4 @@ v7c 的 GAP≈0 验证了指标可信(无信息时匹配=错配);**v8 是地板�
 - **替代(用户要的"永久")**: Windows 计划任务 `PixelWatch` 每 15 分钟跑 `scripts/watch_progress.ps1`——ssh 查 node03(结果数/监工/FAILING/GPU3)与 node09(显存+ljq 目录 60 分钟活动数), 写 `logs_local/watch.log`, **仅在**新结果落地/FAILING/监工消失/node09 真空闲时弹 Windows 通知。独立于 Claude 会话与 VSCode, 重启后仍在。首跑验证通过(22:42 行已落)。
 - **node09 假空闲一例**: 22:42 探测 8 卡 0 MiB, 但 ljq 的 `tc_draft_graph.py` mtime 距探测仅 18 秒——他在两次短运行之间, **没用完**。free 判定已加"其目录 60 分钟无改动"条件防误报。蒸馏链/修正版 worker/13 张结果已同步到 node09, 真空闲时一条命令点火。
 - 会话内另挂 15 分钟后台 tick(sleep 900+状态收集)作为我自己的唤醒, 与 PixelWatch 互为冗余。
+- **[用户指令 2026-09-02] 只用 node03 GPU3, ljq 的 node09 一律不碰(包括空闲时)。** 执行: PixelWatch 移除 node09 探测与扩容提示; 新增**自动接力**——基线 32/32 收官且 worker 退出后, PixelWatch 直接 ssh 在 GPU3 点火 `run_distill_v2.sh`(distill2 监工, 幂等: 有 .done 或已在跑则跳过), 弹通知告知。GPU3 单卡排期: 基线 19 条 ≈3.5 天 → 蒸馏链(SDXL 生成 413 物体 + v13 微调 10k + 覆盖率复测)≈1.5 天。
