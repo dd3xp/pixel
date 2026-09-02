@@ -1,0 +1,430 @@
+# Second-round pseudo-label vocabulary (v13). 413 objects.
+# Round 1 (vocab_distill.txt, 237) proved the mechanism: v12 keeps the gained
+# vocabulary at minor in-domain cost. This round (a) broadens the weak
+# categories further, (b) adds everyday categories round 1 never touched
+# (furniture, appliances, vehicles, clothing, buildings-as-items, animals-as
+# -icons), (c) still keeps food/nature/fantasy light -- real sprites cover them.
+# electronics and computing
+smartphone
+tablet computer
+laptop computer
+desktop monitor
+computer mouse
+mechanical keyboard
+game controller
+handheld game console
+television
+radio
+speaker
+microphone
+headphones
+earbuds
+webcam
+digital camera
+film camera
+video camera
+drone
+robot vacuum
+electric fan
+air conditioner
+light switch
+power outlet
+battery
+power bank
+usb cable
+usb flash drive
+sd card
+circuit board
+solar panel
+flashlight
+projector
+printer
+router
+satellite dish
+smartwatch
+calculator
+alarm clock
+wall clock
+hourglass
+thermometer
+# precision tools and workshop
+scissors
+screwdriver
+wrench
+adjustable wrench
+pliers
+hammer
+mallet
+hand saw
+electric drill
+tape measure
+spirit level
+utility knife
+box cutter
+chisel
+file tool
+sandpaper block
+clamp
+vise
+soldering iron
+wire cutters
+allen key
+socket wrench
+crowbar
+paint roller
+paintbrush
+putty knife
+trowel
+rake
+garden hose
+watering can
+pruning shears
+wheelbarrow
+lawn mower
+chainsaw
+nail
+screw
+bolt and nut
+toolbox
+stepladder
+workbench
+# musical instruments
+acoustic guitar
+electric guitar
+bass guitar
+violin
+cello
+trumpet
+trombone
+saxophone
+flute
+clarinet
+harmonica
+accordion
+piano keyboard
+synthesizer
+drum
+drum kit
+tambourine
+xylophone
+maracas
+banjo
+ukulele
+harp
+microphone stand
+metronome
+music stand
+# sports and outdoor
+basketball
+soccer ball
+football
+baseball
+baseball bat
+tennis racket
+tennis ball
+volleyball
+golf club
+golf ball
+hockey stick
+ice skate
+roller skate
+skateboard
+surfboard
+snowboard
+ski
+sled
+bowling ball
+bowling pin
+dart
+dartboard
+boxing glove
+dumbbell
+kettlebell
+barbell
+jump rope
+yoga mat
+stopwatch
+whistle
+medal
+trophy
+tent
+sleeping bag
+campfire
+fishing rod
+binoculars
+climbing rope
+carabiner
+kayak paddle
+# clothing and accessories
+sneaker
+leather boot
+high heel shoe
+sandal
+baseball cap
+top hat
+beanie
+sunglasses
+eyeglasses
+necktie
+bow tie
+scarf
+mitten
+leather glove
+belt
+handbag
+backpack
+suitcase
+wallet
+umbrella
+raincoat
+denim jacket
+hoodie
+t-shirt
+sock
+ring
+necklace
+earring
+bracelet
+brooch
+hair clip
+zipper
+button
+spool of thread
+sewing needle
+thimble
+# kitchen and dining
+frying pan
+cooking pot
+kettle
+toaster
+blender
+microwave oven
+refrigerator
+coffee machine
+espresso cup
+teacup
+drinking glass
+wine bottle
+soda can
+juice box
+milk carton
+thermos
+lunch box
+cutting board
+kitchen knife
+whisk
+spatula
+ladle
+rolling pin
+grater
+colander
+measuring cup
+oven mitt
+salt shaker
+pepper mill
+ketchup bottle
+jam jar
+honey pot
+sugar bowl
+butter dish
+egg carton
+ice cube tray
+corkscrew
+bottle opener
+can opener
+chopsticks
+napkin
+plate
+bowl
+serving tray
+# furniture and household
+armchair
+office chair
+rocking chair
+wooden stool
+sofa
+bed
+bunk bed
+desk
+dining table
+bookshelf
+wardrobe
+chest of drawers
+nightstand
+coat rack
+picture frame
+floor lamp
+desk lamp
+chandelier
+curtain
+rug
+pillow
+blanket
+mattress
+door
+window
+doorbell
+mailbox
+welcome mat
+flower vase
+plant pot
+birdcage
+fish tank
+fireplace
+bathtub
+shower head
+toilet
+sink
+faucet
+towel rack
+laundry basket
+washing machine
+iron
+ironing board
+vacuum cleaner
+dustpan
+trash can
+recycling bin
+clothespin
+coat hanger
+# stationery and school
+pencil
+ballpoint pen
+fountain pen
+marker
+crayon
+eraser
+pencil sharpener
+ruler
+protractor
+drawing compass
+stapler
+paper clip
+binder clip
+push pin
+sticky note
+notebook
+clipboard
+envelope
+postage stamp
+wax seal
+scroll
+open book
+closed book
+dictionary
+newspaper
+magazine
+globe
+world map
+chalkboard
+chalk
+whiteboard marker
+paint palette
+easel
+glue bottle
+tape dispenser
+abacus
+magnifying glass
+graduation cap
+diploma
+school bag
+# vehicles and transport
+bicycle
+tricycle
+scooter
+motorcycle
+red car
+taxi
+police car
+ambulance
+fire truck
+school bus
+delivery truck
+tractor
+forklift
+excavator
+bulldozer
+crane truck
+train locomotive
+tram
+subway car
+helicopter
+airplane
+hot air balloon
+sailboat
+speedboat
+canoe
+submarine
+rocket ship
+space shuttle
+traffic light
+stop sign
+road cone
+fuel pump
+car tire
+steering wheel
+anchor
+life buoy
+parachute
+# animals as icons
+goldfish
+tropical fish
+octopus
+crab
+seahorse
+turtle
+frog
+snail
+butterfly
+ladybug
+bumblebee
+dragonfly
+spider
+owl
+penguin
+parrot
+flamingo
+duck
+chicken
+rooster
+rabbit
+hedgehog
+squirrel
+fox
+raccoon
+panda
+koala
+elephant
+giraffe
+lion
+tiger
+zebra
+horse
+cow
+pig
+sheep
+goat
+dog
+cat
+mouse
+# light refresh of strong categories (keep the good classes anchored)
+golden sword
+iron pickaxe
+health potion
+gold coin
+red apple
+treasure chest
+royal crown
+magic wand
+wizard hat
+shield with emblem
+bow and arrow
+iron ingot
+diamond gem
+emerald gem
+loaf of bread
+mushroom
+carrot
+cactus
+sunflower
+oak tree

@@ -20,13 +20,17 @@ import csv
 import shutil
 from pathlib import Path
 
+import sys
+
 ROOT = Path("/mnt/data/kw/RoundSquisheen/pixel/pixel")
-SRC = ROOT / "runs_out/distill_v1"
-DST = ROOT / "data/pseudo"
+# args: [src_run_dir] [vocab_txt] [dst_dir]  (defaults reproduce round 1)
+SRC = ROOT / (sys.argv[1] if len(sys.argv) > 1 else "runs_out/distill_v1")
+VOCAB = ROOT / (sys.argv[2] if len(sys.argv) > 2 else "prompts/vocab_distill.txt")
+DST = ROOT / (sys.argv[3] if len(sys.argv) > 3 else "data/pseudo")
 SIZES = [12, 16, 20, 24]
 VARIANT = "mean_raw"
 
-objects = [l.strip() for l in open(ROOT / "prompts/vocab_distill.txt", encoding="utf-8")
+objects = [l.strip() for l in open(VOCAB, encoding="utf-8")
            if l.strip() and not l.startswith("#")]
 
 DST.mkdir(parents=True, exist_ok=True)
@@ -42,11 +46,11 @@ for i, obj in enumerate(objects):
         shutil.copyfile(src, DST / name)
         rows.append((name, f"a pixel art {obj}"))
 
-with open(ROOT / "data/pseudo.csv", "w", newline="", encoding="utf-8") as f:
+with open(DST.with_suffix(".csv"), "w", newline="", encoding="utf-8") as f:
     w = csv.writer(f)
     w.writerow(["path", "text"])
     w.writerows(rows)
 
-print(f"{len(rows)} pseudo sprites from {len(objects)} objects -> data/pseudo/ "
+print(f"{len(rows)} pseudo sprites from {len(objects)} objects -> {DST}/ "
       f"({missing} missing)")
 print("use: --extra data/pseudo,data/pseudo.csv,<repeat>")

@@ -903,3 +903,11 @@ v7c 的 GAP≈0 验证了指标可信(无信息时匹配=错配);**v8 是地板�
 - **新坑 ①(node03 特有)**: 共享账号 `~/.local/lib/python3.10` 里有一个 torch, **遮蔽了 SD-piXL conda 环境的 torch**(报 `torchvision::nms does not exist`)。修法: worker 里 `export PYTHONNOUSERSITE=1`。
 - **新坑 ②(自伤, 日志里早有记载还是踩了)**: 同一条 ssh 里既有 `pgrep -f` 又有含匹配字面量的启动命令(tmux 串里的 `bash baseline/bq_worker.sh 3`), 括号写法救不了**别处的字面量**——pgrep 匹配到自己的 shell, kill 把自己的 ssh 会话杀了(连续三次 exit 255)。修法: **"杀"与"含启动字面量的命令"必须拆成两条独立 ssh**。
 - **状态**: bq0 认领 s20 p6(gold ingot), GPU3 16GB/100%。剩余队列 19 条(s20 p6-p8, s16 ×8, s24 ×8), 单卡约 4.5h/条 ≈ 3.5 天; node09 空出后可再扩 worker。备份: v7_lowres/v6e10_ema/v6e7 检查点正从 node03 拉回本地。
+
+## 2026-09-02 **"什么都能画"第二轮准备完毕(等卡点火): 词表 237→650, v13 链就绪**
+- 用户问"什么都能画的问题没有在解决?"——诚实回答: v12 之后没有新推进, 因为唯一空闲卡按用户指示给了基线队列; 但**无 GPU 的准备工作没有理由等**, 遂全部做完:
+- `prompts/vocab_distill_v2.txt`: **413 个新物体**(重点补覆盖率测量出的弱类: 电子/精密工具/乐器/运动/服饰, 并新增第一轮完全没碰的家具/家电/车辆/动物图标类; 食物/自然/奇幻仍轻量), 与第一轮 237 个合计约 650 词汇。
+- `src/v6/prep_pseudo.py` 参数化(源目录/词表/目标目录可指定, 默认行为不变); csv 命名 `<dst>.csv` 与 fix_pseudo 的约定对齐。
+- `baseline/run_distill_v2.sh`: 自含可续跑链——SDXL 生成(跳过已完成)→ prep → fix_pseudo(v12 版调色板+门控饱和度修正)→ **v13**(从 v7c_bow 起, 两轮伪标签各 ×15, 10k 步, 与 v11/v12 同基底可比)→ coverage 100 物体复测。已推 node03, 语法通过。
+- **点火条件**: 任一空闲 GPU(node09 的 ljq 用完, 或基线队列 19 条跑完腾出 node03 GPU3)。启动: `setsid nohup bash supervise.sh distill2 <gpu> bash baseline/run_distill_v2.sh &`(经监工, 防中途被杀)。
+- 未解决项保持诚实: 药水类高饱和物体在 v12 仍发白; 若 v13 复现该问题, 下一步按计划试"对高饱和域内类别降低伪标签采样权重"。
