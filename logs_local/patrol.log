@@ -3,3 +3,7 @@
 [09-02 23:40] patrol start -> patrol_20260902_234020.log
 [09-02 23:41] 基线 13/32 step=4988/10001 (s20 p6)；蒸馏 未点火(等基线)；bq0 监工在、无 FAILING、GPU3 20.6GB/69%；无新进展
 [09-02 23:41] patrol done
+[09-02 23:56] patrol start -> patrol_20260902_235602.log
+[09-02 23:56] patrol done
+[09-03 00:00] patrol start -> patrol_20260903_000039.log
+[09-03 00:00] patrol done
