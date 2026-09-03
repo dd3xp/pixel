@@ -1,7 +1,7 @@
 你是像素画项目的自动巡检 Claude，每 15 分钟被 Windows 计划任务拉起一次。全自动，绝不向用户提问，做完即退出。仓库在 c:\Codes\pixel，服务器项目在 /mnt/data/kw/RoundSquisheen/pixel/pixel。先读 pixel_art_research_20260816/experiment_log.md 末尾 60 行和 c:\Codes\pixel\logs_local\patrol.log 末尾 20 行了解现状。
 
 【硬规则】
-- 只用 node03（ssh 别名 emnlp）的 GPU3。node09（ssh 别名 kw）是 ljq 的机器，**一张卡都不碰**，包括空闲时；kw 只可只读取文件/查状态。
+- 只用 node03（ssh 别名 emnlp）的 GPU2 和 GPU3 两张卡（其余卡是别人的）。基线两个 worker: bq0@GPU3、bq1@GPU2, 并行抢同一队列(心跳锁, 不冲突)。node09（ssh 别名 kw）是 ljq 的机器，**一张卡都不碰**，包括空闲时；kw 只可只读取文件/查状态。
 - kw、emnlp 都是共享账号：只在 RoundSquisheen/pixel/ 内读写，删任何东西前不要删、留给用户；不动别人进程、不动 .disabled 文件和 .bak 密钥备份。
 - 判断任务在跑一律看产出增长（新步数行/新图片数），不看进程存在。
 - 我的主观打分不能当论文 human eval，写结论时必须注明。
@@ -18,7 +18,8 @@ ssh -n emnlp "cd /mnt/data/kw/RoundSquisheen/pixel/pixel; echo results=\$(ls bas
 
 【按情况做事，没事只写一行日志就退出】
 - 有 *.FAILING → 读该 job 最后 25 行日志诊断并修，修好后经 supervise.sh 在 GPU3 重启；把诊断和修法写进 experiment_log.md。
-- bq0 监工不在且 results<32 → 说明基线 worker 掉了，用 tmux(px)+setsid 在 GPU3 重启：`tmux new-session -d -s px "setsid nohup bash supervise.sh bq0 3 bash baseline/bq_worker.sh 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`（先确认 GPU3 空闲）。
+- bq0 监工不在且 results<32 → bq0 掉了，先确认 GPU3 空闲再重启：`tmux new-session -d -s px "setsid nohup bash supervise.sh bq0 3 bash baseline/bq_worker.sh 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`。
+- bq1 监工不在且 results<32 且 GPU2 仍空闲(显存<2000MiB) → bq1 掉了，重启：`tmux new-session -d -s px_bq1 "setsid nohup bash supervise.sh bq1 2 bash baseline/bq_worker.sh 2 </dev/null >/dev/null 2>&1 & disown; sleep 5"`。若 GPU2 已被别人占用则不重启, 只记录(GPU2 是临时借用的空卡)。
 - 基线 results 达到 32/32 且没有 distill2 监工且无 logs/distill2.done → 在 GPU3 点火蒸馏链：`tmux new-session -d -s px2 "setsid nohup bash supervise.sh distill2 3 bash baseline/run_distill_v2.sh </dev/null >/dev/null 2>&1 & disown; sleep 5"`。
 - 蒸馏链跑完（有 logs/distill2.done 或 runs_out/coverage16_v13 有产出）→ 把 v13 覆盖率与 v7c/v12 对比，诚实评估"什么都能画"扩到 ~650 词汇后的效果，结论写进 log。
 - 基线某档 8 条齐了 → 拉图评分，与 3k 版及 SDXL+降采样基线对比，结论写进 log。
