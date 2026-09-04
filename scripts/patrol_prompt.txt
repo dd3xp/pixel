@@ -13,6 +13,8 @@
 - node03 有共享 ~/.local torch 遮蔽环境 torch，worker 已加 PYTHONNOUSERSITE=1。
 - git 提交前先 `cd c:/Codes/pixel`（曾误提交到别的仓库）。
 
+【当前状态(2026-09-04)】基线接近收官, 蒸馏链 distill2 已在 GPU3 提前点火(SDXL 生成413物体伪标签→v13微调→覆盖率复测), bq1 在 GPU2 跑最后的基线。distill2 已在跑就不要重复点火。
+
 【一条命令查全部】
 ssh -n emnlp "cd /mnt/data/kw/RoundSquisheen/pixel/pixel; echo results=\$(ls baseline/results|wc -l)/32; echo bq0_sup=\$(pgrep -cf 'supervise[.]sh bq0'); echo distill2_sup=\$(pgrep -cf 'supervise[.]sh distill2'); ls logs/*.FAILING 2>/dev/null; s=\$(ls -t /tmp/bq_3_*.out 2>/dev/null|head -1); [ -n \"\$s\" ] && echo step=\$(tail -c 400 \$s|tr '\r' '\n'|grep -oE '[0-9]+/10001'|tail -1); [ -f logs/distill2.log ] && tail -1 logs/distill2.log; nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader -i 3"
 
