@@ -11,8 +11,9 @@ source /mnt/data/kw/anaconda3/etc/profile.d/conda.sh && conda activate SD-piXL
 export HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
 PY=/mnt/data/kw/anaconda3/envs/SD-piXL/bin/python
 # build "a pixel art X" prompt file from the 237-object vocab
-grep -v '^#' prompts/vocab_distill.txt | sed '/^$/d' | sed 's/^/a pixel art /' > runs_out/derisk_prompts.txt
-echo "prompts: $(wc -l < runs_out/derisk_prompts.txt)"
+grep -v '^#' prompts/vocab_distill_v2.txt | sed '/^$/d' | sed 's/^/a pixel art /' > runs_out/derisk_prompts.txt
+n=$(wc -l < runs_out/derisk_prompts.txt); echo "prompts: $n"
+[ "$n" -lt 50 ] && { echo "prompt file too small ($n), abort"; exit 1; }
 $PY src/v6/sample_e.py --ckpt workdir/v7_lowres/model_latest.pt \
     --buckets 12,16,20,24,32,48,64 --sizes 12 16 20 24 32 \
     --prompts runs_out/derisk_prompts.txt --n 8 --seed 0 \

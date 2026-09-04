@@ -13,7 +13,7 @@
 - node03 有共享 ~/.local torch 遮蔽环境 torch，worker 已加 PYTHONNOUSERSITE=1。
 - git 提交前先 `cd c:/Codes/pixel`（曾误提交到别的仓库）。
 
-【当前状态(2026-09-04)】基线接近收官, 蒸馏链 distill2 已在 GPU3 提前点火(SDXL 生成413物体伪标签→v13微调→覆盖率复测), bq1 在 GPU2 跑最后的基线。distill2 已在跑就不要重复点火。
+【当前状态(2026-09-04 晚)】两条主线已收官(基线32/32、蒸馏v13)。现在跑 ICLR 去风险实验: v7 跨分辨率(12/16/20/24/32)密集采样, supervisor=derisk_v7 @GPU3, 产出 runs_out/derisk_v7sweep。目的=验证"SDS低分辨率塌、前馈平缓"这个承重洞见。查它: `pgrep -cf "supervise[.]sh derisk_v7"`、`find runs_out/derisk_v7sweep -name "*.png"|wc -l`(目标约 413物体×5档×8=约16520张)、`ls logs/derisk_v7.FAILING`、`ls logs/derisk_v7.done`。有 FAILING 读日志诊断修复重启; 跑完(有.done)则拉图/算 FD-DINOv2 出曲线并告知用户。别再管基线/蒸馏(已完成)。
 
 【一条命令查全部】
 ssh -n emnlp "cd /mnt/data/kw/RoundSquisheen/pixel/pixel; echo results=\$(ls baseline/results|wc -l)/32; echo bq0_sup=\$(pgrep -cf 'supervise[.]sh bq0'); echo distill2_sup=\$(pgrep -cf 'supervise[.]sh distill2'); ls logs/*.FAILING 2>/dev/null; s=\$(ls -t /tmp/bq_3_*.out 2>/dev/null|head -1); [ -n \"\$s\" ] && echo step=\$(tail -c 400 \$s|tr '\r' '\n'|grep -oE '[0-9]+/10001'|tail -1); [ -f logs/distill2.log ] && tail -1 logs/distill2.log; nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader -i 3"
