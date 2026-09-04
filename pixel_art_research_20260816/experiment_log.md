@@ -946,3 +946,9 @@ v7c 的 GAP≈0 验证了指标可信(无信息时匹配=错配);**v8 是地板�
 - **交付方式**: 32 张 10k 基线图已全部在本地(`baseline/results/`, node03→本地已同步策略)。评分不补主观分; 4 档 × 8 prompt × 3 方法(v7c / SD-πXL 10k / SDXL+降采样)= 96 题盲评页面待生成, 这是论文评估的最后一块。
 - 双 worker(GPU2 借用+GPU3)并行把最后 12 条从单卡约 2.5 天压到约 1 天; GPU2 完成后已被他人收回(正常, 我方 bq1 已退出)。
 - 蒸馏链 v13 仍在 GPU3 跑(伪标签 351/413)。
+
+## 2026-09-04 **蒸馏链 v13 训练步修复: node03 缺第一轮 pseudo_fix**
+- SDXL 生成 413 物体伪标签(runs_out/distill_v2, 826 图)与 prep/fix(pseudo2_fix 1652 张)均成功, 但 v13 训练步失败: `FileNotFoundError: data/pseudo_fix.csv`。
+- **真因**: run_distill_v2 用两轮伪标签(pseudo_fix ×15 + pseudo2_fix ×15), 第一轮 pseudo_fix 是 node09 时期产物、本地有但**从未同步到 node03**。监工在无效重启(每次跳过已生成图、到训练步再撞同一错)。
+- **修复**: 停监工(注意 `pgrep -f run_distill_v2` 会自匹配 ssh 命令行、又一次杀掉自己会话——模式全加括号 `run_[d]istill_v2`), 从本地同步 data/pseudo_fix(948)+csv 到 node03, 重启链。这次生成阶段跳过, 直接进 prep→fix→v13 训练。
+- **教训**: 迁移/跨机运行前, 把依赖的所有中间产物(不只脚本, 还有数据)一并核对齐全。
