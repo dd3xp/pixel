@@ -1,0 +1,38 @@
+{
+  "12": {
+    "v7_prox": 0.963,
+    "v7_std": 0.0165,
+    "v7_n": 64,
+    "sdpixl_prox": 0.8933,
+    "sdpixl_std": 0.0376,
+    "sdpixl_n": 8,
+    "gap_v7_minus_sd": 0.0696
+  },
+  "16": {
+    "v7_prox": 0.945,
+    "v7_std": 0.0107,
+    "v7_n": 64,
+    "sdpixl_prox": 0.9075,
+    "sdpixl_std": 0.0147,
+    "sdpixl_n": 8,
+    "gap_v7_minus_sd": 0.0375
+  },
+  "20": {
+    "v7_prox": 0.8331,
+    "v7_std": 0.0432,
+    "v7_n": 64,
+    "sdpixl_prox": 0.8132,
+    "sdpixl_std": 0.0442,
+    "sdpixl_n": 8,
+    "gap_v7_minus_sd": 0.0199
+  },
+  "24": {
+    "v7_prox": 0.8256,
+    "v7_std": 0.033,
+    "v7_n": 64,
+    "sdpixl_prox": 0.8125,
+    "sdpixl_std": 0.0458,
+    "sdpixl_n": 8,
+    "gap_v7_minus_sd": 0.0131
+  }
+}
