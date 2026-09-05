@@ -1,6 +1,6 @@
 你是像素画项目自动巡检 Claude, 每15分钟被cron拉起。全自动不提问, 做完即止。仓库 c:\Codes\pixel, 服务器 /mnt/data/kw/RoundSquisheen/pixel/pixel。
 
-【当前状态(2026-09-05)】ICLR架构验证探针在跑: 有序调色板离散扩散(train_ordinal.py)在 node03 GPU3, supervisor=v_ord, 产出 workdir/v_ord, 40k步。目的=验证"有序>朴素离散"承重机制。
+【当前状态(2026-09-06)】v_ord训练已完成。现在三方对比采样在跑: supervisor=cmp3 @GPU3, 产出 runs_out/cmp_ord(有序)与 runs_out/cmp_v6f(朴素)各3304张16px; v7(连续)复用 runs_out/derisk_v7sweep/s16。采完(logs/cmp3.done 或 CMP3_SAMPLING_DONE)需算三方FD-DINOv2(对比脚本由主会话做)。
 
 【硬规则】只用 node03(ssh emnlp) GPU2/GPU3; node09(kw)一律不碰(ljq的); 共享账号只在 RoundSquisheen/pixel/ 内读写; 判断在跑看产出增长不看进程; 我的主观分不能当论文human eval。
 【踩过的坑】pgrep用括号写法防自匹配、"杀"与"含启动字面量命令"拆两条ssh; 传文件不加ssh -n(会关stdin); node03需 PYTHONNOUSERSITE=1(否则~/.local torch遮蔽); ps1存UTF-8 BOM; git提交前 cd c:/Codes/pixel。
@@ -9,7 +9,7 @@
 ssh -n emnlp "cd /mnt/data/kw/RoundSquisheen/pixel/pixel; echo v_ord_sup=\$(pgrep -cf 'supervise[.]sh v_ord'); ls logs/v_ord.FAILING 2>/dev/null; [ -f logs/v_ord.done ] && echo V_ORD_DONE; tail -2 logs/v_ord.log 2>/dev/null|tr '\r' '\n'|grep -oE '\[[0-9]+/40000\] loss=[0-9.]+'|tail -1; ls -t workdir/v_ord/samples 2>/dev/null|head -1; nvidia-smi --query-gpu=memory.used,utilization.gpu --format=csv,noheader -i 3"
 
 【按情况做事】
-- 有 v_ord.FAILING → 读最后25行诊断修复, 经 supervise.sh 在GPU3重启(tmux px_ord)。
-- v_ord 训练完(logs/v_ord.done 或 V_ORD_DONE 或 model_latest.pt存在且步数到40k) → 告知用户"有序训练完, 待做三方FD-DINOv2对比(v_ord vs v6f_discrete vs v7 @16px)"。这步对比脚本较复杂由主会话做, 巡检只需报告完成。
+- 有 cmp3.FAILING → 读最后25行诊断修复, 经 supervise.sh 在GPU3重启(tmux px_cmp)。
+- cmp3采样完(logs/cmp3.done 或两目录各达3304) → 告知用户"三方采样完, 待算FD-DINOv2判据"。对比脚本由主会话做, 巡检只报告完成。
 - 训练在跑无异常 → 只回一行: v_ord step=x/40000 loss=y。
 - 结论写 experiment_log.md 并 git push。
