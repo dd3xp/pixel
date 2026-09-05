@@ -1,0 +1,14 @@
+{
+  "ordinal_v_ord": {
+    "fd_dino": 252.27,
+    "n": 3304
+  },
+  "naive_v6f": {
+    "fd_dino": 160.73,
+    "n": 3304
+  },
+  "continuous_v7": {
+    "fd_dino": 64.8,
+    "n": 3304
+  }
+}
