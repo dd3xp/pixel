@@ -38,9 +38,10 @@
 **不死磕**: 同一"大方向"连续 2 个探针都 >45 → 整个大方向标废, 换大方向。
 
 ## 候选队列(按优先级; 调研后可重排/增删)
-1. **[架构化少色/分片恒定机制] 调色板因子化去噪头(palette-factorised x0 head)**: 证据链 = TV 是目前唯一有效手段(42.82, 结构域也最好), 短板是局部离散结构。把它做成**架构瓶颈而非损失**: 去噪网络在 x0 参数化下输出 (a) 每图 K 个颜色(全局 token 头, K≈8-16) + (b) 每像素对 K 的 logits, x0 = softmax(logits/τ)·palette(τ 随训练退火/随 t 调度), eps 由 x0 反推, 损失不变。任何样本天然少色+分片恒定+硬边, 且调色板可解释/可编辑(论文卖点)。与已废的 probe_pal(软吸附**损失**, 无效)和 v_ord(离散扩散)不同: 连续噪声+离散输出流形。风险: softmax 平均出灰色(需 τ 退火/straight-through)、K 固定; novelty 撞车检查: differentiable colour quantisation(ColorCNN)、VQ-x0、"discrete-continuous" 扩散、PaletteNet。RESEARCH 后 BUILD: 从 v7 微调 20k, 只换 conv_out 头 → probe_palhead。
+0. **[离散假设入环] probe_selfq 投影入环自条件(在跑)** → 有信号则加 B 置信评论员选择性 restart; 备胎第二形态: 像素+邻接亲和通道联合头(cycle 4 调研 c)。
+1. ~~[架构化少色/分片恒定机制] 调色板因子化去噪头~~ **已杀(78.34), 不再投**。原文: 证据链 = TV 是目前唯一有效手段(42.82, 结构域也最好), 短板是局部离散结构。把它做成**架构瓶颈而非损失**: 去噪网络在 x0 参数化下输出 (a) 每图 K 个颜色(全局 token 头, K≈8-16) + (b) 每像素对 K 的 logits, x0 = softmax(logits/τ)·palette(τ 随训练退火/随 t 调度), eps 由 x0 反推, 损失不变。任何样本天然少色+分片恒定+硬边, 且调色板可解释/可编辑(论文卖点)。与已废的 probe_pal(软吸附**损失**, 无效)和 v_ord(离散扩散)不同: 连续噪声+离散输出流形。风险: softmax 平均出灰色(需 τ 退火/straight-through)、K 固定; novelty 撞车检查: differentiable colour quantisation(ColorCNN)、VQ-x0、"discrete-continuous" 扩散、PaletteNet。RESEARCH 后 BUILD: 从 v7 微调 20k, 只换 conv_out 头 → probe_palhead。
 2. **[加强基线] TV 权重扫描 已完**: w=0.1 42.82 / 0.3 46.57 / 1.0 569.35(崩): 平凡先验能走多远, 新机制的增益才诚实。
-3. **[逐尺度一致性/多分辩率联合] loop-F**。
+3. **[逐尺度一致性/多分辩率联合] loop-F**: 控制实验 32→16 BOX 更差(v7 84, tv 53) → 降为低优先。
 4. **[区域图生成] loop-O**(区域=颜色分片, 与 1 一脉; 若 1 有信号可作其"显式区域"升级)。
 5. **[结构优先备胎] 单模型模态非对称噪声调度**(S 通道快调度): 前提已被 sgen 阶段一削弱, 仅当 1/3/4 都死再考虑。
 6. **[精确似然/EBM] loop-E**; 7. **[宽泛再调研]**。
@@ -59,4 +60,4 @@
 - cycle 1 (09-06): 结构/调色板 oracle 诊断。probe_struct oracle 公平 FD 13.52 = 地板(难度全在结构); **发现并修正 FD 参考集管线不匹配**(fd_fair.py), 全表重测, 判据重定(<38 信号 / >45 杀)。
 - cycle 2 (09-06): 两阶段 probe_sgen(只生成 S → 上色) **61.66 杀**; 结构域 FD 诊断: 阶段一 19.17 ≈ TV 18.94, 分解不降难度; 上色器曝光偏差。结构优先方向降级。TV w=0.3 → 46.57(甜点窄)。
 - cycle 3 (09-06): RESEARCH 调色板因子化 x0 头(novelty 清) → BUILD train_palhead.py → probe_palhead **硬 78.34 / 软 52.09 杀**(每张仅 ~7 色, 头未改善底层预测)。色数控制实验: **tv+q16 事后量化 = 35.24 成新最强基线**, 甜点 15-20 色; 判据改为 +q16 < 32。"架构化少色瓶颈"方向 1 杀不再投; 剩余难度=结构。
-- cycle 4 (09-06): 控制 32→16 降采样(v7/tv)在跑 → RESEARCH。
+- cycle 4 (09-06): 控制 32→16 BOX: v7 84.07 / tv 52.82(由细到粗更差, loop-F 降级); 三路调研 → 选"投影入环自条件" probe_selfq(GPU3) + 配对对照 probe_tv_cont(GPU2), 训练中。
