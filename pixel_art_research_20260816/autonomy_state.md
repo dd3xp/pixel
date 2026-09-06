@@ -47,12 +47,12 @@
 
 ## 当前状态
 - **cycle**: 4
-- **phase**: CONTROL→RESEARCH (cycle 3 已 DECIDE: palhead 杀, 见 experiment_log 09-06 palhead 条目)
-- **direction**: 待定。约束: 提升单模型内部**局部结构**质量的新机制(不是分解 S, 不是少色瓶颈, 不是损失先验); +q16 后须 < 32。
-- **GPU**: GPU3 = ctrl v7_lowres 32→16(tmux ctrl_v7, logs/ctrl_v7_32to16.log); GPU2 = ctrl probe_tv 32→16(tmux ctrl_tv, logs/ctrl_tv_32to16.log)。各约 25 分钟(32px 采样 3304 张 + 降采样 + FD)。完成标志 CTRL_<name>_32_DONE, 数值在 runs_out/fair_fd16.json 键 runs_out/<name>_s32to16/s16。
-- **控制实验含义**: 若 "32px 生成 → BOX 到 16" 明显好于原生 16(< 42.8 / 与 q16 叠加 < 35) → 候选 3 loop-F(逐尺度一致性/由细到粗)有前提, 且说明 16px 原生生成本身是短板; 若持平或更差 → loop-F 前提弱, 转候选 4 loop-O(区域图)或宽泛再调研(候选 7)。
-- **下一动作**: ① 两个控制出数 → 对两者也跑 +q16(量化脚本同 palhead 条目) → 写 experiment_log; ② 进入 cycle 4 RESEARCH: 起 2-3 subagent 调研——(a) 若控制有效: 多分辩率联合/由细到粗一致性生成(cascade-in-reverse, 联合去噪多尺度、跨尺度 self-consistency)的机制与撞车; (b) 若无效: 针对"局部离散结构"的单模型机制(如像素级离散 token+连续联合、局部对比/边缘感知去噪头、结构 token 自回归+扩散混合、Fourier/拉普拉斯金字塔头), 以及宽泛重扫 2024-2026 低分辩率/像素画/离散-连续混合扩散文献; (c) 对 novelty 做撞车检查。汇总 arch_ideation_log 后 BUILD。
-- **更新时间**: 2026-09-06 14:55 服务器时(UTC)
+- **phase**: TRAIN (14:55 起, 20k 步约 4.5 小时 → ~19:30 服务器时完)
+- **direction**: **投影入环自条件 (probe_selfq)** = 连续 UNet 输入拼 stop-grad 非学习的逐图 k-means(K=16) 量化 P(x̂₀), 训练 p=0.5, 采样每步入环(Bit Diffusion 式自条件的"离散投影"版; 见 arch_ideation_log 09-06 cycle 4)。控制实验 32→16 BOX: v7 84.07 / tv 52.82 → loop-F 降级。
+- **GPU**: GPU3 = probe_selfq(logs/probe_selfq.log, 行含 loss/main/sc/bucket, 从 probe_tv 微调, TV 0.1); GPU2 = **配对对照 probe_tv_cont**(logs/probe_tv_cont.log, probe_tv 同损失再训 20k)。两者 ckpt 都是 EMA, sample_e.py 自动识别 {"selfq":cfg,"state"}。
+- **训练中监控**: main 应 ≈ probe_tv 水平(0.01-0.05 随 bucket), sc=1 步不应显著高于 sc=0 步(若 sc=1 的 main 反而更高 → 网络没用自条件, 记录); 4k 步 workdir/probe_selfq/samples/step_004000_s16.png 与 workdir/probe_tv_cont/samples/step_004000_s16.png 对看。.FAILING 则诊断修复重启(同错 2 次杀)。
+- **下一动作**: ① 两者完(PROBE_SELFQ_DONE / PROBE_TV_CONT_DONE) → 各起 eval: `tmux new-session -d -s ev_sq "setsid nohup bash supervise.sh eval_probe_selfq 3 bash baseline/eval_probe.sh probe_selfq 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`(tv_cont 同法 GPU2) → 两者都做 +q16 量化(octree 16 色, 脚本见 experiment_log palhead 条目; 存 runs_out/<name>_q16/s16 再 fd_fair.py --gen) → 4 个数: selfq 原始/q16 vs tv_cont 原始/q16 (再 vs 42.82/35.24)。② DECIDE: selfq+q16 < 32 且明显优于 tv_cont+q16 → 信号: 深挖(加 B 置信评论员选择性 restart; K 消融 8/32; p_sc; 12/24px; 结构域 FD); 32-40 且优于配对对照 ≥3 点 → 记持平但有效应, 试 B 或 x0 参数化一次; 否则杀 → "离散假设入环"方向 1 杀, 下一形态 = 区域亲和头(调研 c) 或 B 单独, 或转候选 7 宽泛再调研。③ 也对 selfq 样本跑 fd_struct.py --struct_of。
+- **更新时间**: 2026-09-06 15:00 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
