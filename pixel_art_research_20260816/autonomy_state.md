@@ -20,10 +20,11 @@
 | probe_pal 连续+软调色板吸附 w=0.1 | 54.24 (66.26) | ≈v7, 无效 |
 | probe_struct oracle(真 S=[alpha,4级明度]) | 13.52 (52.14) | ≈413 源地板; **数值被记忆污染**(源在训练集里), 只取定性: 难度全在 S |
 | probe_paltok oracle(真 8 色调色板 token) | 18.18 | **记忆污染实证**: 无空间信息却空间复现 → oracle 源必须剔除训练 |
+| **probe_sgen 两阶段(v7微调只生成 S → probe_struct 上色)** | **61.66** | **杀**; 阶段一结构域 FD 19.17(v7 23.55, tv 18.94, 地板 1.40): 只学低熵 S 也没变容易; 上色器对生成 S 曝光偏差崩 |
 | v6f 朴素离散 absorbing | (160.7, 未重测) | 崩坏, 离散劣于连续 |
 | v_ord 有序调色板离散 | (252.3, 未重测) | 更差 |
 | SD-πXL(SDS优化式) | 极低分辩率崩 | 对照基线 |
-教训: ①离散调色板整族作废; ②"手工先验没用"是旧指标误判, 硬边/分片恒定先验有效但 TV 本身无 novelty, 只能当基线; ③结构 S 决定一切 → 生成结构才是问题核心; ④先验证指标再解读 Δ。
+教训: ①离散调色板整族作废; ②"手工先验没用"是旧指标误判, 硬边/分片恒定先验有效但 TV 本身无 novelty, 只能当基线; ③结构 S 决定一切, **但把 S 分解出来单独生成并不更容易**(sgen 19.17 vs 地板 1.40), 两阶段还引入曝光偏差 → "先结构再上色"大方向 1 杀+反证, 仅留"单模型非对称调度"当低优先备胎; ④先验证指标再解读 Δ; ⑤结构域 FD(fd_struct.py)显示 TV 也是结构最好的 → 短板是**局部离散结构(分片恒定/硬边/少色)**, 不是全局布局。
 
 ## 循环协议(每 cycle)
 1. **RESEARCH**: 起 2-3 个 subagent 并行——(a)该方向文献机制/怎么做的, (b)novelty 撞车检查(最像的 3 篇+相似度), (c)极低分辩率可行性/坑。汇总写 arch_ideation_log.md。判定: 有新机制且未撞车 → BUILD; 否则 → 下一个候选。
@@ -34,26 +35,26 @@
 **不死磕**: 同一"大方向"连续 2 个探针都 >45 → 整个大方向标废, 换大方向。
 
 ## 候选队列(按优先级; 调研后可重排/增删)
-1. **[结构优先 stage-1] 用户点名方向, oracle 已证"难度全在 S"**: 探针 probe_sgen = v7 微调成"只生成 S"(S 编码为 RGBA: R=G=B=明度级, A=alpha, 20k 步), 采样 → 量化回 5 态 S → 喂 probe_struct 上色 → 公平 FD。赢 42.82 才有信号。S 是 5 态离散低熵模态, 正是文献里"两阶段能降 FID"的条件; 后续消融 S 信息量(2 级/仅 alpha)找最低熵仍有增益的结构表示 → 这是机制贡献("需要多少结构才够")。novelty 风险: 两阶段本身撞车, 需靠"极低分辩率+低熵结构表示+消融曲线"或"模态非对称噪声调度单模型"(结构通道快调度、颜色慢调度)撑新意。
-2. **[加强基线] TV 权重扫描** w=0.3/1.0(probe_tv3/probe_tv10): 廉价, 必须知道平凡先验能走多远, 新机制的增益才诚实。与 1 并行填 GPU2。
+1. **[架构化少色/分片恒定机制] 调色板因子化去噪头(palette-factorised x0 head)**: 证据链 = TV 是目前唯一有效手段(42.82, 结构域也最好), 短板是局部离散结构。把它做成**架构瓶颈而非损失**: 去噪网络在 x0 参数化下输出 (a) 每图 K 个颜色(全局 token 头, K≈8-16) + (b) 每像素对 K 的 logits, x0 = softmax(logits/τ)·palette(τ 随训练退火/随 t 调度), eps 由 x0 反推, 损失不变。任何样本天然少色+分片恒定+硬边, 且调色板可解释/可编辑(论文卖点)。与已废的 probe_pal(软吸附**损失**, 无效)和 v_ord(离散扩散)不同: 连续噪声+离散输出流形。风险: softmax 平均出灰色(需 τ 退火/straight-through)、K 固定; novelty 撞车检查: differentiable colour quantisation(ColorCNN)、VQ-x0、"discrete-continuous" 扩散、PaletteNet。RESEARCH 后 BUILD: 从 v7 微调 20k, 只换 conv_out 头 → probe_palhead。
+2. **[加强基线] TV 权重扫描** w=0.3(probe_tv3, 评估中)/1.0(probe_tv10, GPU3 在训): 平凡先验能走多远, 新机制的增益才诚实。
 3. **[逐尺度一致性/多分辩率联合] loop-F**。
-4. **[区域图生成] loop-O**: 与 1 合并——S 就是区域图的粗版。
-5. **[精确似然/EBM] loop-E**; 6. **[宽泛再调研]**。
+4. **[区域图生成] loop-O**(区域=颜色分片, 与 1 一脉; 若 1 有信号可作其"显式区域"升级)。
+5. **[结构优先备胎] 单模型模态非对称噪声调度**(S 通道快调度): 前提已被 sgen 阶段一削弱, 仅当 1/3/4 都死再考虑。
+6. **[精确似然/EBM] loop-E**; 7. **[宽泛再调研]**。
 
 ## 当前状态
-- **cycle**: 1 → 2 过渡
-- **phase**: TRAIN (GPU3 = probe_sgen 4k/20k, 约 10:30 服务器时完; GPU2 = probe_tv3 已起 07:55 服务器时, 约 11:30 完)
-- **direction**: 结构优先 stage-1(候选 1) + TV 加强基线(候选 2)
-- **GPU**: GPU3 = probe_sgen(logs/probe_sgen.log); GPU2 = probe_tv3(logs/probe_tv3.log, TV w=0.3 加强基线, 评估用 eval_probe.sh probe_tv3 2)
-- **已完成本 cycle**: probe_struct oracle 公平 FD 13.52 = 地板 → 结构决定一切。**指标修正**(fd_fair.py)已落地, eval_probe.sh/eval_cond.sh 已切换, experiment_log 已记。
-- **paltok 已完**: oracle 18.18, 但证实 oracle 被记忆污染(见 experiment_log), 两个 oracle 只留定性结论。
-- **cycle 2 BUILD 计划**:
-  - GPU3: **probe_sgen** = 从 v7 微调 20k 步生成 S-as-RGBA(R=G=B=4 级明度 ∈{0,85,170,255}, A=alpha; 训练目标 = to_tensor(x) 经 make_struct 再编码), 采样 3304 张 → 量化回 S → 用 workdir/probe_struct 上色 → 公平 FD。代码: src/v6/train_sgen.py(复用 train_cond 骨架, 只改 target) + src/v6/sample_twostage.py。
-  - GPU2(paltok 完后): **probe_tv3** = train_probe.py --probe tv w=0.3(加强基线)。
-- **已 BUILD 并冒烟通过**: src/v6/train_sgen.py(v7 微调生成 S-as-RGBA), src/v6/sample_twostage.py(sgen→量化 S→probe_struct 上色), baseline/run_probe_sgen.sh, baseline/run_probe_tv3.sh(W 默认 0.3), baseline/eval_twostage.sh <sgen_name> <gpu> [color=probe_struct]。
-- **下一动作**: ① probe_tv3 完(PROBE_TV3_DONE) → `tmux new-session -d -s ev_tv3 "setsid nohup bash supervise.sh eval_probe_tv3 2 bash baseline/eval_probe.sh probe_tv3 2 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → runs_out/probe_tv3_fd.json, 若 < 42.82 则更新"最强简单基线"; ② probe_sgen 完(PROBE_SGEN_DONE) → 看 workdir/probe_sgen/samples/step_020000_s16.png(行1 真 S/行2 生成/行3 量化) → `tmux new-session -d -s ev_sgen "setsid nohup bash supervise.sh eval_probe_sgen 3 bash baseline/eval_twostage.sh probe_sgen 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → runs_out/probe_sgen_fd.json → DECIDE(<38 信号; 38-45 持平; >45 杀)。
-- **更新时间**: 2026-09-06 08:00 服务器时(UTC)
+- **cycle**: 3
+- **phase**: RESEARCH(候选 1 调色板因子化去噪头) ‖ 后台 EVAL(probe_tv3, GPU2) + TRAIN(probe_tv10, GPU3, 10:50 起, 约 14:30 完)
+- **direction**: 架构化少色/分片恒定机制(候选 1); 结构优先方向已判 1 杀+反证, 降级为候选 5
+- **GPU**: GPU2 = eval_probe_tv3(logs/eval_probe_tv3.log → runs_out/probe_tv3_fd.json), 之后空闲; GPU3 = probe_tv10(logs/probe_tv10.log, TV w=1.0)
+- **cycle 2 结果**: probe_sgen 两阶段 61.66 杀(见 experiment_log 09-06 "probe_sgen 判决"); 新诊断工具 src/v6/fd_struct.py(结构域 FD: --gen S-as-RGBA 目录 / --struct_of RGBA 目录, 结果 runs_out/fair_fd16_struct.json)。
+- **下一动作**:
+  ① RESEARCH(本 tick 或下 tick): 起 3 个 subagent——(a) 机制: 可微颜色量化/调色板因子化输出头如何训得稳(τ 退火、straight-through、K 选择、x0 vs eps 参数化下如何接入 DDPM), (b) novelty: 最像的 3 篇(ColorCNN/可微 k-means 量化、VQ/离散-连续混合扩散、PaletteNet、pixel-art 生成里的调色板头), (c) 可行性: 16px、v7 微调 20k 是否够, 潜在失败模式(灰色平均、调色板塌缩)与对策。汇总写 arch_ideation_log.md, 判定 BUILD 或换候选 3(loop-F)。
+  ② BUILD(若通过): src/v6/train_palhead.py(复用 train_probe 骨架; UNet conv_out → K 路 logits + 全局调色板头; x0 参数化损失或由 x0 反推 eps), sample_palhead.py 或让 sample_e.py 兼容; 冒烟 200 步; 起 GPU2 → probe_palhead → eval_probe.sh → DECIDE(<38/38-45/>45)。
+  ③ 背景: probe_tv3 fd.json 出 → 若 <42.82 更新"最强简单基线"及 patrol_prompt.txt/eval_probe.sh 里的 tv_fair; probe_tv10 完(PROBE_TV3_DONE 字样, 日志 logs/probe_tv10.log) → `tmux new-session -d -s ev_tv10 "setsid nohup bash supervise.sh eval_probe_tv10 3 bash baseline/eval_probe.sh probe_tv10 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`。
+- **更新时间**: 2026-09-06 10:55 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
 - cycle 1 (09-06): 结构/调色板 oracle 诊断。probe_struct oracle 公平 FD 13.52 = 地板(难度全在结构); **发现并修正 FD 参考集管线不匹配**(fd_fair.py), 全表重测, 判据重定(<38 信号 / >45 杀)。
+- cycle 2 (09-06): 两阶段 probe_sgen(只生成 S → 上色) **61.66 杀**; 结构域 FD 诊断: 阶段一 19.17 ≈ TV 18.94, 分解不降难度; 上色器曝光偏差。结构优先方向降级。TV 扫描 w=0.3/1.0 在跑。
