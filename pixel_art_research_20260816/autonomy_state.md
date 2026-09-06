@@ -18,7 +18,8 @@
 | v7 连续原生前馈(基线) | **53.21** (64.80) | 主基线 |
 | **probe_tv 连续+TV 平坦先验 w=0.1** | **42.82** (70.65) | **最强简单基线**; 旧指标误杀, 分片恒定/硬边是 v7 主短板 |
 | probe_pal 连续+软调色板吸附 w=0.1 | 54.24 (66.26) | ≈v7, 无效 |
-| probe_struct oracle(真 S=[alpha,4级明度]) | 13.52 (52.14) | = 413 源地板 → 给定 S 上色已解决; 难度全在 S |
+| probe_struct oracle(真 S=[alpha,4级明度]) | 13.52 (52.14) | ≈413 源地板; **数值被记忆污染**(源在训练集里), 只取定性: 难度全在 S |
+| probe_paltok oracle(真 8 色调色板 token) | 18.18 | **记忆污染实证**: 无空间信息却空间复现 → oracle 源必须剔除训练 |
 | v6f 朴素离散 absorbing | (160.7, 未重测) | 崩坏, 离散劣于连续 |
 | v_ord 有序调色板离散 | (252.3, 未重测) | 更差 |
 | SD-πXL(SDS优化式) | 极低分辩率崩 | 对照基线 |
@@ -41,17 +42,17 @@
 
 ## 当前状态
 - **cycle**: 1 → 2 过渡
-- **phase**: TRAIN (GPU3 = probe_sgen 已起 07:55 UTC, ~4h; GPU2 = probe_paltok 收尾 17k/20k)
+- **phase**: TRAIN (GPU3 = probe_sgen 4k/20k, 约 10:30 服务器时完; GPU2 = probe_tv3 已起 07:55 服务器时, 约 11:30 完)
 - **direction**: 结构优先 stage-1(候选 1) + TV 加强基线(候选 2)
-- **GPU**: GPU3 = probe_sgen(logs/probe_sgen.log, workdir/probe_sgen); GPU2 = probe_paltok(约 08:20 UTC 完)
+- **GPU**: GPU3 = probe_sgen(logs/probe_sgen.log); GPU2 = probe_tv3(logs/probe_tv3.log, TV w=0.3 加强基线, 评估用 eval_probe.sh probe_tv3 2)
 - **已完成本 cycle**: probe_struct oracle 公平 FD 13.52 = 地板 → 结构决定一切。**指标修正**(fd_fair.py)已落地, eval_probe.sh/eval_cond.sh 已切换, experiment_log 已记。
-- **待办 paltok**: 训练完 → `tmux new-session -d -s ev_paltok "setsid nohup bash supervise.sh eval_probe_paltok 2 bash baseline/eval_cond.sh probe_paltok 2 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → 读 runs_out/probe_paltok_fd.json(fair_fd16; 地板 13.82, v7 53.21)。预期: 调色板信息量远小于 S, oracle 会明显高于 13.5; 记录"调色板 vs 结构谁是瓶颈"即可, 不改方向。
+- **paltok 已完**: oracle 18.18, 但证实 oracle 被记忆污染(见 experiment_log), 两个 oracle 只留定性结论。
 - **cycle 2 BUILD 计划**:
   - GPU3: **probe_sgen** = 从 v7 微调 20k 步生成 S-as-RGBA(R=G=B=4 级明度 ∈{0,85,170,255}, A=alpha; 训练目标 = to_tensor(x) 经 make_struct 再编码), 采样 3304 张 → 量化回 S → 用 workdir/probe_struct 上色 → 公平 FD。代码: src/v6/train_sgen.py(复用 train_cond 骨架, 只改 target) + src/v6/sample_twostage.py。
   - GPU2(paltok 完后): **probe_tv3** = train_probe.py --probe tv w=0.3(加强基线)。
 - **已 BUILD 并冒烟通过**: src/v6/train_sgen.py(v7 微调生成 S-as-RGBA), src/v6/sample_twostage.py(sgen→量化 S→probe_struct 上色), baseline/run_probe_sgen.sh, baseline/run_probe_tv3.sh(W 默认 0.3), baseline/eval_twostage.sh <sgen_name> <gpu> [color=probe_struct]。
-- **下一动作**: ① paltok 完 → GPU2 起 eval_cond(见上) → 读 fair_fd16 记录; ② eval 完 GPU2 空 → `tmux new-session -d -s px_tv3 "setsid nohup bash supervise.sh probe_tv3 2 bash baseline/run_probe_tv3.sh </dev/null >/dev/null 2>&1 & disown; sleep 5"`; ③ probe_sgen 完(PROBE_SGEN_DONE) → 看 workdir/probe_sgen/samples/step_020000_s16.png(行1 真 S/行2 生成/行3 量化) → `tmux new-session -d -s ev_sgen "setsid nohup bash supervise.sh eval_probe_sgen 3 bash baseline/eval_twostage.sh probe_sgen 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → runs_out/probe_sgen_fd.json → DECIDE(<38 信号; 38-45 持平; >45 杀)。
-- **更新时间**: 2026-09-06 07:58 UTC
+- **下一动作**: ① probe_tv3 完(PROBE_TV3_DONE) → `tmux new-session -d -s ev_tv3 "setsid nohup bash supervise.sh eval_probe_tv3 2 bash baseline/eval_probe.sh probe_tv3 2 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → runs_out/probe_tv3_fd.json, 若 < 42.82 则更新"最强简单基线"; ② probe_sgen 完(PROBE_SGEN_DONE) → 看 workdir/probe_sgen/samples/step_020000_s16.png(行1 真 S/行2 生成/行3 量化) → `tmux new-session -d -s ev_sgen "setsid nohup bash supervise.sh eval_probe_sgen 3 bash baseline/eval_twostage.sh probe_sgen 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → runs_out/probe_sgen_fd.json → DECIDE(<38 信号; 38-45 持平; >45 杀)。
+- **更新时间**: 2026-09-06 08:00 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
