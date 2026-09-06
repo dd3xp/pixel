@@ -5,7 +5,7 @@
 
 ## 判据与硬约束
 - **指标(2026-09-06 修正)**: **公平 FD-DINOv2@16px**(src/v6/fd_fair.py, 参考集与生成同走 to_tensor 管线; 旧 fd_dino 数值全部作废, 见 experiment_log "指标修正")。n=3304(413 prompts×8, eval_probe.sh)。**真实地板 3.45, v7 = 53.21, 最强简单基线 probe_tv(TV w=0.1) = 42.82**, 越低越好。
-- **胜负线(2026-09-06 14:50 二次修正)**: 事后 16 色 octree 量化对任何模型正交可加(v7 −10.6, tv −7.6), **probe_tv+q16 = 35.24 是新最强简单基线**。每个探针**两个数都测**: 原始 vs 42.82, +q16(quantise 脚本见 experiment_log palhead 条目) vs 35.24。**+q16 < 32 才算"有信号"**; 32-40 持平记录; 原始 **> 45 杀**。oracle 类探针(eval_cond.sh, 413 源)地板是 13.82, 单独解读。
+- **胜负线(2026-09-06 19:40 三次修正, 协议重定)**: 旧协议(413 词表 prompt×8)被证明有 ~15 点 prompt 分布错配伪影, **作废**。新主指标 = **matched FAIR FD@16**: baseline/eval_matched.sh(3000 张 held-out 真实精灵的 caption, n=1, seed 0; 参考集不变, 地板 3.45)。**基线: probe_tv 28.02 (+q16 28.69, 量化在此协议下无效); v7 待测**。判据: 探针 matched FD 比配对对照低 ≥4 点(run 间方差 ±4)才算信号; 深挖线 < 22; 差异 <4 不作结论。每个探针都要跑 fd_decomp.py 看 recall/coverage(现 0.60, 地板 0.92)。旧的 +q16 / 42.82 / 35.24 全部作废。
 - **一个探针最多 ~1 天**(训练+采样+FD)。超时未出结果 → 杀掉记原因换下一个。
 - **每轮最多 2 探针并行**(GPU2 + GPU3)。优先"从 v7 断点微调 20k 步"的廉价形式; 只有机制上必须从头训时才从头(≤40k步)。
 - **硬规则**: 只用 node03(ssh emnlp) GPU2/GPU3; **node09(kw) 一律不碰**(ljq的); 共享账号只在 /mnt/data/kw/RoundSquisheen/pixel/pixel 内读写; 后台任务必走 supervise.sh + tmux; node03 需 PYTHONNOUSERSITE=1; 判断在跑看产出增长。
