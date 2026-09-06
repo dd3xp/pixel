@@ -1,5 +1,6 @@
 #!/bin/bash
-# Evaluate a fine-tuned probe at FD-DINOv2 @16px, comparable to v7 baseline=64.8.
+# Evaluate a fine-tuned probe at FAIR FD-DINOv2 @16px (pipeline-matched reference, see
+# src/v6/fd_fair.py). Baselines (2026-09-06): real floor 3.45, v7 53.21, probe_tv 42.82.
 # Usage: bash baseline/eval_probe.sh <probe_name> <gpu>   e.g. probe_tv 3
 set -eu
 NAME=$1; GPU=${2:-3}
@@ -13,18 +14,13 @@ CKPT=workdir/$NAME/model_latest.pt
 $PY src/v6/sample_e.py --ckpt "$CKPT" \
     --buckets 12,16,20,24,32,48,64 --sizes 16 \
     --prompts runs_out/derisk_prompts.txt --n 8 --seed 0 --out runs_out/${NAME}_eval
+$PY src/v6/fd_fair.py --size 16 --gen runs_out/${NAME}_eval/s16 --out runs_out/fair_fd16.json
 $PY - "$NAME" <<'PYEOF'
-import glob, random, sys, json
-import sys as _s; _s.path.insert(0, "src")
-from v6 import fd_dino as F
+import json, sys
 name = sys.argv[1]
-random.seed(0)
-REAL = glob.glob("data/oga_clean/**/*.png", recursive=True) + glob.glob("data/oga_clean/*.png")
-random.shuffle(REAL); REAL = REAL[:3000]
-gen = sorted(glob.glob(f"runs_out/{name}_eval/s16/*.png"))
-fd = F.fd(gen, REAL, 16)
-print(f"{name} FD-DINOv2@16 = {fd:.2f}  (n={len(gen)})  vs v7 baseline 64.80", flush=True)
-json.dump({"name": name, "fd16": round(fd,2), "n": len(gen), "v7_baseline": 64.80},
-          open(f"runs_out/{name}_fd.json","w"), indent=2)
+fd = json.load(open("runs_out/fair_fd16.json"))[f"runs_out/{name}_eval/s16"]
+print(f"{name} FAIR FD-DINOv2@16 = {fd:.2f}  vs v7 53.21 / probe_tv 42.82 / real floor 3.45", flush=True)
+json.dump({"name": name, "fair_fd16": fd, "v7_fair": 53.21, "tv_fair": 42.82, "floor": 3.45},
+          open(f"runs_out/{name}_fd.json", "w"), indent=2)
 PYEOF
 echo EVAL_${NAME}_DONE

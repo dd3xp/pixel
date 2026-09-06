@@ -1,5 +1,7 @@
 #!/bin/bash
-# Oracle FD-DINOv2@16 for a train_cond.py probe. Usage: bash baseline/eval_cond.sh <name> <gpu>
+# Oracle FAIR FD-DINOv2@16 for a train_cond.py probe (side-condition from held-out real
+# sprites disjoint from the reference). Usage: bash baseline/eval_cond.sh <name> <gpu>
+# NOTE: 413 held-out sources x8 near-duplicates -> small-n floor is 13.82, not 3.45.
 set -eu
 NAME=$1; GPU=${2:-3}
 ROOT=/mnt/data/kw/RoundSquisheen/pixel/pixel; cd "$ROOT"; export PYTHONNOUSERSITE=1
@@ -8,18 +10,13 @@ export HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
 export CUDA_VISIBLE_DEVICES=$GPU
 PY=/mnt/data/kw/anaconda3/envs/SD-piXL/bin/python
 $PY src/v6/sample_cond.py --ckpt workdir/$NAME/model_latest.pt --n_src 413 --n 8 --size 16 --out runs_out/${NAME}_eval
+$PY src/v6/fd_fair.py --size 16 --gen runs_out/${NAME}_eval/s16 --out runs_out/fair_fd16.json
 $PY - "$NAME" <<'PYEOF'
-import glob, random, sys, json
-sys.path.insert(0, "src")
-from v6 import fd_dino as F
+import json, sys
 name = sys.argv[1]
-random.seed(0)
-REAL = glob.glob("data/oga_clean/**/*.png", recursive=True) + glob.glob("data/oga_clean/*.png")
-random.shuffle(REAL); REAL = REAL[:3000]
-gen = sorted(glob.glob(f"runs_out/{name}_eval/s16/*.png"))
-fd = F.fd(gen, REAL, 16)
-print(f"{name} ORACLE FD-DINOv2@16 = {fd:.2f}  (n={len(gen)})  vs v7 baseline 64.80", flush=True)
-json.dump({"name": name, "fd16": round(fd,2), "n": len(gen), "v7_baseline": 64.80, "oracle": True},
-          open(f"runs_out/{name}_fd.json","w"), indent=2)
+fd = json.load(open("runs_out/fair_fd16.json"))[f"runs_out/{name}_eval/s16"]
+print(f"{name} ORACLE FAIR FD-DINOv2@16 = {fd:.2f}  vs v7 53.21 / 413-src floor 13.82", flush=True)
+json.dump({"name": name, "fair_fd16": fd, "v7_fair": 53.21, "floor_413src": 13.82, "oracle": True},
+          open(f"runs_out/{name}_fd.json", "w"), indent=2)
 PYEOF
 echo EVAL_${NAME}_DONE
