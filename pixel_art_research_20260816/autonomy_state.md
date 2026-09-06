@@ -53,7 +53,8 @@
 - **GPU**: GPU3 = probe_selfq(logs/probe_selfq.log, 行含 loss/main/sc/bucket, 从 probe_tv 微调, TV 0.1); GPU2 = **配对对照 probe_tv_cont**(logs/probe_tv_cont.log, probe_tv 同损失再训 20k)。两者 ckpt 都是 EMA, sample_e.py 自动识别 {"selfq":cfg,"state"}。
 - **训练中监控**: main 应 ≈ probe_tv 水平(0.01-0.05 随 bucket), sc=1 步不应显著高于 sc=0 步(若 sc=1 的 main 反而更高 → 网络没用自条件, 记录); 4k 步 workdir/probe_selfq/samples/step_004000_s16.png 与 workdir/probe_tv_cont/samples/step_004000_s16.png 对看。.FAILING 则诊断修复重启(同错 2 次杀)。
 - **下一动作**: ① 两者完(PROBE_SELFQ_DONE / PROBE_TV_CONT_DONE) → 各起 eval: `tmux new-session -d -s ev_sq "setsid nohup bash supervise.sh eval_probe_selfq 3 bash baseline/eval_probe.sh probe_selfq 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`(tv_cont 同法 GPU2) → 两者都做 +q16 量化(octree 16 色, 脚本见 experiment_log palhead 条目; 存 runs_out/<name>_q16/s16 再 fd_fair.py --gen) → 4 个数: selfq 原始/q16 vs tv_cont 原始/q16 (再 vs 42.82/35.24)。② DECIDE: selfq+q16 < 32 且明显优于 tv_cont+q16 → 信号: 深挖(加 B 置信评论员选择性 restart; K 消融 8/32; p_sc; 12/24px; 结构域 FD); 32-40 且优于配对对照 ≥3 点 → 记持平但有效应, 试 B 或 x0 参数化一次; 否则杀 → "离散假设入环"方向 1 杀, 下一形态 = 区域亲和头(调研 c) 或 B 单独, 或转候选 7 宽泛再调研。③ 也对 selfq 样本跑 fd_struct.py --struct_of。
-- **更新时间**: 2026-09-06 15:00 服务器时(UTC)
+- **18:05 配对对照出数**: probe_tv_cont 原始 **46.91** / +q16 **39.91** —— 比 probe_tv(42.82/35.24) 差 ~4-5 点: 同损失再训 20k 反而变差(过训或 run 间方差 ±4). 含义: 探针 vs 基线的差距 <4 点不可信; selfq 主要与配对对照比, 同时报 vs probe_tv。
+- **更新时间**: 2026-09-06 18:05 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
