@@ -1132,3 +1132,19 @@ eval_matched.sh: 用 3000 张 held-out 真实精灵(与参考集不相交)各自
 - **matched 协议下 +q16 完全没用(28.02 → 28.69)**: 事后 16 色量化在旧协议的 −7.6 收益, 是词表 prompt 产生的颜色统计偏移被量化"碰巧"拉回来了; 与真实 caption 匹配时颜色统计本来就对。**这意味着 cycle 0-4 的整个"少色/分片恒定"叙事(包括 TV 的部分收益)可能都是协议伪影** —— 需要 v7 在 matched 下重测确认 TV 本身是否还有效(在跑)。
 - CFG 扫描(旧协议, GPU3): CFG 1.5 → 74.69(!), 2 → 51.04, 4 → 42.82; 引导越弱越差, 说明模型的条件分布本身很弱、靠 CFG 硬撑 → CFG 7/10 + 自引导在 matched 下测(GPU2, diag_matched.sh)。
 - **协议决定(自 cycle 5 起)**: 主指标 = **matched FAIR FD@16**(held-out caption, n=1, 3000 张); 地板不变 3.45(同参考集、同 n); 基线 probe_tv 28.02; v7 待测; 不再报 +q16(或只作附注)。旧协议数字全部作废, 只保留其排序的定性结论。
+
+## 2026-09-06 19:00~ (UTC) cycle 5 诊断 ③: v7 matched + 零训练采样扫描 + 记忆污染 → 基线重训 v7h
+
+| 设置 | 旧协议 FD | +q16 | matched FD | +q16 | 备注 |
+|---|---|---|---|---|---|
+| v7_lowres cfg4 | 53.21 | - | **16.66** | **11.29** | matched 下 v7 反超 probe_tv 11 点 |
+| probe_tv cfg4 | 42.82 | 35.24 | 28.02 | 28.69 | TV 在 matched 下**有害**; 量化无效 |
+| probe_tv cfg7 | 65.53 | 41.46 | 23.85 | 18.64 | matched 下高 CFG 有益, 旧协议相反 |
+| probe_tv cfg10 | - | - | 32.02 | 18.64(疑与 cfg7 重复, 待核) | |
+| probe_tv cfg2 / 1.5 | 51.04 / 74.69 | 53.40 / 79.21 | - | - | 低 CFG 一律更差 |
+| probe_tv ddim50 (clip_sample) | 203.56 | 142.30 | - | - | 采样器坏, 不追 |
+| probe_tv autog w=2 / 4 (弱模型=v7) | 124.87 / 93.03 | 129.21 / 83.06 | 231.90 (w=2) | 246.23 | 6.1 色: v7 不是 probe_tv 的"弱版本", 引导方向=TV 差分 → 少色崩塌; **不是自引导的有效测试**, 需同一 run 的早期快照 |
+
+**记忆污染(决定性)**: matched 协议的 3000 张 "held-out" 精灵只是从**参考集**里排除, 却全在训练集里(v7 及其初始化 v6e10 都见过全部 oga_clean)。v7 matched 样本中 8.4% 与其 caption 源精灵近乎逐像素相同(RMSE<0.05), 19.7% 的最近邻就是源精灵(probe_tv 5.4% / 12.8%)。caption 仅 9,799 唯一 / 37,490 (7,669 张 = "a pixel art sprite", 1,211 张 = "a pixel with a pixel in the middle", BLIP 自动 caption 噪声大), 唯一 caption 等价于唯一标签, 72M 参数 × 3 万样本处于记忆阈值以上。因此 16.66 不可信, 且任何从 v7 微调的探针都继承此污染。
+
+**决定**: 重训基线 **v7h** = v7 配方, 随机初始化(不能用 v6e10 初始化, 它见过全部数据), `--exclude runs_out/holdout_exclude.txt`(ref[:3000] ∪ held[:3000], 去重后 5,928 路径, 6,096 行含 tool_candidates 重复), 80k 步, `--snap_every 5000` 保存 EMA 快照(自引导弱模型 = 早期快照, 且 ckpt.pt 支持 supervisor 重启续训)。数据集 205,956 → 180,533 行。09-06 18:55 UTC 上线 GPU3 supervise.sh(logs/v7h.log, ~11 h), 结束自动跑 eval_matched + fd_decomp。以后所有探针从 v7h 微调, 与 v7h(及 v7h+CADS/自引导)在 matched 协议下比。

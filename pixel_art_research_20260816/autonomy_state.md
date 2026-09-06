@@ -5,7 +5,7 @@
 
 ## 判据与硬约束
 - **指标(2026-09-06 修正)**: **公平 FD-DINOv2@16px**(src/v6/fd_fair.py, 参考集与生成同走 to_tensor 管线; 旧 fd_dino 数值全部作废, 见 experiment_log "指标修正")。n=3304(413 prompts×8, eval_probe.sh)。**真实地板 3.45, v7 = 53.21, 最强简单基线 probe_tv(TV w=0.1) = 42.82**, 越低越好。
-- **胜负线(2026-09-06 19:40 三次修正, 协议重定)**: 旧协议(413 词表 prompt×8)被证明有 ~15 点 prompt 分布错配伪影, **作废**。新主指标 = **matched FAIR FD@16**: baseline/eval_matched.sh(3000 张 held-out 真实精灵的 caption, n=1, seed 0; 参考集不变, 地板 3.45)。**基线: probe_tv 28.02 (+q16 28.69, 量化在此协议下无效); v7 待测**。判据: 探针 matched FD 比配对对照低 ≥4 点(run 间方差 ±4)才算信号; 深挖线 < 22; 差异 <4 不作结论。每个探针都要跑 fd_decomp.py 看 recall/coverage(现 0.60, 地板 0.92)。旧的 +q16 / 42.82 / 35.24 全部作废。
+- **胜负线(2026-09-06 19:40 三次修正; 22:30 四次修正: 基线重训)**: 旧协议(413 词表 prompt×8)有 ~15 点 prompt 分布错配伪影, **作废**。新主指标 = **matched FAIR FD@16**: baseline/eval_matched.sh(3000 张 held-out 真实精灵的 caption, n=1, seed 0; 参考集不变, 地板 3.45)。**但 v7/probe_tv 的 matched 数字(16.66 / 28.02)被记忆污染**(held-out 只从参考集排除, 训练集含全部 oga; v7 8.4% 近逐像素复现), 只作参考。**干净基线 = v7h**(v7 配方随机初始化, 训练排除 ref∪held 5,928 张, 80k 步, 快照每 5k; 在训, 09-07 ~06:00 UTC 完)。判据: 探针(**必须从 v7h 微调或同配方训练**) matched FD 比 v7h(及 v7h+最佳零训练引导) 低 ≥4 点才算信号; 差异 <4 不作结论; 每个探针跑 fd_decomp.py 看 recall/coverage。
 - **一个探针最多 ~1 天**(训练+采样+FD)。超时未出结果 → 杀掉记原因换下一个。
 - **每轮最多 2 探针并行**(GPU2 + GPU3)。优先"从 v7 断点微调 20k 步"的廉价形式; 只有机制上必须从头训时才从头(≤40k步)。
 - **硬规则**: 只用 node03(ssh emnlp) GPU2/GPU3; **node09(kw) 一律不碰**(ljq的); 共享账号只在 /mnt/data/kw/RoundSquisheen/pixel/pixel 内读写; 后台任务必走 supervise.sh + tmux; node03 需 PYTHONNOUSERSITE=1; 判断在跑看产出增长。
@@ -51,11 +51,11 @@
 
 ## 当前状态
 - **cycle**: 5
-- **phase**: RESEARCH + DIAG (18:55 服务器时起)
-- **direction**: 先诊断再建。(A) 零训练采样/引导侧扫描 on probe_tv(GPU3, 脚本 baseline/diag_sampler.sh): CFG 1.5/2.5/7, DDIM 50, 自引导(弱模型 v7 当 unconditional/低质量项)。(B) 三路调研 subagent: 评分规则/能量距离去噪 · 对抗去噪+分类式输出 · AR/token 与已发表像素画生成论文的水平。汇总 → arch_ideation_log cycle 5, 选 1-2 个从根上改变损失/参数化/采样目标的机制 BUILD。
-- **GPU**: GPU3 空(用于诊断扫描); GPU2 上有用户自己的另一个项目进程(ga_vllm async_fastapi_trainer, 7.6GB, 0% util, 别动), 我们的作业 <20GB 可共用。
-- **下一动作**: ① 写 baseline/diag_sampler.sh(sample_e.py 加 --scheduler ddim / --guide_ckpt 自引导), tmux 逐个跑, 每点 ~15 min(3304 张)+q16; 结果进 runs_out/fair_fd16.json 键 probe_tv_cfg{1.5,2.5,7}, probe_tv_ddim50, probe_tv_autog{w}。② 调研汇总后按"改损失/参数化/采样目标"筛候选, 撞车检查, BUILD 一个探针(优先从 probe_tv 微调 20k 的形式)。③ DECIDE 判据不变: +q16 < 32 信号(若诊断产生新基线则以新基线 −3 为线); 差异 <4 不作结论。
-- **更新时间**: 2026-09-06 18:58 服务器时(UTC)
+- **phase**: TRAIN(基线 v7h 重训) + BUILD(采样侧: CADS/自引导/guidance-interval; 训练侧: 能量分数随机去噪探针)
+- **direction**: 诊断结论 — 差距在 recall/coverage(0.60 vs 地板 0.92), 不在 precision; 旧协议 ~15 点是 prompt 错配; matched 协议又被记忆污染 → 先建干净基线 v7h。零训练扫描: CFG 7 优于 4(matched 28.02→23.85), 低 CFG/DDIM(clip)/以 v7 为弱模型的自引导都差(自引导需同 run 早期快照 → v7h 快照)。研究综合见 arch_ideation_log cycle 5: ① CADS+自引导(零训练) ② 能量分数随机去噪微调 ③ 非泄漏增广+16px 噪声调度平移+ZTSNR ④ UFOGen 对抗精修。
+- **在跑**: GPU3 supervise.sh `v7h` → logs/v7h.log / logs/v7h.supervisor(80k 步, 每 200 步一行; 结束打 V7H_DONE 并自动 eval_matched + fd_decomp, 写 logs/v7h.done)。看进度: `grep "^\[" logs/v7h.log | tail -n 1`。GPU2: 用户 ga_vllm 进程(别动); 我们可放 <20GB 作业。
+- **下一动作**: ① v7h 训练中: sample_e.py 加 --cads(τ1,τ2,s,ψ 按 CADS 论文默认 0.6/0.9/0.1/1.0)与 --guide_ckpt 用同 run 早期快照(model_step005000/010000)的自引导 w∈{1.5,2,3}, 加 --guide_interval(仅中段 t 用 CFG); 写 baseline/diag_v7h.sh 扫 cfg{4,7,10}×cads×autog, 全部 matched 协议(每点 3000 张 ~12 min)。② 写 src/v6/train_es.py(能量分数随机去噪: conv_in 4→8 加 ξ 通道零初始化, x0 空间 ES 损失 m=4, λ 预热, 监控 E‖x̂(ξ)−x̂(ξ')‖ 防 ξ 忽略崩塌), 从 v7h 微调 20k; 配对对照 = 同步数 v7h 继续训练 MSE。③ v7h 完成后: 记录 v7h matched / fd_decomp 为新基线, 核 cfg10 q16=18.64 与 cfg7 重复是否 q16_eval.sh 读错目录。④ DECIDE: 能量分数探针 vs v7h+最佳引导, ≥4 点信号。
+- **更新时间**: 2026-09-06 22:35 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
@@ -63,4 +63,4 @@
 - cycle 2 (09-06): 两阶段 probe_sgen(只生成 S → 上色) **61.66 杀**; 结构域 FD 诊断: 阶段一 19.17 ≈ TV 18.94, 分解不降难度; 上色器曝光偏差。结构优先方向降级。TV w=0.3 → 46.57(甜点窄)。
 - cycle 3 (09-06): RESEARCH 调色板因子化 x0 头(novelty 清) → BUILD train_palhead.py → probe_palhead **硬 78.34 / 软 52.09 杀**(每张仅 ~7 色, 头未改善底层预测)。色数控制实验: **tv+q16 事后量化 = 35.24 成新最强基线**, 甜点 15-20 色; 判据改为 +q16 < 32。"架构化少色瓶颈"方向 1 杀不再投; 剩余难度=结构。
 - cycle 4 (09-06): 控制 32→16 BOX: v7 84.07 / tv 52.82(由细到粗更差, loop-F 降级); 三路调研 → "投影入环自条件" probe_selfq **42.55/+q16 38.45 杀**(配对对照 46.91/39.91, 置零消融 47.23/37.51: 效应=少色, 量化后消失); 暴露 run 间方差 ±4。"离散/少色假设族"5 探针全 ≤ 事后量化 → 整族标废。
-- cycle 5 (09-06~): 先诊断(CFG/DDIM/自引导零训练扫描)再宽泛调研"逃离均值回归"的训练目标。
+- cycle 5 (09-06~): 诊断三连: FD 分解(差距=coverage) → prompt 错配(旧协议作废, matched 协议) → 记忆污染(v7 matched 16.66 不可信, 8.4% 复现) → **重训干净基线 v7h**(排除评测集, 随机初始化, 快照); 零训练扫描: CFG7 有益, DDIM/以 v7 为弱模型的自引导无效; 调研综合: 能量分数随机去噪 / CADS+自引导 / 非泄漏增广+调度平移。

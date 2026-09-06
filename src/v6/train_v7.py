@@ -70,12 +70,18 @@ class NativeSprites(torch.utils.data.Dataset):
     """sources: list of (img_dir, captions_csv, repeat). Every sprite feeds its
     native bucket plus every LOW bucket at least 25% below its native size."""
 
-    def __init__(self, sources):
+    def __init__(self, sources, exclude=()):
         self.rows, self.bucket_of = [], []
+        exclude = {str(e).replace("\\", "/") for e in exclude}
+        n_ex = 0
         for img_dir, captions_csv, repeat in sources:
             img_dir = Path(img_dir)
             with open(captions_csv, newline="", encoding="utf-8") as f:
                 rows = [(img_dir / r["path"], r["text"]) for r in csv.DictReader(f)]
+            if exclude:
+                keep = [r for r in rows if str(r[0]).replace("\\", "/") not in exclude]
+                n_ex += len(rows) - len(keep)
+                rows = keep
             n_aug = 0
             for path, text in rows:
                 s = max(Image.open(path).size)
@@ -88,6 +94,8 @@ class NativeSprites(torch.utils.data.Dataset):
                         self.bucket_of.extend([t] * repeat)
                         n_aug += repeat
             print(f"source {img_dir}: {len(rows)} x{repeat} (+{n_aug} low-bucket aug)", flush=True)
+        if exclude:
+            print(f"excluded {n_ex} rows (held-out protocol)", flush=True)
 
     def __len__(self):
         return len(self.rows)
@@ -188,6 +196,10 @@ def main():
                    help='e.g. "_col" to use the colour-grounded caption files')
     p.add_argument("--extra", action="append", default=[],
                    help="additional source as img_dir,captions_csv,repeat (repeatable)")
+    p.add_argument("--exclude", default=None,
+                   help="text file, one sprite path per line, dropped from all sources (clean eval hold-out)")
+    p.add_argument("--snap_every", type=int, default=0,
+                   help="also keep EMA snapshots model_step{N}.pt every N steps (autoguidance bad model)")
     args = p.parse_args()
     for k in BATCH:
         BATCH[k] = max(8, int(BATCH[k] * args.bs_scale))
@@ -204,7 +216,8 @@ def main():
     for spec in args.extra:
         d, c, rep = spec.split(",")
         sources.append((d, c, int(rep)))
-    ds = NativeSprites(sources)
+    exclude = [l.strip() for l in open(args.exclude) if l.strip()] if args.exclude else []
+    ds = NativeSprites(sources, exclude)
     counts = [ds.bucket_of.count(b) for b in range(len(BUCKETS))]
     print(f"dataset: {len(ds)} buckets {dict(zip(BUCKETS, counts))}", flush=True)
     loader = torch.utils.data.DataLoader(ds, batch_sampler=BucketSampler(ds.bucket_of, args.steps), num_workers=8)
@@ -238,6 +251,16 @@ def main():
     eval_uncond = embed([""] * len(EVAL_PROMPTS), tokenizer, text_encoder, device)
 
     step = 0
+    resume = out / "ckpt.pt"  # full state for supervisor restarts (gpu_killer sweeps)
+    if args.snap_every and resume.exists():
+        ck = torch.load(resume, map_location=device)
+        model.load_state_dict(ck["model"])
+        opt.load_state_dict(ck["opt"])
+        if ema is not None:
+            ema.load_state_dict(ck["ema"])
+        step = ck["step"]
+        loader = torch.utils.data.DataLoader(ds, batch_sampler=BucketSampler(ds.bucket_of, args.steps - step), num_workers=8)
+        print(f"resumed from {resume} at step {step}", flush=True)
     for x, texts, b in loader:
         texts = ["" if random.random() < 0.1 else t for t in texts]
         cond = embed(list(texts), tokenizer, text_encoder, device)
@@ -265,6 +288,11 @@ def main():
                     out / "samples" / f"step_{step:06d}_s{s}.png")
             torch.save(net.state_dict(), out / "model_latest.pt")
             model.train()
+        if args.snap_every and step % args.snap_every == 0:
+            net = ema if ema is not None else model
+            torch.save(net.state_dict(), out / f"model_step{step:06d}.pt")
+            torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "step": step,
+                        "ema": ema.state_dict() if ema is not None else None}, resume)
     print(f"Done -> {out}", flush=True)
 
 
