@@ -11,7 +11,7 @@ import math
 from pathlib import Path
 
 import torch
-from diffusers import DDPMScheduler, UNet2DConditionModel
+from diffusers import DDIMScheduler, DDPMScheduler, UNet2DConditionModel
 from PIL import Image
 from transformers import CLIPTextModel, CLIPTokenizer
 
@@ -35,7 +35,7 @@ def embed(texts, tokenizer, encoder, device):
 
 
 @torch.no_grad()
-def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0):
+def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None):
     scheduler.set_timesteps(steps)
     n = cond.shape[0]
     lab = torch.full((n,), BUCKETS.index(size), device=device, dtype=torch.long)
@@ -57,7 +57,10 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             x = model(x, t, encoder_hidden_states=cond, class_labels=lab, hard=True).x0.clamp(-1, 1)
             break
         e_c = model(x, t, encoder_hidden_states=cond, class_labels=lab).sample
-        e_u = model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample
+        if guide is not None:  # autoguidance (Karras et al. 2024): weak model's conditional prediction as the reference
+            e_u = guide(x, t, encoder_hidden_states=cond, class_labels=lab).sample
+        else:
+            e_u = model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample
         x = scheduler.step(e_u + cfg * (e_c - e_u), t, x).prev_sample
     return ((x + 1) / 2).clamp(0, 1).cpu()
 
@@ -94,6 +97,8 @@ def main():
     p.add_argument("--steps", type=int, default=100)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--buckets", default=None, help="comma list, e.g. 12,16,20,24,32,48,64 for v7 models")
+    p.add_argument("--sampler", default="ddpm", choices=["ddpm", "ddim"])
+    p.add_argument("--guide_ckpt", default=None, help="plain 4ch ckpt of a WEAKER model -> autoguidance instead of CFG")
     p.add_argument("--out", required=True)
     args = p.parse_args()
     if args.buckets:
@@ -127,12 +132,21 @@ def main():
         model = build_model(device)
         model.load_state_dict(sd)
     model.eval()
-    scheduler = DDPMScheduler(num_train_timesteps=1000, beta_schedule="squaredcos_cap_v2")
+    guide = None
+    if args.guide_ckpt:
+        guide = build_model(device)
+        guide.load_state_dict(torch.load(args.guide_ckpt, map_location=device))
+        guide.eval()
+        print(f"autoguidance with weak model {args.guide_ckpt}", flush=True)
+    if args.sampler == "ddim":
+        scheduler = DDIMScheduler(num_train_timesteps=1000, beta_schedule="squaredcos_cap_v2", clip_sample=True)
+    else:
+        scheduler = DDPMScheduler(num_train_timesteps=1000, beta_schedule="squaredcos_cap_v2")
 
     cond = embed(prompts, tokenizer, enc, device).repeat_interleave(args.n, 0)
     uncond = embed([""] * len(prompts) * args.n, tokenizer, enc, device)
     for size in args.sizes:
-        imgs = sample(model, scheduler, cond, uncond, size, device, args.steps, args.cfg, args.seed)
+        imgs = sample(model, scheduler, cond, uncond, size, device, args.steps, args.cfg, args.seed, guide)
         rgba = [to_rgba(im) for im in imgs]
         for i, im in enumerate(rgba):
             pi, k = divmod(i, args.n)
