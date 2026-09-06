@@ -48,7 +48,7 @@
 
 ## 当前状态
 - **cycle**: 4
-- **phase**: TRAIN (14:55 起, 20k 步约 4.5 小时 → ~19:30 服务器时完)
+- **phase**: TRAIN (14:55 起; tv_cont ~18:00 完, selfq ~18:40 完 服务器时). **eval 已自动排队**: tmux ev_tvc / ev_sq 等 DONE 标志后跑 eval_probe.sh + baseline/q16_eval.sh(+q16), 日志 logs/eval_probe_<name>.log, 结果 runs_out/<name>_fd.json 与 fair_fd16.json 键 runs_out/<name>_q16/s16
 - **direction**: **投影入环自条件 (probe_selfq)** = 连续 UNet 输入拼 stop-grad 非学习的逐图 k-means(K=16) 量化 P(x̂₀), 训练 p=0.5, 采样每步入环(Bit Diffusion 式自条件的"离散投影"版; 见 arch_ideation_log 09-06 cycle 4)。控制实验 32→16 BOX: v7 84.07 / tv 52.82 → loop-F 降级。
 - **GPU**: GPU3 = probe_selfq(logs/probe_selfq.log, 行含 loss/main/sc/bucket, 从 probe_tv 微调, TV 0.1); GPU2 = **配对对照 probe_tv_cont**(logs/probe_tv_cont.log, probe_tv 同损失再训 20k)。两者 ckpt 都是 EMA, sample_e.py 自动识别 {"selfq":cfg,"state"}。
 - **训练中监控**: main 应 ≈ probe_tv 水平(0.01-0.05 随 bucket), sc=1 步不应显著高于 sc=0 步(若 sc=1 的 main 反而更高 → 网络没用自条件, 记录); 4k 步 workdir/probe_selfq/samples/step_004000_s16.png 与 workdir/probe_tv_cont/samples/step_004000_s16.png 对看。.FAILING 则诊断修复重启(同错 2 次杀)。
