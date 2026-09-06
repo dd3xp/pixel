@@ -35,7 +35,24 @@ def embed(texts, tokenizer, encoder, device):
 
 
 @torch.no_grad()
-def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None):
+def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
+    """CADS (Sadat et al. 2024): corrupt the condition embedding with noise that anneals from
+    s (high noise levels) to 0 (tau <= tau1), with mean/std rescaling mixed in by psi."""
+    tau = float(t) / T
+    gamma = 1.0 if tau <= tau1 else 0.0 if tau >= tau2 else (tau2 - tau) / (tau2 - tau1)
+    if gamma >= 1.0:
+        return cond
+    noise = torch.randn(cond.shape, device=cond.device, generator=g)
+    c_hat = (gamma ** 0.5) * cond + s * ((1 - gamma) ** 0.5) * noise
+    if psi > 0:
+        mu, sd = cond.mean(), cond.std()
+        c_res = (c_hat - c_hat.mean()) / c_hat.std().clamp_min(1e-6) * sd + mu
+        c_hat = psi * c_res + (1 - psi) * c_hat
+    return c_hat
+
+
+def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
+           cads=None, gi=(0.0, 1.0)):
     scheduler.set_timesteps(steps)
     n = cond.shape[0]
     lab = torch.full((n,), BUCKETS.index(size), device=device, dtype=torch.long)
@@ -43,12 +60,21 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
     x = torch.randn(n, 4, size, size, device=device, generator=g)
     last = scheduler.timesteps[-1]
     sc = None
+    T = scheduler.config.num_train_timesteps
+    cond0 = cond
+    if getattr(model, "es", False):  # energy-score posterior-sample denoiser (train_es.py): few-step re-noising
+        from train_es import sample_es
+        return sample_es(model, cond, uncond, size, device, steps=steps, cfg=cfg, seed=seed)
     for t in scheduler.timesteps:
+        if cads is not None:
+            cond = cads_anneal(cond0, t, T, g, **cads)
+        # guidance interval (Kynkaanniemi et al. 2024): CFG only for t/T in [gi_lo, gi_hi], else plain conditional
+        w = cfg if gi[0] <= float(t) / T <= gi[1] else 1.0
         if getattr(model, "selfcond", False):
             # projection-in-the-loop self-conditioning (train_selfq.py): feed P(x0_hat) of previous step
             e_c = model(x, t, encoder_hidden_states=cond, class_labels=lab, sc=sc).sample
             e_u = model(x, t, encoder_hidden_states=uncond, class_labels=lab, sc=sc).sample
-            e = e_u + cfg * (e_c - e_u)
+            e = e_u + w * (e_c - e_u)
             sc = model.project_from_eps(x, t, e)
             x = scheduler.step(e, t, x).prev_sample
             continue
@@ -57,11 +83,14 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             x = model(x, t, encoder_hidden_states=cond, class_labels=lab, hard=True).x0.clamp(-1, 1)
             break
         e_c = model(x, t, encoder_hidden_states=cond, class_labels=lab).sample
+        if w == 1.0:
+            x = scheduler.step(e_c, t, x).prev_sample
+            continue
         if guide is not None:  # autoguidance (Karras et al. 2024): weak model's conditional prediction as the reference
             e_u = guide(x, t, encoder_hidden_states=cond, class_labels=lab).sample
         else:
             e_u = model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample
-        x = scheduler.step(e_u + cfg * (e_c - e_u), t, x).prev_sample
+        x = scheduler.step(e_u + w * (e_c - e_u), t, x).prev_sample
     return ((x + 1) / 2).clamp(0, 1).cpu()
 
 
@@ -99,8 +128,16 @@ def main():
     p.add_argument("--buckets", default=None, help="comma list, e.g. 12,16,20,24,32,48,64 for v7 models")
     p.add_argument("--sampler", default="ddpm", choices=["ddpm", "ddim"])
     p.add_argument("--guide_ckpt", default=None, help="plain 4ch ckpt of a WEAKER model -> autoguidance instead of CFG")
+    p.add_argument("--cads", action="store_true", help="CADS condition annealing (tau1/tau2/s/psi below)")
+    p.add_argument("--cads_tau1", type=float, default=0.6)
+    p.add_argument("--cads_tau2", type=float, default=0.9)
+    p.add_argument("--cads_s", type=float, default=0.1)
+    p.add_argument("--cads_psi", type=float, default=1.0)
+    p.add_argument("--gi", type=float, nargs=2, default=[0.0, 1.0],
+                   help="guidance interval as t/T range [lo hi]; CFG off (w=1) outside it")
     p.add_argument("--out", required=True)
     args = p.parse_args()
+    cads = dict(tau1=args.cads_tau1, tau2=args.cads_tau2, s=args.cads_s, psi=args.cads_psi) if args.cads else None
     if args.buckets:
         BUCKETS.clear()
         BUCKETS.extend(int(v) for v in args.buckets.split(","))
@@ -128,6 +165,15 @@ def main():
         import os
         model.use_sc = not os.environ.get("SELFQ_NOSC")  # ablation switch
         print(f"selfq model K={sd['selfq']['K']} use_sc={model.use_sc}", flush=True)
+    elif isinstance(sd, dict) and "es" in sd:  # energy-score stochastic denoiser probe (train_es.py)
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        from train_es import build_es
+        model = build_es(sd["es"], device)
+        model.load_state_dict(sd["state"])
+        if args.steps == 100:  # default is the 100-step DDPM count; es models use their own few-step default
+            args.steps = sd["es"].get("sample_steps", 16)
+        print(f"es model use_xi={model.use_xi} steps={args.steps}", flush=True)
     else:
         model = build_model(device)
         model.load_state_dict(sd)
@@ -146,7 +192,8 @@ def main():
     cond = embed(prompts, tokenizer, enc, device).repeat_interleave(args.n, 0)
     uncond = embed([""] * len(prompts) * args.n, tokenizer, enc, device)
     for size in args.sizes:
-        imgs = sample(model, scheduler, cond, uncond, size, device, args.steps, args.cfg, args.seed, guide)
+        imgs = sample(model, scheduler, cond, uncond, size, device, args.steps, args.cfg, args.seed, guide,
+                      cads=cads, gi=tuple(args.gi))
         rgba = [to_rgba(im) for im in imgs]
         for i, im in enumerate(rgba):
             pi, k = divmod(i, args.n)

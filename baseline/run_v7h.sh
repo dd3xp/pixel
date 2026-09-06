@@ -23,6 +23,6 @@ EOF
 echo "[$(date +%m%d-%H:%M)] STAGE train v7h steps=$STEPS"
 $P src/v6/train_v7.py --steps $STEPS --out $OUT --exclude $EX --snap_every 5000 || { echo V7H_TRAIN_FAIL; exit 1; }
 echo "[$(date +%m%d-%H:%M)] STAGE matched eval"
-NAME=v7h CKPT=$OUT/model_latest.pt bash baseline/eval_matched.sh
+CKPT=$OUT/model_latest.pt bash baseline/eval_matched.sh v7h ${CUDA_VISIBLE_DEVICES:-3}  # NOTE: running 09-06 copy had a bug here (no positional args) -> eval done by diag_v7h.sh instead
 $P src/v6/fd_decomp.py --size 16 --gen runs_out/v7h_matched_eval/s16
 echo V7H_DONE
