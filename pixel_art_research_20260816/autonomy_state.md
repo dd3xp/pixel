@@ -41,16 +41,17 @@
 
 ## 当前状态
 - **cycle**: 1 → 2 过渡
-- **phase**: TRAIN(probe_paltok 收尾, GPU2) + BUILD(cycle 2 探针)
+- **phase**: TRAIN (GPU3 = probe_sgen 已起 07:55 UTC, ~4h; GPU2 = probe_paltok 收尾 17k/20k)
 - **direction**: 结构优先 stage-1(候选 1) + TV 加强基线(候选 2)
-- **GPU**: GPU3 空(probe_struct 训练+评估已完); GPU2 = probe_paltok(~16k/20k, 约 07:50 UTC 完)
+- **GPU**: GPU3 = probe_sgen(logs/probe_sgen.log, workdir/probe_sgen); GPU2 = probe_paltok(约 08:20 UTC 完)
 - **已完成本 cycle**: probe_struct oracle 公平 FD 13.52 = 地板 → 结构决定一切。**指标修正**(fd_fair.py)已落地, eval_probe.sh/eval_cond.sh 已切换, experiment_log 已记。
 - **待办 paltok**: 训练完 → `tmux new-session -d -s ev_paltok "setsid nohup bash supervise.sh eval_probe_paltok 2 bash baseline/eval_cond.sh probe_paltok 2 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → 读 runs_out/probe_paltok_fd.json(fair_fd16; 地板 13.82, v7 53.21)。预期: 调色板信息量远小于 S, oracle 会明显高于 13.5; 记录"调色板 vs 结构谁是瓶颈"即可, 不改方向。
 - **cycle 2 BUILD 计划**:
   - GPU3: **probe_sgen** = 从 v7 微调 20k 步生成 S-as-RGBA(R=G=B=4 级明度 ∈{0,85,170,255}, A=alpha; 训练目标 = to_tensor(x) 经 make_struct 再编码), 采样 3304 张 → 量化回 S → 用 workdir/probe_struct 上色 → 公平 FD。代码: src/v6/train_sgen.py(复用 train_cond 骨架, 只改 target) + src/v6/sample_twostage.py。
   - GPU2(paltok 完后): **probe_tv3** = train_probe.py --probe tv w=0.3(加强基线)。
-- **下一动作**: 写 train_sgen.py / sample_twostage.py → 冒烟 200 步 → GPU3 起 probe_sgen; paltok 完 → 起 eval; 再起 probe_tv3。
-- **更新时间**: 2026-09-06 07:30 UTC
+- **已 BUILD 并冒烟通过**: src/v6/train_sgen.py(v7 微调生成 S-as-RGBA), src/v6/sample_twostage.py(sgen→量化 S→probe_struct 上色), baseline/run_probe_sgen.sh, baseline/run_probe_tv3.sh(W 默认 0.3), baseline/eval_twostage.sh <sgen_name> <gpu> [color=probe_struct]。
+- **下一动作**: ① paltok 完 → GPU2 起 eval_cond(见上) → 读 fair_fd16 记录; ② eval 完 GPU2 空 → `tmux new-session -d -s px_tv3 "setsid nohup bash supervise.sh probe_tv3 2 bash baseline/run_probe_tv3.sh </dev/null >/dev/null 2>&1 & disown; sleep 5"`; ③ probe_sgen 完(PROBE_SGEN_DONE) → 看 workdir/probe_sgen/samples/step_020000_s16.png(行1 真 S/行2 生成/行3 量化) → `tmux new-session -d -s ev_sgen "setsid nohup bash supervise.sh eval_probe_sgen 3 bash baseline/eval_twostage.sh probe_sgen 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → runs_out/probe_sgen_fd.json → DECIDE(<38 信号; 38-45 持平; >45 杀)。
+- **更新时间**: 2026-09-06 07:58 UTC
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
