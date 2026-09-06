@@ -132,3 +132,34 @@
 **Novelty**: 最近 Bit Diffusion 自条件(机制相似度高, 但作用于原始 x0/bits 而非调色板投影)、RIN(中)、Simple Self-Conditioning for MDMs 2026(中)。总体 **中**; 论文框架应是"离散假设入环"= A + **B(置信评论员选择性 restart: 逐像素头预测 P(x̂₀)是否等于 P(x₀), 采样时只对低置信像素重加噪)**, B 的 novelty 中-高(连续模型的像素选择性 restart 无先例)。A 有信号再加 B。
 **坑**: 12px 上 K=16 全局调色板可能吞 1px 眼睛/轮廓(用逐图自适应 K-means 缓解, alpha 不投影); 自条件可能成吸引子(网络照抄 P) → 保持 p=0.5; 指标配对: 原始 vs 42.82(paired 对照 probe_tv_cont), +q16 vs 35.24。
 **决定**: BUILD src/v6/train_selfq.py (SelfQUNet, kmeans_quantise, 采样入环), sample_e.py 加 selfq 分支, baseline/run_probe_selfq.sh; 冒烟 200 步通过(采样图≈probe_tv, 零初始化 conv 使起点等价)。GPU3 = probe_selfq 20k; GPU2 = **配对对照 probe_tv_cont**(probe_tv 同损失再训 20k, 隔离"多训 20k"效应)。
+
+## 2026-09-06 cycle 5 RESEARCH: 三路调研汇总 + 诊断 → 重定问题
+### 诊断先行(见 experiment_log cycle 5 ①②)
+- FD 分解: 所有模型 precision≈0.89(地板 0.94), recall/coverage≈0.60(地板 0.92) → 差距=覆盖, 不是保真。
+- prompt 匹配控制: probe_tv 42.82 → **28.02**; +q16 在 matched 下无效。旧协议 ~15 点是词表 prompt 错配伪影, "少色"叙事大半是伪影。协议已重定为 matched FD。
+- CFG 扫描(旧协议): 1.5→74.7, 2→51.0, 4→42.8: 引导越弱越差(与 ImageNet 经验相反), 说明条件分支本身很弱、模型靠 CFG 硬撑。
+- 指标本质(调研 c 指出): 16px NEAREST 放大到 224, DINOv2 patch=14 → **每个 patch 恰好=一个精灵像素的纯色块**, FD-DINOv2@16 = 在 16×16 颜色网格上的一个学习核; 它重罚孤立错像素(一个像素=一个错 token)、轮廓拓扑、逐像素颜色统计。12/24px 与 patch 网格错位 → 应按原生尺寸分层报。
+
+### 调研 a: 逃离均值回归的训练目标(输出 p(x0|xt) 的样本而非均值)
+- **DDM-SR 评分规则去噪器**(De Bortoli+ ICML25, 2502.02483): 输入拼噪声 ξ, 能量分数损失 L=E||x0−x̂(ξ)||^β − λ/(2(m−1))ΣΣ||x̂(ξj)−x̂(ξj')||^β, m≥2 次前向, 少步采样(≤16 步; 多步反而差)。CIFAR 5 步 8.5 vs 12。风险: ξ 被忽略退化成中位数回归; 需监控 E||x̂(ξ)−x̂(ξ')||。fit 5 / 微调易 5 / novelty 5。
+- **UFOGen 式对抗 x0 精修**(2311.09257; Diffusion-GAN 噪声化判别器 2206.02262 稳小数据): 生成器=现 DDPM, 判别器 4 层 conv 看噪声化 x̂0, 损失 eps-MSE + hinge + R1。fit 4 / 5 / 5。风险: 判别器只学直方图+锐边, 与 MSE 锚拉锯成半色调。
+- **SiD/DMD2 模式寻求蒸馏**(2404.04057): 3 份 UNet, 反 KL 天然模式寻求。风险: 跨 prompt 塌缩杀 recall(我们恰恰缺 recall) → 不合适。
+- PMRF "均值→样本"流(2410.00418): 冻结 DDPM 输出当起点训小流。
+- 分类式 CE 头(CDCD/Analog Bits): 期望仍是均值, 与已死的离散族最近 → 不投。
+- 理论支撑: 确定性反向过程渐近收敛到条件均值(2403.02957) → 少步随机采样有理。
+
+### 调研 b: 引导/采样 + AR 基线 + 像素画文献
+- **Autoguidance**(Karras 2406.02507): 坏模型=同族更小/更少训练(1/16 训练步最优), 权重 1.8-2.4 平台; 无条件 FID 11.67→3.86; 与 CFG 可叠加(小 CFG 只管 prompt 贴合)。**CADS**(2310.17347): 条件嵌入加退火噪声, DeepFashion 10k 图 FID 16.4→7.7, **recall 0.02→0.48** — 与我们的 recall 症状最像。Guidance interval(2404.07724; FD-DINOv2 最优区间比 FID 更宽), APG(2410.02416, 降饱和 recall 0.48→0.62), CFG++, rescaled-CFG+ZTSNR(2305.08891), In-situ autoguidance(2510.17136, dropout 当坏模型, 零训练)。NoiseShift(2510.02307): 低分辨率下整条 cosine 调度"太吵"。2026 基准(2608.16786)警告: 无训练 CFG 变体并不稳定优于 CFG, 必须自己扫。全部 novelty=0, 只能当组件。
+- 像素画文献: Coutinho&Chaimowicz GAN 系列(64px 角色, Inception-FID, 无扩散基线); SD-πXL; Sprite Sheet Diffusion; **PixDiff-PIG**(2025 workshop, 42k 精灵, OKLab TinyUNet + 调色板/索引图条件, FID 19.6 vs LDM 28.4 — 唯一声称客观指标赢扩散的, 但调色板是输入非生成)。**无人在 ≤16px 做过受控研究(调度/增广/评测)** → 论文可占。
+- AR: 16px=256(+alpha) token, 光栅/RAR AR 用颜色码本无需 VQ, 30-60M transformer <1 GPU 天; 离散像素建模 FID 差距已基本关闭(2603.20155 CIFAR 6.4)。**"调色板优先 AR"(先生成 K 个调色板 token 再生成索引)未发表**——唯一新机制候选, 但属于已废"离散/少色族"的近亲, 且 matched 协议下颜色已不是问题 → 降为基线候选。
+
+### 调研 c: 差距来源 / 数据规模 / 配方
+- 72M 参数对 1024 维目标、30k 图: 过容量+欠泛化(Gu+ 2310.02664: 16×16 的记忆阈值 >4k 图; 近唯一 caption 像唯一标签, 把 0% 复制推到 65%)。→ 诊断: 生成样本到训练集 NN 距离 vs held-out 到训练集。
+- CFG: Ho&Salimans ImageNet-64 scale 4 比 1.1 差一个量级; 但我们扫出相反方向(弱引导更差) → 条件分支弱是主因, 需 CADS/autoguidance 而非单纯降 CFG。
+- 非泄漏增广(EDM App.F, p=0.15; 整数平移/翻转/OKLab 色相旋转, 增广参数作条件)对 ≤70k 数据是 EDM 的标配, ADA 拐点恰在 30k。
+- 16px 调度: simple-diffusion 外推 logSNR 应 +2.8 nats(更少噪声); EDM P_mean −1.2→≈−1.9; **无人在 16px 研究过**。ZTSNR+v-pred 管全局均值(alpha 覆盖/主色)。EDM2 事后 EMA 扫描可解释 1-4 点 run 间方差。
+- 评测: 加 KD/CMMD(MMD 置换检验给 ±4 差异 p 值), FD∞, 按原生尺寸分层, 真实数据"扰动标尺"(1-3% 杂点/色相偏移/1px 腐蚀 → 校准 FD 的单位)。
+
+### 综合判断(待 matched 扫描出数后定 BUILD)
+1. 论文的"新东西"可能不是一个去噪头, 而是**极低分辨率生成的系统性研究**: 评测协议(patch-对齐分析、匹配 prompt、扰动标尺、分层)、16px 专用调度/增广、覆盖问题的机制解(CADS/autoguidance/评分规则去噪)。这在 ICLR 上是"分析+方法"型论文, 前提是最终方法在 matched FD 上显著赢过 v7/probe_tv。
+2. 机制候选优先级(按"直接打 recall/覆盖 + 可微调 + 未撞车"): ① **CADS + autoguidance(早期 ckpt 为坏模型)** 零训练, 先测(是组件, 决定基线的真实水平); ② **能量分数随机去噪器(DDM-SR 微调, ξ 通道 + 少步采样)** — 唯一从根上改变"输出均值"的可微调机制, 在像素画/极低分辨率未有人做; ③ 非泄漏增广 + 16px 移位调度 + ZTSNR 重训(配方, 作为强基线/组件); ④ UFOGen 式对抗精修(备胎)。
