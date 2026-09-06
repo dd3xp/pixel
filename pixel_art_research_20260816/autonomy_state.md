@@ -18,7 +18,7 @@
 | v7 连续原生前馈(基线) | **53.21** (64.80) | 主基线 |
 | **probe_tv 连续+TV 平坦先验 w=0.1** | **42.82** (70.65) | **最强简单基线**; 旧指标误杀, 分片恒定/硬边是 v7 主短板 |
 | probe_pal 连续+软调色板吸附 w=0.1 | 54.24 (66.26) | ≈v7, 无效 |
-| probe_tv3 TV w=0.3 | 46.57 | TV 甜点窄, 加重过平滑; w=1.0 在测 |
+| probe_tv3 / probe_tv10 TV w=0.3 / 1.0 | 46.57 / **569.35** | TV 甜点极窄(0.1); w=1.0 完全崩坏(过平滑成空白/平色) |
 | probe_struct oracle(真 S=[alpha,4级明度]) | 13.52 (52.14) | ≈413 源地板; **数值被记忆污染**(源在训练集里), 只取定性: 难度全在 S |
 | probe_paltok oracle(真 8 色调色板 token) | 18.18 | **记忆污染实证**: 无空间信息却空间复现 → oracle 源必须剔除训练 |
 | **probe_sgen 两阶段(v7微调只生成 S → probe_struct 上色)** | **61.66** | **杀**; 阶段一结构域 FD 19.17(v7 23.55, tv 18.94, 地板 1.40): 只学低熵 S 也没变容易; 上色器对生成 S 曝光偏差崩 |
@@ -37,7 +37,7 @@
 
 ## 候选队列(按优先级; 调研后可重排/增删)
 1. **[架构化少色/分片恒定机制] 调色板因子化去噪头(palette-factorised x0 head)**: 证据链 = TV 是目前唯一有效手段(42.82, 结构域也最好), 短板是局部离散结构。把它做成**架构瓶颈而非损失**: 去噪网络在 x0 参数化下输出 (a) 每图 K 个颜色(全局 token 头, K≈8-16) + (b) 每像素对 K 的 logits, x0 = softmax(logits/τ)·palette(τ 随训练退火/随 t 调度), eps 由 x0 反推, 损失不变。任何样本天然少色+分片恒定+硬边, 且调色板可解释/可编辑(论文卖点)。与已废的 probe_pal(软吸附**损失**, 无效)和 v_ord(离散扩散)不同: 连续噪声+离散输出流形。风险: softmax 平均出灰色(需 τ 退火/straight-through)、K 固定; novelty 撞车检查: differentiable colour quantisation(ColorCNN)、VQ-x0、"discrete-continuous" 扩散、PaletteNet。RESEARCH 后 BUILD: 从 v7 微调 20k, 只换 conv_out 头 → probe_palhead。
-2. **[加强基线] TV 权重扫描** w=0.3 → 46.57(比 0.1 差, 已完) / 1.0(probe_tv10, GPU3 在训, 预期更差): 平凡先验能走多远, 新机制的增益才诚实。
+2. **[加强基线] TV 权重扫描 已完**: w=0.1 42.82 / 0.3 46.57 / 1.0 569.35(崩): 平凡先验能走多远, 新机制的增益才诚实。
 3. **[逐尺度一致性/多分辩率联合] loop-F**。
 4. **[区域图生成] loop-O**(区域=颜色分片, 与 1 一脉; 若 1 有信号可作其"显式区域"升级)。
 5. **[结构优先备胎] 单模型模态非对称噪声调度**(S 通道快调度): 前提已被 sgen 阶段一削弱, 仅当 1/3/4 都死再考虑。
@@ -45,12 +45,12 @@
 
 ## 当前状态
 - **cycle**: 3
-- **phase**: TRAIN (GPU2 = probe_palhead 11:08 起, 20k 步约 15:30 服务器时完; GPU3 = probe_tv10 约 14:30 完)
+- **phase**: TRAIN (GPU2 = probe_palhead 11:08 起, 20k 步约 15:30 服务器时完; GPU3 = 空闲)
 - **direction**: 架构化少色/分片恒定机制 = 调色板因子化 x0 头(候选 1, RESEARCH 已过, 见 arch_ideation_log 09-06 cycle 3)
-- **GPU**: GPU2 = probe_palhead(logs/probe_palhead.log; 日志行含 main/pal/useH/peak/palsep/lam/tau); GPU3 = probe_tv10(logs/probe_tv10.log)
+- **GPU**: GPU2 = probe_palhead(logs/probe_palhead.log; 日志行含 main/pal/useH/peak/palsep/lam/tau); GPU3 = 空闲(tv10 已完并评估)
 - **已 BUILD 并冒烟通过**: src/v6/train_palhead.py(PalHeadUNet 包装: conv_out→Identity, eps_direct=v7 conv_out 复制, logits K+1, 调色板 MLP; λ 0→1@4k, τ 1→0.3@2k-10k 余弦; 损失 x0 min-SNR(γ=5)+0.1 pal 一致性+0.01 使用率熵+0.01 ᾱ 加权置信; ckpt {"palhead":cfg,"state":sd}; 末步硬分配), sample_e.py 加 palhead 分支(末步 t=0 用条件支路硬 x0, 因 t=0 时 scheduler 几乎忽略 eps), baseline/run_probe_palhead.sh(env K/PAL_MODE/EXTRA)。冒烟 200 步: 单张唯一色 7-9, 管线通。
 - **训练中监控(每 tick 看日志最后一行)**: useH 应保持 >2.0(满 2.77; <1.5 = 调色板塌缩), peak(平均最大分配概率) 应随 τ 降到 >0.8(长期 <0.5 = 灰均值), palsep(最近调色板对距离) >0.1, main 不应比 v7 起点(≈0.003-0.05 随 bucket)劣化数倍。**4k 步样本图 workdir/probe_palhead/samples/step_004000_s16.png 必看**: 若明显劣于 v7 且 8k 仍未恢复 → 提前杀, 记原因(候选 2 形态: pal_mode=centroid 或更慢 λ/τ)。
-- **下一动作**: ① probe_palhead 完(PROBE_PALHEAD_DONE) → `tmux new-session -d -s ev_pal "setsid nohup bash supervise.sh eval_probe_palhead 2 bash baseline/eval_probe.sh probe_palhead 2 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → runs_out/probe_palhead_fd.json → DECIDE(<38 信号深挖: K 消融 8/32、centroid 模式、τ(t) 调度、12/24px、软 vs 硬末步; 38-45 持平: 试 centroid/更长训练一次; >45 杀 → 该大方向记 1 杀, 下一形态或候选 3 loop-F)。② probe_tv10 完(PROBE_TV3_DONE 字样, logs/probe_tv10.log) → `tmux new-session -d -s ev_tv10 "setsid nohup bash supervise.sh eval_probe_tv10 3 bash baseline/eval_probe.sh probe_tv10 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`。③ 也对 palhead 样本跑 fd_struct.py --struct_of 看结构域是否同步改善。
+- **下一动作**: ① probe_palhead 完(PROBE_PALHEAD_DONE) → `tmux new-session -d -s ev_pal "setsid nohup bash supervise.sh eval_probe_palhead 2 bash baseline/eval_probe.sh probe_palhead 2 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → runs_out/probe_palhead_fd.json → DECIDE(<38 信号深挖: K 消融 8/32、centroid 模式、τ(t) 调度、12/24px、软 vs 硬末步; 38-45 持平: 试 centroid/更长训练一次; >45 杀 → 该大方向记 1 杀, 下一形态或候选 3 loop-F)。② 也对 palhead 样本跑 fd_struct.py --struct_of 看结构域是否同步改善。
 - **4k 步检查(11:50)**: step_004000_s16 样本干净、少色、硬边、形状连贯(runs/derisk/palhead_step004000_s16.png), 肉眼优于 v7 与 TV; useH 2.75, peak 0.68, palsep 0.29, 无塌缩/灰均值 → 继续训。
 - **更新时间**: 2026-09-06 11:50 服务器时(UTC)
 
