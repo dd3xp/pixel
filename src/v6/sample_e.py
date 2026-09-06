@@ -42,7 +42,16 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
     g = torch.Generator(device=device).manual_seed(seed)
     x = torch.randn(n, 4, size, size, device=device, generator=g)
     last = scheduler.timesteps[-1]
+    sc = None
     for t in scheduler.timesteps:
+        if getattr(model, "selfcond", False):
+            # projection-in-the-loop self-conditioning (train_selfq.py): feed P(x0_hat) of previous step
+            e_c = model(x, t, encoder_hidden_states=cond, class_labels=lab, sc=sc).sample
+            e_u = model(x, t, encoder_hidden_states=uncond, class_labels=lab, sc=sc).sample
+            e = e_u + cfg * (e_c - e_u)
+            sc = model.project_from_eps(x, t, e)
+            x = scheduler.step(e, t, x).prev_sample
+            continue
         if t == last and getattr(model, "palhead", False) and model.hard_final:
             # palette-head model (train_palhead.py): final step = hard palette snap of the conditional x0
             x = model(x, t, encoder_hidden_states=cond, class_labels=lab, hard=True).x0.clamp(-1, 1)
@@ -105,6 +114,13 @@ def main():
         model = build_palhead(sd["palhead"], device)
         model.load_state_dict(sd["state"])
         print(f"palhead model K={sd['palhead']['K']} {sd['palhead']['pal_mode']}", flush=True)
+    elif isinstance(sd, dict) and "selfq" in sd:  # projection-in-the-loop self-cond probe (train_selfq.py)
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        from train_selfq import build_selfq
+        model = build_selfq(sd["selfq"], device)
+        model.load_state_dict(sd["state"])
+        print(f"selfq model K={sd['selfq']['K']}", flush=True)
     else:
         model = build_model(device)
         model.load_state_dict(sd)
