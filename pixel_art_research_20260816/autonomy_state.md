@@ -18,6 +18,7 @@
 | v7 连续原生前馈(基线) | **53.21** (64.80) | 主基线 |
 | **probe_tv 连续+TV 平坦先验 w=0.1** | **42.82** (70.65) | **最强简单基线**; 旧指标误杀, 分片恒定/硬边是 v7 主短板 |
 | probe_pal 连续+软调色板吸附 w=0.1 | 54.24 (66.26) | ≈v7, 无效 |
+| probe_tv3 TV w=0.3 | 46.57 | TV 甜点窄, 加重过平滑; w=1.0 在测 |
 | probe_struct oracle(真 S=[alpha,4级明度]) | 13.52 (52.14) | ≈413 源地板; **数值被记忆污染**(源在训练集里), 只取定性: 难度全在 S |
 | probe_paltok oracle(真 8 色调色板 token) | 18.18 | **记忆污染实证**: 无空间信息却空间复现 → oracle 源必须剔除训练 |
 | **probe_sgen 两阶段(v7微调只生成 S → probe_struct 上色)** | **61.66** | **杀**; 阶段一结构域 FD 19.17(v7 23.55, tv 18.94, 地板 1.40): 只学低熵 S 也没变容易; 上色器对生成 S 曝光偏差崩 |
@@ -36,7 +37,7 @@
 
 ## 候选队列(按优先级; 调研后可重排/增删)
 1. **[架构化少色/分片恒定机制] 调色板因子化去噪头(palette-factorised x0 head)**: 证据链 = TV 是目前唯一有效手段(42.82, 结构域也最好), 短板是局部离散结构。把它做成**架构瓶颈而非损失**: 去噪网络在 x0 参数化下输出 (a) 每图 K 个颜色(全局 token 头, K≈8-16) + (b) 每像素对 K 的 logits, x0 = softmax(logits/τ)·palette(τ 随训练退火/随 t 调度), eps 由 x0 反推, 损失不变。任何样本天然少色+分片恒定+硬边, 且调色板可解释/可编辑(论文卖点)。与已废的 probe_pal(软吸附**损失**, 无效)和 v_ord(离散扩散)不同: 连续噪声+离散输出流形。风险: softmax 平均出灰色(需 τ 退火/straight-through)、K 固定; novelty 撞车检查: differentiable colour quantisation(ColorCNN)、VQ-x0、"discrete-continuous" 扩散、PaletteNet。RESEARCH 后 BUILD: 从 v7 微调 20k, 只换 conv_out 头 → probe_palhead。
-2. **[加强基线] TV 权重扫描** w=0.3(probe_tv3, 评估中)/1.0(probe_tv10, GPU3 在训): 平凡先验能走多远, 新机制的增益才诚实。
+2. **[加强基线] TV 权重扫描** w=0.3 → 46.57(比 0.1 差, 已完) / 1.0(probe_tv10, GPU3 在训, 预期更差): 平凡先验能走多远, 新机制的增益才诚实。
 3. **[逐尺度一致性/多分辩率联合] loop-F**。
 4. **[区域图生成] loop-O**(区域=颜色分片, 与 1 一脉; 若 1 有信号可作其"显式区域"升级)。
 5. **[结构优先备胎] 单模型模态非对称噪声调度**(S 通道快调度): 前提已被 sgen 阶段一削弱, 仅当 1/3/4 都死再考虑。
@@ -46,13 +47,14 @@
 - **cycle**: 3
 - **phase**: RESEARCH(候选 1 调色板因子化去噪头) ‖ 后台 EVAL(probe_tv3, GPU2) + TRAIN(probe_tv10, GPU3, 10:50 起, 约 14:30 完)
 - **direction**: 架构化少色/分片恒定机制(候选 1); 结构优先方向已判 1 杀+反证, 降级为候选 5
-- **GPU**: GPU2 = eval_probe_tv3(logs/eval_probe_tv3.log → runs_out/probe_tv3_fd.json), 之后空闲; GPU3 = probe_tv10(logs/probe_tv10.log, TV w=1.0)
+- **GPU**: GPU2 = **空闲**(留给 probe_palhead 冒烟+训练); GPU3 = probe_tv10(logs/probe_tv10.log, TV w=1.0)
 - **cycle 2 结果**: probe_sgen 两阶段 61.66 杀(见 experiment_log 09-06 "probe_sgen 判决"); 新诊断工具 src/v6/fd_struct.py(结构域 FD: --gen S-as-RGBA 目录 / --struct_of RGBA 目录, 结果 runs_out/fair_fd16_struct.json)。
 - **下一动作**:
   ① RESEARCH(本 tick 或下 tick): 起 3 个 subagent——(a) 机制: 可微颜色量化/调色板因子化输出头如何训得稳(τ 退火、straight-through、K 选择、x0 vs eps 参数化下如何接入 DDPM), (b) novelty: 最像的 3 篇(ColorCNN/可微 k-means 量化、VQ/离散-连续混合扩散、PaletteNet、pixel-art 生成里的调色板头), (c) 可行性: 16px、v7 微调 20k 是否够, 潜在失败模式(灰色平均、调色板塌缩)与对策。汇总写 arch_ideation_log.md, 判定 BUILD 或换候选 3(loop-F)。
   ② BUILD(若通过): src/v6/train_palhead.py(复用 train_probe 骨架; UNet conv_out → K 路 logits + 全局调色板头; x0 参数化损失或由 x0 反推 eps), sample_palhead.py 或让 sample_e.py 兼容; 冒烟 200 步; 起 GPU2 → probe_palhead → eval_probe.sh → DECIDE(<38/38-45/>45)。
-  ③ 背景: probe_tv3 fd.json 出 → 若 <42.82 更新"最强简单基线"及 patrol_prompt.txt/eval_probe.sh 里的 tv_fair; probe_tv10 完(PROBE_TV3_DONE 字样, 日志 logs/probe_tv10.log) → `tmux new-session -d -s ev_tv10 "setsid nohup bash supervise.sh eval_probe_tv10 3 bash baseline/eval_probe.sh probe_tv10 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`。
-- **更新时间**: 2026-09-06 10:55 服务器时(UTC)
+  ③ 背景: probe_tv10 完(PROBE_TV3_DONE 字样, 日志 logs/probe_tv10.log) → `tmux new-session -d -s ev_tv10 "setsid nohup bash supervise.sh eval_probe_tv10 3 bash baseline/eval_probe.sh probe_tv10 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`。
+- **RESEARCH 进行中**: 3 个 subagent(机制/novelty/可行性)已起 10:55; 结果汇总写 arch_ideation_log.md 后判 BUILD。
+- **更新时间**: 2026-09-06 11:00 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
