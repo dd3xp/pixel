@@ -3,7 +3,7 @@
 【唯一真相源】c:\Codes\pixel\pixel_art_research_20260816\autonomy_state.md ——先 Read 它, 按"当前状态.phase"与"循环协议"推进一步, 做完更新它。
 仓库 c:\Codes\pixel, 服务器 /mnt/data/kw/RoundSquisheen/pixel/pixel (ssh emnlp)。
 
-【判据】FD-DINOv2@16 vs 真实精灵, v7 基线 64.80。<61 深挖; 61-65 持平记录; >65 杀。评估用 baseline/eval_probe.sh <name> <gpu>(采 3304 张 16px + FD, 结果 runs_out/<name>_fd.json)。
+【判据】FD-DINOv2@16 vs 真实精灵, v7 基线 64.80。<61 深挖; 61-65 持平记录; >65 杀。评估: 普通探针用 baseline/eval_probe.sh <name> <gpu>; **带侧条件的 train_cond.py 探针(probe_struct/probe_paltok 等 oracle)必须用 baseline/eval_cond.sh <name> <gpu>**; 都出 runs_out/<name>_fd.json。oracle 探针判定看 autonomy_state.md 当前状态里的专用规则。
 【硬规则】只用 node03 GPU2/GPU3; node09 一律不碰; 只在 RoundSquisheen/pixel/ 内读写; 后台任务 supervise.sh+tmux; PYTHONNOUSERSITE=1; 一个探针 ≤1 天; 同大方向连杀 2 个就换大方向。
 【踩过的坑】pgrep 括号写法防自匹配; 杀与含启动字面量命令拆两条 ssh; 传文件不加 ssh -n; ps1 存 UTF-8 BOM; git 前 cd c:/Codes/pixel。离散调色板/TV/调色板吸附已证伪, 别回头。
 

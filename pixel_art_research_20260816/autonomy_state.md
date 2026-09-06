@@ -39,12 +39,14 @@
 
 ## 当前状态
 - **cycle**: 1
-- **phase**: RESEARCH
-- **direction**: 候选 1 结构→上色两阶段 (+ 并行宽泛扫描找第 2 个探针填 GPU2)
-- **GPU**: GPU2 空, GPU3 空
-- **在跑探针**: 无
-- **下一动作**: 起 3 个 research subagent(机制/novelty/可行性)调研"结构→上色", 同时 1 个宽泛扫描; 汇总后决定 BUILD 什么。
-- **更新时间**: 2026-09-06 (cycle 1 启动)
+- **phase**: TRAIN
+- **direction**: 候选 1 结构→上色 —— 先做 **oracle 诊断**(调研结论: 两阶段本身 novelty 弱, 只有 stage-1 模态是 v7 的真瓶颈时才值得建; 详见 arch_ideation_log.md "cycle 1 调研"): 把真实精灵的侧条件喂给 v7 微调, 看上限。
+- **GPU**: GPU3 = probe_struct, GPU2 = probe_paltok (2026-09-06 03:20 启动, ~200 步/分, 20000 步 ≈ 1.7h)
+- **在跑探针**: `probe_struct`(结构图 S=[alpha, 4 级 OKLab 明度草图] 作输入通道 conv_in 4→6 零初始化), `probe_paltok`(真实 8 色调色板 → PalTok 8 token 拼到 CLIP 77 token 后)。均 src/v6/train_cond.py 从 v7 微调, 日志 logs/probe_struct.log / logs/probe_paltok.log, ckpt workdir/<name>/model_latest.pt。
+- **评估**: **必须用 `bash baseline/eval_cond.sh <name> <gpu>`**(不是 eval_probe.sh): 从 413 张 held-out 真实精灵(与 FD 参考集不交)取侧条件+各自 caption, 每张采 8 = 3304 张 16px, FD → runs_out/<name>_fd.json (`"oracle": true`)。训练完 GPU 一空就 tmux 起它。
+- **判定(oracle 专用, 不套 <61 规则)**: oracle FD ≪ 64.8(比如 <55) → 该模态是 v7 瓶颈, 下一 cycle BUILD 该模态的 stage-1 生成器(或"模态非对称噪声调度"单模型: 结构通道快调度、颜色通道慢调度, 这是绕开两阶段撞车的新机制候选); ≈64.8 或更差 → 该模态无 headroom。两者都 ≈64.8 → 结构→上色整方向杀, 取候选 2。
+- **下一动作**: cron 报进度; `[20000/20000]` + `PROBE_*_DONE` 后 → `tmux new-session -d -s ev_<name> "setsid nohup bash supervise.sh eval_<name> <gpu> bash baseline/eval_cond.sh <name> <gpu> </dev/null >/dev/null 2>&1 & disown; sleep 5"` → 看 runs_out/<name>_fd.json + grid_s16.png(第 1 行真实参考, 第 2 行生成, 肉眼确认结构/调色板是否被遵循) → DECIDE。
+- **更新时间**: 2026-09-06 03:25 (探针启动)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 70.65/66.26 杀。纯 v7 最强。
