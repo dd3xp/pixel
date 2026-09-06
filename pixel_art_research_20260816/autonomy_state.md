@@ -24,10 +24,11 @@
 | **probe_sgen 两阶段(v7微调只生成 S → probe_struct 上色)** | **61.66** | **杀**; 阶段一结构域 FD 19.17(v7 23.55, tv 18.94, 地板 1.40): 只学低熵 S 也没变容易; 上色器对生成 S 曝光偏差崩 |
 | **probe_tv + 事后 octree 量化 8/12/16/24/32/48 色** | 65.03/40.83/**35.24**/35.59/36.81/37.69 | **零学习的新最强基线 35.24**; 甜点 15-20 色/张(真实中位 34, P10 9); 8 色立刻崩 |
 | **probe_palhead 调色板因子化 x0 头 K=16(硬末步 / 软末步 / 软+q16)** | **78.34** / 52.09 / 45.97 | **杀**; 每张实际只用 ~7 色(远低于真实 P10=9) → 硬吸附致命; 软末步≈v7 说明头未改善底层预测; 学到的量化劣于事后量化 |
+| **probe_selfq 投影入环自条件 K=16(从 probe_tv 微调 20k) / 配对对照 probe_tv_cont / selfq 采样置零消融** | **42.55 → +q16 38.45** / 46.91 → 39.91 / 47.23 → 37.51 | **杀(无信号)**; 原始域 −4.4 vs 配对全是"少色"效应(唯一色 66 vs 73), +q16 后消失(38.45 vs 37.51); 训练 sc=1/0 的 main 损失无差 → 网络基本忽略投影通道; 结构域 18.43(tv 18.94) 持平。配对对照暴露 **run 间方差 ±4** |
 | v6f 朴素离散 absorbing | (160.7, 未重测) | 崩坏, 离散劣于连续 |
 | v_ord 有序调色板离散 | (252.3, 未重测) | 更差 |
 | SD-πXL(SDS优化式) | 极低分辩率崩 | 对照基线 |
-教训: ①离散调色板整族作废; ②"手工先验没用"是旧指标误判, 硬边/分片恒定先验有效但 TV 本身无 novelty, 只能当基线; ③结构 S 决定一切, **但把 S 分解出来单独生成并不更容易**(sgen 19.17 vs 地板 1.40), 两阶段还引入曝光偏差 → "先结构再上色"大方向 1 杀+反证, 仅留"单模型非对称调度"当低优先备胎; ④先验证指标再解读 Δ; ⑤结构域 FD(fd_struct.py)显示 TV 也是结构最好的 → 短板是**局部离散结构(分片恒定/硬边/少色)**, 不是全局布局。⑥**颜色维度已被平凡手段(TV+q16)基本解决**, 剩余 35 中结构域占 15.5(地板 1.4); "架构化少色瓶颈"方向 1 杀且预期上限≈事后量化 → 不再投; 下一机制必须提升**单模型内部的局部结构质量**, 且 +q16 后 < 32。
+教训: ①离散调色板整族作废; ②"手工先验没用"是旧指标误判, 硬边/分片恒定先验有效但 TV 本身无 novelty, 只能当基线; ③结构 S 决定一切, **但把 S 分解出来单独生成并不更容易**(sgen 19.17 vs 地板 1.40), 两阶段还引入曝光偏差 → "先结构再上色"大方向 1 杀+反证, 仅留"单模型非对称调度"当低优先备胎; ④先验证指标再解读 Δ; ⑤结构域 FD(fd_struct.py)显示 TV 也是结构最好的 → 短板是**局部离散结构(分片恒定/硬边/少色)**, 不是全局布局。⑥**颜色维度已被平凡手段(TV+q16)基本解决**, 剩余 35 中结构域占 15.5(地板 1.4); "架构化少色瓶颈"方向 1 杀且预期上限≈事后量化 → 不再投; 下一机制必须提升**单模型内部的局部结构质量**, 且 +q16 后 < 32。⑦(cycle 4) **"离散/少色假设"整族(有序离散、调色板损失、调色板头、投影自条件)5 个探针全 ≤ 事后量化 → 该假设族标废, 不再投任何"让输出更少色/更硬边"的机制**; 差异 <4 点不作结论(run 间方差 ±4), 2-3 点差别需多 seed。剩余 35→3.45 的差距**先诊断再建**: 采样/引导侧(CFG、步数、自引导)零训练扫描 + 训练目标层面"逃离均值回归"(评分规则/能量距离、对抗去噪、分类式输出、AR)。
 
 ## 循环协议(每 cycle)
 1. **RESEARCH**: 起 2-3 个 subagent 并行——(a)该方向文献机制/怎么做的, (b)novelty 撞车检查(最像的 3 篇+相似度), (c)极低分辩率可行性/坑。汇总写 arch_ideation_log.md。判定: 有新机制且未撞车 → BUILD; 否则 → 下一个候选。
@@ -38,7 +39,9 @@
 **不死磕**: 同一"大方向"连续 2 个探针都 >45 → 整个大方向标废, 换大方向。
 
 ## 候选队列(按优先级; 调研后可重排/增删)
-0. **[离散假设入环] probe_selfq 投影入环自条件(在跑)** → 有信号则加 B 置信评论员选择性 restart; 备胎第二形态: 像素+邻接亲和通道联合头(cycle 4 调研 c)。
+0. ~~[离散假设入环] probe_selfq 投影入环自条件~~ **已杀(42.55/38.45, 消融证明效应=少色)**; B 置信评论员 restart / 区域亲和头同属"离散假设族", 一并不再投。
+0'. **[cycle 5 诊断, 零训练] 采样/引导侧扫描**(probe_tv): CFG {1.5, 2.5, 7}(现 4) ×(原始/+q16); DDIM 50 步; **自引导**(Karras 2024: 用弱模型 v7 代替无条件项/或 tv+v7 混合)。目的: 判定 35 中多少是引导/采样伪影(过饱和、均值偏移、多样性损失), 而不是模型能力。任一 +q16 < 32 → 立即成为新基线且重定判据。
+0''. **[cycle 5 调研] 逃离均值回归的训练目标**: (i) 评分规则/能量距离去噪器(Distributional Diffusion / energy score, 输出是 p(x0|xt) 的**样本**而非均值); (ii) 对抗去噪(DDGAN/Diffusion-GAN/ADD 的判别器仅在 16px); (iii) 分类式像素输出(固定全局码本 CE, 模式寻求) + 连续噪声; (iv) 光栅 AR / PixelCNN 式 256-token 文本条件模型(16px 下序列极短)当"没人跑过的强基线"。判定标准: 机制必须改变**损失/参数化/采样目标**, 而不是"多给网络看一眼"。
 1. ~~[架构化少色/分片恒定机制] 调色板因子化去噪头~~ **已杀(78.34), 不再投**。原文: 证据链 = TV 是目前唯一有效手段(42.82, 结构域也最好), 短板是局部离散结构。把它做成**架构瓶颈而非损失**: 去噪网络在 x0 参数化下输出 (a) 每图 K 个颜色(全局 token 头, K≈8-16) + (b) 每像素对 K 的 logits, x0 = softmax(logits/τ)·palette(τ 随训练退火/随 t 调度), eps 由 x0 反推, 损失不变。任何样本天然少色+分片恒定+硬边, 且调色板可解释/可编辑(论文卖点)。与已废的 probe_pal(软吸附**损失**, 无效)和 v_ord(离散扩散)不同: 连续噪声+离散输出流形。风险: softmax 平均出灰色(需 τ 退火/straight-through)、K 固定; novelty 撞车检查: differentiable colour quantisation(ColorCNN)、VQ-x0、"discrete-continuous" 扩散、PaletteNet。RESEARCH 后 BUILD: 从 v7 微调 20k, 只换 conv_out 头 → probe_palhead。
 2. **[加强基线] TV 权重扫描 已完**: w=0.1 42.82 / 0.3 46.57 / 1.0 569.35(崩): 平凡先验能走多远, 新机制的增益才诚实。
 3. **[逐尺度一致性/多分辩率联合] loop-F**: 控制实验 32→16 BOX 更差(v7 84, tv 53) → 降为低优先。
@@ -47,18 +50,17 @@
 6. **[精确似然/EBM] loop-E**; 7. **[宽泛再调研]**。
 
 ## 当前状态
-- **cycle**: 4
-- **phase**: TRAIN (14:55 起; tv_cont ~18:00 完, selfq ~18:40 完 服务器时). **eval 已自动排队**: tmux ev_tvc / ev_sq 等 DONE 标志后跑 eval_probe.sh + baseline/q16_eval.sh(+q16), 日志 logs/eval_probe_<name>.log, 结果 runs_out/<name>_fd.json 与 fair_fd16.json 键 runs_out/<name>_q16/s16
-- **direction**: **投影入环自条件 (probe_selfq)** = 连续 UNet 输入拼 stop-grad 非学习的逐图 k-means(K=16) 量化 P(x̂₀), 训练 p=0.5, 采样每步入环(Bit Diffusion 式自条件的"离散投影"版; 见 arch_ideation_log 09-06 cycle 4)。控制实验 32→16 BOX: v7 84.07 / tv 52.82 → loop-F 降级。
-- **GPU**: GPU3 = probe_selfq(logs/probe_selfq.log, 行含 loss/main/sc/bucket, 从 probe_tv 微调, TV 0.1); GPU2 = **配对对照 probe_tv_cont**(logs/probe_tv_cont.log, probe_tv 同损失再训 20k)。两者 ckpt 都是 EMA, sample_e.py 自动识别 {"selfq":cfg,"state"}。
-- **训练中监控**: main 应 ≈ probe_tv 水平(0.01-0.05 随 bucket), sc=1 步不应显著高于 sc=0 步(若 sc=1 的 main 反而更高 → 网络没用自条件, 记录); 4k 步 workdir/probe_selfq/samples/step_004000_s16.png 与 workdir/probe_tv_cont/samples/step_004000_s16.png 对看。.FAILING 则诊断修复重启(同错 2 次杀)。
-- **下一动作**: ① 两者完(PROBE_SELFQ_DONE / PROBE_TV_CONT_DONE) → 各起 eval: `tmux new-session -d -s ev_sq "setsid nohup bash supervise.sh eval_probe_selfq 3 bash baseline/eval_probe.sh probe_selfq 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`(tv_cont 同法 GPU2) → 两者都做 +q16 量化(octree 16 色, 脚本见 experiment_log palhead 条目; 存 runs_out/<name>_q16/s16 再 fd_fair.py --gen) → 4 个数: selfq 原始/q16 vs tv_cont 原始/q16 (再 vs 42.82/35.24)。② DECIDE: selfq+q16 < 32 且明显优于 tv_cont+q16 → 信号: 深挖(加 B 置信评论员选择性 restart; K 消融 8/32; p_sc; 12/24px; 结构域 FD); 32-40 且优于配对对照 ≥3 点 → 记持平但有效应, 试 B 或 x0 参数化一次; 否则杀 → "离散假设入环"方向 1 杀, 下一形态 = 区域亲和头(调研 c) 或 B 单独, 或转候选 7 宽泛再调研。③ 也对 selfq 样本跑 fd_struct.py --struct_of。
-- **18:05 配对对照出数**: probe_tv_cont 原始 **46.91** / +q16 **39.91** —— 比 probe_tv(42.82/35.24) 差 ~4-5 点: 同损失再训 20k 反而变差(过训或 run 间方差 ±4). 含义: 探针 vs 基线的差距 <4 点不可信; selfq 主要与配对对照比, 同时报 vs probe_tv。
-- **更新时间**: 2026-09-06 18:05 服务器时(UTC)
+- **cycle**: 5
+- **phase**: RESEARCH + DIAG (18:55 服务器时起)
+- **direction**: 先诊断再建。(A) 零训练采样/引导侧扫描 on probe_tv(GPU3, 脚本 baseline/diag_sampler.sh): CFG 1.5/2.5/7, DDIM 50, 自引导(弱模型 v7 当 unconditional/低质量项)。(B) 三路调研 subagent: 评分规则/能量距离去噪 · 对抗去噪+分类式输出 · AR/token 与已发表像素画生成论文的水平。汇总 → arch_ideation_log cycle 5, 选 1-2 个从根上改变损失/参数化/采样目标的机制 BUILD。
+- **GPU**: GPU3 空(用于诊断扫描); GPU2 上有用户自己的另一个项目进程(ga_vllm async_fastapi_trainer, 7.6GB, 0% util, 别动), 我们的作业 <20GB 可共用。
+- **下一动作**: ① 写 baseline/diag_sampler.sh(sample_e.py 加 --scheduler ddim / --guide_ckpt 自引导), tmux 逐个跑, 每点 ~15 min(3304 张)+q16; 结果进 runs_out/fair_fd16.json 键 probe_tv_cfg{1.5,2.5,7}, probe_tv_ddim50, probe_tv_autog{w}。② 调研汇总后按"改损失/参数化/采样目标"筛候选, 撞车检查, BUILD 一个探针(优先从 probe_tv 微调 20k 的形式)。③ DECIDE 判据不变: +q16 < 32 信号(若诊断产生新基线则以新基线 −3 为线); 差异 <4 不作结论。
+- **更新时间**: 2026-09-06 18:58 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
 - cycle 1 (09-06): 结构/调色板 oracle 诊断。probe_struct oracle 公平 FD 13.52 = 地板(难度全在结构); **发现并修正 FD 参考集管线不匹配**(fd_fair.py), 全表重测, 判据重定(<38 信号 / >45 杀)。
 - cycle 2 (09-06): 两阶段 probe_sgen(只生成 S → 上色) **61.66 杀**; 结构域 FD 诊断: 阶段一 19.17 ≈ TV 18.94, 分解不降难度; 上色器曝光偏差。结构优先方向降级。TV w=0.3 → 46.57(甜点窄)。
 - cycle 3 (09-06): RESEARCH 调色板因子化 x0 头(novelty 清) → BUILD train_palhead.py → probe_palhead **硬 78.34 / 软 52.09 杀**(每张仅 ~7 色, 头未改善底层预测)。色数控制实验: **tv+q16 事后量化 = 35.24 成新最强基线**, 甜点 15-20 色; 判据改为 +q16 < 32。"架构化少色瓶颈"方向 1 杀不再投; 剩余难度=结构。
-- cycle 4 (09-06): 控制 32→16 BOX: v7 84.07 / tv 52.82(由细到粗更差, loop-F 降级); 三路调研 → 选"投影入环自条件" probe_selfq(GPU3) + 配对对照 probe_tv_cont(GPU2), 训练中。
+- cycle 4 (09-06): 控制 32→16 BOX: v7 84.07 / tv 52.82(由细到粗更差, loop-F 降级); 三路调研 → "投影入环自条件" probe_selfq **42.55/+q16 38.45 杀**(配对对照 46.91/39.91, 置零消融 47.23/37.51: 效应=少色, 量化后消失); 暴露 run 间方差 ±4。"离散/少色假设族"5 探针全 ≤ 事后量化 → 整族标废。
+- cycle 5 (09-06~): 先诊断(CFG/DDIM/自引导零训练扫描)再宽泛调研"逃离均值回归"的训练目标。

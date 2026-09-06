@@ -91,6 +91,7 @@ class SelfQUNet(nn.Module):
         unet.conv_in = new
         self.unet = unet
         self.K, self.iters = K, iters
+        self.use_sc = True  # ablation: False -> always feed zeros at sampling
         self.register_buffer("abar", DDPMScheduler(1000, beta_schedule="squaredcos_cap_v2").alphas_cumprod.float())
 
     def forward(self, x_t, t, encoder_hidden_states=None, class_labels=None, sc=None):
@@ -108,6 +109,8 @@ class SelfQUNet(nn.Module):
         return kmeans_quantise(x0, self.K, self.iters)
 
     def project_from_eps(self, x_t, t, eps):
+        if not self.use_sc:
+            return torch.zeros_like(x_t)
         return self.project(self.x0_from_eps(x_t, t, eps))
 
 

@@ -120,7 +120,9 @@ def main():
         from train_selfq import build_selfq
         model = build_selfq(sd["selfq"], device)
         model.load_state_dict(sd["state"])
-        print(f"selfq model K={sd['selfq']['K']}", flush=True)
+        import os
+        model.use_sc = not os.environ.get("SELFQ_NOSC")  # ablation switch
+        print(f"selfq model K={sd['selfq']['K']} use_sc={model.use_sc}", flush=True)
     else:
         model = build_model(device)
         model.load_state_dict(sd)
