@@ -51,7 +51,8 @@
 - **已 BUILD 并冒烟通过**: src/v6/train_palhead.py(PalHeadUNet 包装: conv_out→Identity, eps_direct=v7 conv_out 复制, logits K+1, 调色板 MLP; λ 0→1@4k, τ 1→0.3@2k-10k 余弦; 损失 x0 min-SNR(γ=5)+0.1 pal 一致性+0.01 使用率熵+0.01 ᾱ 加权置信; ckpt {"palhead":cfg,"state":sd}; 末步硬分配), sample_e.py 加 palhead 分支(末步 t=0 用条件支路硬 x0, 因 t=0 时 scheduler 几乎忽略 eps), baseline/run_probe_palhead.sh(env K/PAL_MODE/EXTRA)。冒烟 200 步: 单张唯一色 7-9, 管线通。
 - **训练中监控(每 tick 看日志最后一行)**: useH 应保持 >2.0(满 2.77; <1.5 = 调色板塌缩), peak(平均最大分配概率) 应随 τ 降到 >0.8(长期 <0.5 = 灰均值), palsep(最近调色板对距离) >0.1, main 不应比 v7 起点(≈0.003-0.05 随 bucket)劣化数倍。**4k 步样本图 workdir/probe_palhead/samples/step_004000_s16.png 必看**: 若明显劣于 v7 且 8k 仍未恢复 → 提前杀, 记原因(候选 2 形态: pal_mode=centroid 或更慢 λ/τ)。
 - **下一动作**: ① probe_palhead 完(PROBE_PALHEAD_DONE) → `tmux new-session -d -s ev_pal "setsid nohup bash supervise.sh eval_probe_palhead 2 bash baseline/eval_probe.sh probe_palhead 2 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → runs_out/probe_palhead_fd.json → DECIDE(<38 信号深挖: K 消融 8/32、centroid 模式、τ(t) 调度、12/24px、软 vs 硬末步; 38-45 持平: 试 centroid/更长训练一次; >45 杀 → 该大方向记 1 杀, 下一形态或候选 3 loop-F)。② probe_tv10 完(PROBE_TV3_DONE 字样, logs/probe_tv10.log) → `tmux new-session -d -s ev_tv10 "setsid nohup bash supervise.sh eval_probe_tv10 3 bash baseline/eval_probe.sh probe_tv10 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`。③ 也对 palhead 样本跑 fd_struct.py --struct_of 看结构域是否同步改善。
-- **更新时间**: 2026-09-06 11:10 服务器时(UTC)
+- **4k 步检查(11:50)**: step_004000_s16 样本干净、少色、硬边、形状连贯(runs/derisk/palhead_step004000_s16.png), 肉眼优于 v7 与 TV; useH 2.75, peak 0.68, palsep 0.29, 无塌缩/灰均值 → 继续训。
+- **更新时间**: 2026-09-06 11:50 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
