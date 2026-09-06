@@ -45,18 +45,16 @@
 
 ## 当前状态
 - **cycle**: 3
-- **phase**: RESEARCH(候选 1 调色板因子化去噪头) ‖ 后台 EVAL(probe_tv3, GPU2) + TRAIN(probe_tv10, GPU3, 10:50 起, 约 14:30 完)
-- **direction**: 架构化少色/分片恒定机制(候选 1); 结构优先方向已判 1 杀+反证, 降级为候选 5
-- **GPU**: GPU2 = **空闲**(留给 probe_palhead 冒烟+训练); GPU3 = probe_tv10(logs/probe_tv10.log, TV w=1.0)
-- **cycle 2 结果**: probe_sgen 两阶段 61.66 杀(见 experiment_log 09-06 "probe_sgen 判决"); 新诊断工具 src/v6/fd_struct.py(结构域 FD: --gen S-as-RGBA 目录 / --struct_of RGBA 目录, 结果 runs_out/fair_fd16_struct.json)。
-- **下一动作**:
-  ① RESEARCH(本 tick 或下 tick): 起 3 个 subagent——(a) 机制: 可微颜色量化/调色板因子化输出头如何训得稳(τ 退火、straight-through、K 选择、x0 vs eps 参数化下如何接入 DDPM), (b) novelty: 最像的 3 篇(ColorCNN/可微 k-means 量化、VQ/离散-连续混合扩散、PaletteNet、pixel-art 生成里的调色板头), (c) 可行性: 16px、v7 微调 20k 是否够, 潜在失败模式(灰色平均、调色板塌缩)与对策。汇总写 arch_ideation_log.md, 判定 BUILD 或换候选 3(loop-F)。
-  ② BUILD(若通过): src/v6/train_palhead.py(复用 train_probe 骨架; UNet conv_out → K 路 logits + 全局调色板头; x0 参数化损失或由 x0 反推 eps), sample_palhead.py 或让 sample_e.py 兼容; 冒烟 200 步; 起 GPU2 → probe_palhead → eval_probe.sh → DECIDE(<38/38-45/>45)。
-  ③ 背景: probe_tv10 完(PROBE_TV3_DONE 字样, 日志 logs/probe_tv10.log) → `tmux new-session -d -s ev_tv10 "setsid nohup bash supervise.sh eval_probe_tv10 3 bash baseline/eval_probe.sh probe_tv10 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`。
-- **RESEARCH 进行中**: 3 个 subagent(机制/novelty/可行性)已起 10:55; 结果汇总写 arch_ideation_log.md 后判 BUILD。
-- **更新时间**: 2026-09-06 11:00 服务器时(UTC)
+- **phase**: TRAIN (GPU2 = probe_palhead 11:08 起, 20k 步约 15:30 服务器时完; GPU3 = probe_tv10 约 14:30 完)
+- **direction**: 架构化少色/分片恒定机制 = 调色板因子化 x0 头(候选 1, RESEARCH 已过, 见 arch_ideation_log 09-06 cycle 3)
+- **GPU**: GPU2 = probe_palhead(logs/probe_palhead.log; 日志行含 main/pal/useH/peak/palsep/lam/tau); GPU3 = probe_tv10(logs/probe_tv10.log)
+- **已 BUILD 并冒烟通过**: src/v6/train_palhead.py(PalHeadUNet 包装: conv_out→Identity, eps_direct=v7 conv_out 复制, logits K+1, 调色板 MLP; λ 0→1@4k, τ 1→0.3@2k-10k 余弦; 损失 x0 min-SNR(γ=5)+0.1 pal 一致性+0.01 使用率熵+0.01 ᾱ 加权置信; ckpt {"palhead":cfg,"state":sd}; 末步硬分配), sample_e.py 加 palhead 分支(末步 t=0 用条件支路硬 x0, 因 t=0 时 scheduler 几乎忽略 eps), baseline/run_probe_palhead.sh(env K/PAL_MODE/EXTRA)。冒烟 200 步: 单张唯一色 7-9, 管线通。
+- **训练中监控(每 tick 看日志最后一行)**: useH 应保持 >2.0(满 2.77; <1.5 = 调色板塌缩), peak(平均最大分配概率) 应随 τ 降到 >0.8(长期 <0.5 = 灰均值), palsep(最近调色板对距离) >0.1, main 不应比 v7 起点(≈0.003-0.05 随 bucket)劣化数倍。**4k 步样本图 workdir/probe_palhead/samples/step_004000_s16.png 必看**: 若明显劣于 v7 且 8k 仍未恢复 → 提前杀, 记原因(候选 2 形态: pal_mode=centroid 或更慢 λ/τ)。
+- **下一动作**: ① probe_palhead 完(PROBE_PALHEAD_DONE) → `tmux new-session -d -s ev_pal "setsid nohup bash supervise.sh eval_probe_palhead 2 bash baseline/eval_probe.sh probe_palhead 2 </dev/null >/dev/null 2>&1 & disown; sleep 5"` → runs_out/probe_palhead_fd.json → DECIDE(<38 信号深挖: K 消融 8/32、centroid 模式、τ(t) 调度、12/24px、软 vs 硬末步; 38-45 持平: 试 centroid/更长训练一次; >45 杀 → 该大方向记 1 杀, 下一形态或候选 3 loop-F)。② probe_tv10 完(PROBE_TV3_DONE 字样, logs/probe_tv10.log) → `tmux new-session -d -s ev_tv10 "setsid nohup bash supervise.sh eval_probe_tv10 3 bash baseline/eval_probe.sh probe_tv10 3 </dev/null >/dev/null 2>&1 & disown; sleep 5"`。③ 也对 palhead 样本跑 fd_struct.py --struct_of 看结构域是否同步改善。
+- **更新时间**: 2026-09-06 11:10 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
 - cycle 1 (09-06): 结构/调色板 oracle 诊断。probe_struct oracle 公平 FD 13.52 = 地板(难度全在结构); **发现并修正 FD 参考集管线不匹配**(fd_fair.py), 全表重测, 判据重定(<38 信号 / >45 杀)。
-- cycle 2 (09-06): 两阶段 probe_sgen(只生成 S → 上色) **61.66 杀**; 结构域 FD 诊断: 阶段一 19.17 ≈ TV 18.94, 分解不降难度; 上色器曝光偏差。结构优先方向降级。TV 扫描 w=0.3/1.0 在跑。
+- cycle 2 (09-06): 两阶段 probe_sgen(只生成 S → 上色) **61.66 杀**; 结构域 FD 诊断: 阶段一 19.17 ≈ TV 18.94, 分解不降难度; 上色器曝光偏差。结构优先方向降级。TV w=0.3 → 46.57(甜点窄)。
+- cycle 3 (09-06): RESEARCH 调色板因子化 x0 头(novelty 清, SD-πXL 最近但为逐图 SDS+固定调色板) → BUILD train_palhead.py → probe_palhead 训练中(GPU2)。

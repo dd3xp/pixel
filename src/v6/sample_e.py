@@ -41,7 +41,12 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
     lab = torch.full((n,), BUCKETS.index(size), device=device, dtype=torch.long)
     g = torch.Generator(device=device).manual_seed(seed)
     x = torch.randn(n, 4, size, size, device=device, generator=g)
+    last = scheduler.timesteps[-1]
     for t in scheduler.timesteps:
+        if t == last and getattr(model, "palhead", False) and model.hard_final:
+            # palette-head model (train_palhead.py): final step = hard palette snap of the conditional x0
+            x = model(x, t, encoder_hidden_states=cond, class_labels=lab, hard=True).x0.clamp(-1, 1)
+            break
         e_c = model(x, t, encoder_hidden_states=cond, class_labels=lab).sample
         e_u = model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample
         x = scheduler.step(e_u + cfg * (e_c - e_u), t, x).prev_sample
@@ -92,8 +97,17 @@ def main():
     prompts = [l.strip() for l in open(args.prompts, encoding="utf-8") if l.strip() and not l.startswith("#")]
     tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
     enc = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch32").to(device).eval()
-    model = build_model(device)
-    model.load_state_dict(torch.load(args.ckpt, map_location=device))
+    sd = torch.load(args.ckpt, map_location=device)
+    if isinstance(sd, dict) and "palhead" in sd:  # palette-factorised head probe (train_palhead.py)
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        from train_palhead import build_palhead
+        model = build_palhead(sd["palhead"], device)
+        model.load_state_dict(sd["state"])
+        print(f"palhead model K={sd['palhead']['K']} {sd['palhead']['pal_mode']}", flush=True)
+    else:
+        model = build_model(device)
+        model.load_state_dict(sd)
     model.eval()
     scheduler = DDPMScheduler(num_train_timesteps=1000, beta_schedule="squaredcos_cap_v2")
 
