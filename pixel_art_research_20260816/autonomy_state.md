@@ -56,7 +56,7 @@
 ## 当前状态
 - **cycle**: 7
 - **phase**: EVAL(分辩率泛化 dres24/dres20 → 机制 dmech(GPU3) → 第二组件 APG 扫描 dapg(GPU2); 均已排队 tmux, 顺序等待前一 DONE)。RESEARCH 完(subagent 报告见 arch_ideation_log cycle 7)
-- **direction**: **跨分辩率自引导**(同一多分辩率模型以"更低分辩率标签下的自己"为弱参考, 零训练) —— 当前最优 = 叠加 快照10k+bucket:12 w1.5 **7.67 / seed1 7.32**(裸 v7h 21.98/21.05; 地板 3.45; matched seed 方差 ≈0.3~0.5)。**训练版 probe_cg 杀**(见已证伪), 机制解释改写为"条件诱导简单性先验"(arch_ideation_log cycle 6 DECIDE)。论文定位: 推理侧引导机制 + 机制分析, 需 20/24px 泛化 + 第二模型 + 第二组件才够 ICLR。
+- **direction**: **跨分辩率自引导**(同一多分辩率模型以"更低分辩率标签下的自己"为弱参考, 零训练) —— 当前最优 = 叠加 快照10k+bucket:12 w1.5 **7.67 / seed1 7.32**(裸 v7h 21.98/21.05; 地板 3.45; matched seed 方差 ≈0.3~0.5)。**训练版 probe_cg 杀**(见已证伪), 机制(dmech 完, 09-07 14:20): **有效弱参考 = 局部对比度(TV)低于强模型且结构对齐的自身信念**; 分辩率标签是单调对比度旋钮(bk12 21.6 / bk24 31.9 / bk64 40.9 vs 强 32.0); "简单性先验"假说证伪; 显式低通分支有害因引入块结构。**泛化成立**: 20px 45.9→bk16 32.9/叠加 29.7; 24px 79.8→bk16 60.4(自引导 53.4); 12px 高桶参考变差 14.45(方向性); 第二模型 v7_lowres 16.66→7.40。论文定位: 推理侧引导机制 + 机制分析, 需 20/24px 泛化 + 第二模型 + 第二组件才够 ICLR。
 - **在跑**(tmux, 13:40 UTC 起, 每项 ~25 min):
   - GPU2 `dres24` → logs/diag_res24.log, 末行 DIAG_RES24_DONE: 24px matched@24(eval_matched_r.sh, fd_fair --size 24, 地板同算): v7h_r24_cfg4 / bk16_w2 / autog10k_w1p5 / bk20_w2 / bk12_w2 / bk16s10k_w1p5 / bk32_w2 + fd_decomp。**判据**: bk16 (或 bk12/bk20) 明显低于 cfg4 且 ≤ autog → 泛化成立; bk32 应无效(更高桶)。
   - GPU3 `dres20` → logs/diag_res20.log, DIAG_RES20_DONE: 20px: cfg4 / bk16 / bk12 / autog / bk16s10k; 12px: cfg4 / autog / bk16(更高桶, 预期无效—诚实限制); 然后 v7_lowres bucket:12 w2 @16(第二模型; 其裸 16.66 受记忆污染, 只看相对下降)。
@@ -64,7 +64,7 @@
   - GPU2 `dapg`(等 DIAG_RES24_DONE) → logs/diag_apg.log, DIAG_APG_DONE: **APG(Sadat 2024, sample_e `--apg eta,r,beta[,rgb]`, x0 空间投影, rgb 变体只投 RGB)** 叠在 stack(bk12+10k)上 w 1.5/2/3 + full/proj-only/momentum 消融 + 单参考 bk12/autog w2 + fd_decomp。基线 stack w1.5 7.67(seed1 7.32)。**判据**: 任一 apg 行 < 7.2 → 组件有信号, 补 seed1; 全 ≥ 7.5 → APG 无益, 试 FDG(频域分权)/区间调度。
   - 已出: FD@20 地板 12.14, v7h_r20_cfg4 45.92(20px 差距 33.8 > 16px 的 18.5)。每项 ~6 min。
 - **下一动作(cycle 7)**: ① 两个 dres 出数 → 写 experiment_log 分辩率泛化表(含地板@20/24/12), 判定泛化。② subagent 报告 → 写 arch_ideation_log cycle 7 RESEARCH, 选第二组件做零训练扫描(优先 APG: sample_e 加 `--apg` 投影, 叠在 bk12+10k 上, w 扫 1.5/2/3; 若 APG 允许更大 w 而不爆颜色 → 组件成立)。③ 机制实验(GPU 空后): `--cfg 0 --guide_mode bucket:12` 纯低桶信念样本 3000 张 @16 → FD + 统计(唯一色数/平区比例/TV) vs 真实 12px & 16px 精灵 & 块平均版; 同法 bucket:24 信念。写小脚本 src/v6/stats_simplicity.py。④ 若 20/24px 泛化失败 → 机制降为 16px 组件, 回 RESEARCH 换大方向(候选: 逃离均值回归的训练目标里剩余未试的分类式像素输出/AR 强基线)。⑤ 论文素材: 定性对比图(v7h 裸 vs 自引导 vs bk12 vs 叠加, 同 seed 同 prompt)。
-- **更新时间**: 2026-09-07 14:35 服务器时(UTC)
+- **更新时间**: 2026-09-07 14:25 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
