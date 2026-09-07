@@ -34,7 +34,6 @@ def embed(texts, tokenizer, encoder, device):
     return encoder(**tok).last_hidden_state
 
 
-@torch.no_grad()
 def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
     """CADS (Sadat et al. 2024): corrupt the condition embedding with noise that anneals from
     s (high noise levels) to 0 (tau <= tau1), with mean/std rescaling mixed in by psi."""
@@ -51,6 +50,7 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
     return c_hat
 
 
+@torch.no_grad()
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
            cads=None, gi=(0.0, 1.0)):
     scheduler.set_timesteps(steps)
@@ -123,7 +123,7 @@ def main():
     p.add_argument("--sizes", type=int, nargs="+", default=[16])
     p.add_argument("--n", type=int, default=4, help="samples per prompt")
     p.add_argument("--cfg", type=float, default=4.0)
-    p.add_argument("--steps", type=int, default=100)
+    p.add_argument("--steps", type=int, default=None, help="DDPM steps (default 100; es models default to their few-step count)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--buckets", default=None, help="comma list, e.g. 12,16,20,24,32,48,64 for v7 models")
     p.add_argument("--sampler", default="ddpm", choices=["ddpm", "ddim"])
@@ -135,6 +135,7 @@ def main():
     p.add_argument("--cads_psi", type=float, default=1.0)
     p.add_argument("--gi", type=float, nargs=2, default=[0.0, 1.0],
                    help="guidance interval as t/T range [lo hi]; CFG off (w=1) outside it")
+    p.add_argument("--chunk", type=int, default=1000, help="max samples per forward batch")
     p.add_argument("--out", required=True)
     args = p.parse_args()
     cads = dict(tau1=args.cads_tau1, tau2=args.cads_tau2, s=args.cads_s, psi=args.cads_psi) if args.cads else None
@@ -171,13 +172,15 @@ def main():
         from train_es import build_es
         model = build_es(sd["es"], device)
         model.load_state_dict(sd["state"])
-        if args.steps == 100:  # default is the 100-step DDPM count; es models use their own few-step default
+        if args.steps is None:
             args.steps = sd["es"].get("sample_steps", 16)
         print(f"es model use_xi={model.use_xi} steps={args.steps}", flush=True)
     else:
         model = build_model(device)
         model.load_state_dict(sd)
     model.eval()
+    if args.steps is None:
+        args.steps = 100
     guide = None
     if args.guide_ckpt:
         guide = build_model(device)
@@ -192,8 +195,11 @@ def main():
     cond = embed(prompts, tokenizer, enc, device).repeat_interleave(args.n, 0)
     uncond = embed([""] * len(prompts) * args.n, tokenizer, enc, device)
     for size in args.sizes:
-        imgs = sample(model, scheduler, cond, uncond, size, device, args.steps, args.cfg, args.seed, guide,
-                      cads=cads, gi=tuple(args.gi))
+        # chunked so 3000-prompt matched evals fit next to other jobs (one 3000 batch needs ~70GB);
+        # chunk i uses seed+i, so results are seed-reproducible per chunk size
+        imgs = torch.cat([sample(model, scheduler, cond[i:i + args.chunk], uncond[i:i + args.chunk], size, device,
+                                 args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi))
+                          for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
         for i, im in enumerate(rgba):
             pi, k = divmod(i, args.n)

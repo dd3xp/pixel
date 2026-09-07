@@ -1148,3 +1148,22 @@ eval_matched.sh: 用 3000 张 held-out 真实精灵(与参考集不相交)各自
 **记忆污染(决定性)**: matched 协议的 3000 张 "held-out" 精灵只是从**参考集**里排除, 却全在训练集里(v7 及其初始化 v6e10 都见过全部 oga_clean)。v7 matched 样本中 8.4% 与其 caption 源精灵近乎逐像素相同(RMSE<0.05), 19.7% 的最近邻就是源精灵(probe_tv 5.4% / 12.8%)。caption 仅 9,799 唯一 / 37,490 (7,669 张 = "a pixel art sprite", 1,211 张 = "a pixel with a pixel in the middle", BLIP 自动 caption 噪声大), 唯一 caption 等价于唯一标签, 72M 参数 × 3 万样本处于记忆阈值以上。因此 16.66 不可信, 且任何从 v7 微调的探针都继承此污染。
 
 **决定**: 重训基线 **v7h** = v7 配方, 随机初始化(不能用 v6e10 初始化, 它见过全部数据), `--exclude runs_out/holdout_exclude.txt`(ref[:3000] ∪ held[:3000], 去重后 5,928 路径, 6,096 行含 tool_candidates 重复), 80k 步, `--snap_every 5000` 保存 EMA 快照(自引导弱模型 = 早期快照, 且 ckpt.pt 支持 supervisor 重启续训)。数据集 205,956 → 180,533 行。09-06 18:55 UTC 上线 GPU3 supervise.sh(logs/v7h.log, ~11 h), 结束自动跑 eval_matched + fd_decomp。以后所有探针从 v7h 微调, 与 v7h(及 v7h+CADS/自引导)在 matched 协议下比。
+
+## 2026-09-07 06:30~ (UTC) v7h 完成; 能量分数探针先导(污染, 只看机制); 干净基线首值
+
+**v7h**(v7 配方随机初始化, 排除评测 5,928 张, 80k 步, 11.6 h, GPU3): matched FD **21.98 / q16 12.64**(cfg4, DDPM100)。对比污染的 v7 16.66/11.29 → 记忆约值 5 点。cfg7 → 42.95/19.79(对 v7h 有害, 与 probe_tv 相反, 高 CFG 结论不可跨模型迁移)。其余引导扫描(cfg10/CADS/gi/自引导快照)在跑 logs/diag_v7h.log。
+
+**es 先导**(train_es.py, v7 初始化, 10k 步, m=4 λ=1 β=1; 配对对照 ctrl = 同步数 MSE, ξ=0; 均为 matched 协议):
+
+| 设置 | 采样 | FD | +q16 | precision | recall | coverage | intra_div |
+|---|---|---|---|---|---|---|---|
+| v7 (污染参照) | DDPM 100 | 16.66 | 11.29 | .921 | .905 | .899 | 25.09 |
+| es | 再加噪 16 步 | 67.13 | 21.47 | .881 | .815 | .713 | 24.49 |
+| es | 40 步 | 43.80 | 16.58 | .908 | .865 | .806 | 24.84 |
+| es | 100 步 | 28.47 | 14.06 | .915 | .861 | .823 | 25.13 |
+| ctrl (MSE) | 16 步 | 35.47 | 13.79 | .903 | .859 | .803 | 24.94 |
+| ctrl (MSE) | 100 步 | 待 | | | | | |
+
+训练侧: pair 项全程 ≈ fid 项(4.7~7.0), **没有 ξ-忽略崩塌**, 网络确实用了 ξ。样本图(runs/derisk/es_pilot_grid_crop.png): 结构更"果断"但带**像素级散点/alpha 噪声**(后验采样把像素级不确定性也采出来了, DINOv2@16 每 patch=1 像素, 重罚), 因此 mean_term 大(16 步 47.9 → 100 步 17.1); 步数越多残余噪声越小。100 步 es 的 intra_div 25.13 = 真实 25.0(v7 25.09), recall/coverage 均**低于** v7, 未见覆盖率收益。q16 差 2.8 < 4 不作结论, 原始差 12 → 机制在此形态下**失败**。补一枚: 混合 hyb300(t≥300 用能量分数, t<300 用 MSE/ξ=0, 让结构随机、像素细节取均值) 10k 先导在 GPU3 排队(logs/probe_es_pilot_hyb300.log), 若仍不优于 ctrl@100 即杀整个方向。
+
+**修 bug**: sample_e.py 加 CADS 时误把 @torch.no_grad 挪到 cads_anneal 上 → 3000 张评测建图 70GB OOM, 已修; 加 --chunk 1000(每块 seed+i, 与旧 3000 单批数字非逐位一致但统计等价); --steps 默认改 None(原 `==100` 判定让 es 的 --steps 100 被换成 16, 已作废那次结果)。

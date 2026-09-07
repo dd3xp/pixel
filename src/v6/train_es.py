@@ -56,8 +56,9 @@ class ESUNet(nn.Module):
     """UNet with conv_in widened to 8 channels: [x_t, xi]."""
     es = True
 
-    def __init__(self, unet, use_xi=True):
+    def __init__(self, unet, use_xi=True, tmin=0):
         super().__init__()
+        self.tmin = tmin  # hybrid: xi (posterior sample) only for t >= tmin; below, xi=0 and the net is the MSE mean
         old = unet.conv_in
         new = nn.Conv2d(8, old.out_channels, old.kernel_size, padding=old.padding)
         with torch.no_grad():
@@ -72,6 +73,10 @@ class ESUNet(nn.Module):
     def forward(self, x_t, t, encoder_hidden_states=None, class_labels=None, xi=None):
         if xi is None or not self.use_xi:
             xi = torch.zeros_like(x_t)
+        elif self.tmin > 0:
+            tt = t if torch.is_tensor(t) else torch.tensor(t, device=x_t.device)
+            tt = tt.view(-1, 1, 1, 1) if tt.dim() else tt
+            xi = torch.where(tt >= self.tmin, xi, torch.zeros_like(xi))
         return self.unet(torch.cat([x_t, xi], 1), t, encoder_hidden_states=encoder_hidden_states,
                          class_labels=class_labels)
 
@@ -82,21 +87,37 @@ class ESUNet(nn.Module):
 
 
 def build_es(cfg, device):
-    return ESUNet(build_unet(device), use_xi=cfg.get("use_xi", True)).to(device)
+    return ESUNet(build_unet(device), use_xi=cfg.get("use_xi", True), tmin=cfg.get("tmin", 0)).to(device)
 
 
-def energy_score(pred, target, m, lam, beta):
+def energy_score(pred, target, m, lam, beta, es_mask=None):
     """pred: (m*B, C, H, W) in xi-major order [xi_0 batch, xi_1 batch, ...]; target: (B, C, H, W).
-    Returns (loss, fidelity term, pairwise term) -- pairwise term is the collapse monitor."""
+    es_mask: (B,) bool -- samples that get the energy score; the rest (hybrid, t < tmin) get plain
+    eps-MSE on their xi=0 prediction.  Returns (loss, fidelity term, pairwise term) -- the pairwise
+    term is the collapse monitor."""
     B = target.shape[0]
     p = pred.view(m, B, -1)
-    fid = (p - target.view(1, B, -1)).norm(dim=-1).pow(beta).mean()
+    tgt = target.view(1, B, -1)
+    if es_mask is not None and not bool(es_mask.all()):
+        mse = ((p[:, ~es_mask] - tgt[:, ~es_mask]) ** 2).mean()
+        if not bool(es_mask.any()):
+            return mse, mse.detach(), torch.zeros((), device=pred.device)
+        p, tgt = p[:, es_mask], tgt[:, es_mask]
+        frac = float(es_mask.float().mean())
+    else:
+        mse, frac = None, 1.0
+    fid = (p - tgt).norm(dim=-1).pow(beta).mean()
     if m < 2 or lam == 0:
-        return fid, fid.detach(), torch.zeros((), device=pred.device)
-    d = torch.cdist(p.transpose(0, 1), p.transpose(0, 1))  # (B, m, m)
-    pair = d.pow(beta).sum(dim=(1, 2)) / (m * (m - 1))      # mean over ordered pairs j != j'
-    pair = pair.mean()
-    return fid - lam * 0.5 * pair, fid.detach(), pair.detach()
+        loss = fid
+    else:
+        d = torch.cdist(p.transpose(0, 1), p.transpose(0, 1))  # (B, m, m)
+        pair = d.pow(beta).sum(dim=(1, 2)) / (m * (m - 1))      # mean over ordered pairs j != j'
+        pair = pair.mean()
+        loss = fid - lam * 0.5 * pair
+    if mse is not None:  # scale-match: ES per-image norm ~ 32*rmse at 1024 dims -> weight MSE up so both parts matter
+        loss = frac * loss + (1 - frac) * 1024.0 ** 0.5 * mse
+    pair = pair if (m >= 2 and lam != 0) else torch.zeros((), device=pred.device)
+    return loss, fid.detach(), pair.detach()
 
 
 @torch.no_grad()
@@ -141,6 +162,8 @@ def main():
     p.add_argument("--no_xi", action="store_true", help="control: xi channels forced to zero (deterministic)")
     p.add_argument("--mse", action="store_true", help="control: plain eps-MSE loss (with --m 1 --no_xi = paired v7 recipe)")
     p.add_argument("--sample_steps", type=int, default=16)
+    p.add_argument("--tmin", type=int, default=0,
+                   help="hybrid: energy score only for t >= tmin (structure), eps-MSE with xi=0 below (pixel detail)")
     p.add_argument("--bs_scale", type=float, default=0.5, help="batch scaled down because m copies are run")
     args = p.parse_args()
     for k in BATCH:
@@ -164,11 +187,11 @@ def main():
 
     unet = build_unet(device)
     unet.load_state_dict(torch.load(args.init, map_location=device))
-    model = ESUNet(unet, use_xi=not args.no_xi).to(device)
+    model = ESUNet(unet, use_xi=not args.no_xi, tmin=args.tmin).to(device)
     print(f"init from {args.init}; params {sum(q.numel() for q in model.parameters()) / 1e6:.1f}M; "
           f"m={args.m} lam={args.lam} beta={args.beta} use_xi={model.use_xi}", flush=True)
     cfg = {"use_xi": model.use_xi, "buckets": BUCKETS, "m": args.m, "lam": args.lam, "beta": args.beta,
-           "sample_steps": args.sample_steps}
+           "sample_steps": args.sample_steps, "tmin": args.tmin}
 
     scheduler = DDPMScheduler(num_train_timesteps=1000, beta_schedule="squaredcos_cap_v2")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr)
@@ -196,7 +219,8 @@ def main():
             loss = F.mse_loss(pred, noise.repeat(m, 1, 1, 1))
             fid, pair = loss.detach(), torch.zeros((), device=device)
         else:
-            loss, fid, pair = energy_score(pred, noise, m, lam, args.beta)
+            loss, fid, pair = energy_score(pred, noise, m, lam, args.beta,
+                                           es_mask=(t >= args.tmin) if args.tmin > 0 else None)
         opt.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
