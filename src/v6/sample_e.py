@@ -19,14 +19,18 @@ from transformers import CLIPTextModel, CLIPTokenizer
 BUCKETS = [16, 24, 32, 48, 64]  # overridden by --buckets
 
 
-def build_model(device):
+def build_model(device, n_class=None):
     return UNet2DConditionModel(
         sample_size=64, in_channels=4, out_channels=4, layers_per_block=2,
         block_out_channels=(128, 256, 512), cross_attention_dim=512,
         down_block_types=("CrossAttnDownBlock2D", "CrossAttnDownBlock2D", "DownBlock2D"),
         up_block_types=("UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D"),
-        num_class_embeds=len(BUCKETS),
+        num_class_embeds=n_class or len(BUCKETS),
     ).to(device)
+
+
+def n_class_of(sd):  # 7 (v7) or 14 (train_coarse.py: fine + coarse labels)
+    return sd["class_embedding.weight"].shape[0]
 
 
 @torch.no_grad()
@@ -100,6 +104,8 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             elif kind == "shift":  # degraded input: 1-px cyclic shift (breaks pixel-grid alignment)
                 xb = torch.roll(x, shifts=(1, 1), dims=(2, 3))
                 e_u = torch.roll(ref(xb, t, encoder_hidden_states=cond, class_labels=lab).sample, shifts=(-1, -1), dims=(2, 3))
+            elif kind == "coarse":  # train_coarse.py: the network's own trained coarse-view labels (idx + 7)
+                e_u = ref(x, t, encoder_hidden_states=cond, class_labels=lab + len(BUCKETS)).sample
             elif kind == "bucketmix":  # average of the wrong-bucket and unconditional references (<arg>px)
                 lab_bad = torch.full_like(lab, BUCKETS.index(int(arg)))
                 e_u = 0.5 * (ref(x, t, encoder_hidden_states=cond, class_labels=lab_bad).sample
@@ -200,15 +206,16 @@ def main():
             args.steps = sd["es"].get("sample_steps", 16)
         print(f"es model use_xi={model.use_xi} steps={args.steps}", flush=True)
     else:
-        model = build_model(device)
+        model = build_model(device, n_class_of(sd))
         model.load_state_dict(sd)
     model.eval()
     if args.steps is None:
         args.steps = 100
     guide = None
     if args.guide_ckpt:
-        guide = build_model(device)
-        guide.load_state_dict(torch.load(args.guide_ckpt, map_location=device))
+        gsd = torch.load(args.guide_ckpt, map_location=device)
+        guide = build_model(device, n_class_of(gsd))
+        guide.load_state_dict(gsd)
         guide.eval()
         print(f"autoguidance with weak model {args.guide_ckpt}", flush=True)
     if args.sampler == "ddim":
