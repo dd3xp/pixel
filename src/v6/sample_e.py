@@ -57,8 +57,9 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
 
 @torch.no_grad()
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
-           cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None):
+           cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None):
     scheduler.set_timesteps(steps)
+    apg_state = None
     n = cond.shape[0]
     lab = torch.full((n,), BUCKETS.index(size), device=device, dtype=torch.long)
     g = torch.Generator(device=device).manual_seed(seed)
@@ -118,8 +119,40 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             e_u = model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample
         if cfg_alpha is not None:  # channel-decoupled weight: RGB (palette) gets w, alpha (silhouette) gets cfg_alpha
             w = torch.tensor([w, w, w, cfg_alpha], device=device).view(1, 4, 1, 1)
+        if apg is not None:
+            e, apg_state = apg_step(scheduler, x, t, e_c, e_u, w, apg, apg_state)
+            x = scheduler.step(e, t, x).prev_sample
+            continue
         x = scheduler.step(e_u + w * (e_c - e_u), t, x).prev_sample
     return ((x + 1) / 2).clamp(0, 1).cpu()
+
+
+def apg_step(scheduler, x, t, e_c, e_u, w, apg, state):
+    """Adaptive Projected Guidance (Sadat et al. 2024, arXiv 2410.02416) on an eps-prediction sampler, applied to
+    whatever reference e_u is (CFG unconditional, autoguidance weak model, or a wrong-bucket belief).
+    In x0 space: d = x0_c - x0_u; momentum d += beta * d_prev; norm clip to r; drop the component parallel to x0_c
+    (keep eta of it); x0 = x0_c + (w - 1) d; back to eps.  apg = dict(eta, r, beta, rgb): with rgb=True only the RGB
+    channels are projected (alpha keeps the raw difference) -- the over-guidance damage lives in the colour channels."""
+    ab = scheduler.alphas_cumprod.to(x.device)[t]
+    sa, sb = ab.sqrt(), (1 - ab).sqrt()
+    x0_c, x0_u = (x - sb * e_c) / sa, (x - sb * e_u) / sa
+    d = x0_c - x0_u
+    if apg["beta"] != 0.0:
+        if state is not None:
+            d = d + apg["beta"] * state
+        state = d
+    if apg["r"] > 0:
+        nrm = d.flatten(1).norm(dim=1).view(-1, 1, 1, 1)
+        d = d * torch.clamp(apg["r"] / (nrm + 1e-8), max=1.0)
+    if apg["rgb"]:
+        ref, dd = x0_c[:, :3], d[:, :3]
+        par = ((dd * ref).flatten(1).sum(1) / (ref.flatten(1).pow(2).sum(1) + 1e-8)).view(-1, 1, 1, 1) * ref
+        d = torch.cat([dd - par + apg["eta"] * par, d[:, 3:]], 1)
+    else:
+        par = ((d * x0_c).flatten(1).sum(1) / (x0_c.flatten(1).pow(2).sum(1) + 1e-8)).view(-1, 1, 1, 1) * x0_c
+        d = d - par + apg["eta"] * par
+    x0 = x0_c + (w - 1) * d
+    return (x - sa * x0) / sb, state
 
 
 def to_rgba(img):  # (4,h,w) in [0,1] -> PIL RGBA with hard alpha
@@ -158,6 +191,7 @@ def main():
     p.add_argument("--guide_ckpt", default=None, help="plain 4ch ckpt of a WEAKER model -> autoguidance instead of CFG")
     p.add_argument("--cfg_alpha", type=float, default=None, help="separate guidance weight for the alpha channel")
     p.add_argument("--guide_mode", default=None, help="zero-training bad model from the same net: bucket:<px> | blur:<k> | shift")
+    p.add_argument("--apg", default=None, help="adaptive projected guidance 'eta,r,beta[,rgb]' e.g. 0,0,-0.5,rgb (r=0: no norm clip)")
     p.add_argument("--cads", action="store_true", help="CADS condition annealing (tau1/tau2/s/psi below)")
     p.add_argument("--cads_tau1", type=float, default=0.6)
     p.add_argument("--cads_tau2", type=float, default=0.9)
@@ -169,6 +203,10 @@ def main():
     p.add_argument("--out", required=True)
     args = p.parse_args()
     cads = dict(tau1=args.cads_tau1, tau2=args.cads_tau2, s=args.cads_s, psi=args.cads_psi) if args.cads else None
+    apg = None
+    if args.apg:
+        f = args.apg.split(",")
+        apg = dict(eta=float(f[0]), r=float(f[1]), beta=float(f[2]), rgb=len(f) > 3 and f[3] == "rgb")
     if args.buckets:
         BUCKETS.clear()
         BUCKETS.extend(int(v) for v in args.buckets.split(","))
@@ -230,7 +268,7 @@ def main():
         # chunk i uses seed+i, so results are seed-reproducible per chunk size
         imgs = torch.cat([sample(model, scheduler, cond[i:i + args.chunk], uncond[i:i + args.chunk], size, device,
                                  args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi),
-                                 guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha)
+                                 guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg)
                           for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
         for i, im in enumerate(rgba):
