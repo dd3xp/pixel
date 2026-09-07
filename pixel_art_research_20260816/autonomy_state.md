@@ -51,12 +51,11 @@
 
 ## 当前状态
 - **cycle**: 5
-- **phase**: TRAIN(基线 v7h 重训) + BUILD(采样侧: CADS/自引导/guidance-interval; 训练侧: 能量分数随机去噪探针)
-- **direction**: 诊断结论 — 差距在 recall/coverage(0.60 vs 地板 0.92), 不在 precision; 旧协议 ~15 点是 prompt 错配; matched 协议又被记忆污染 → 先建干净基线 v7h。零训练扫描: CFG 7 优于 4(matched 28.02→23.85), 低 CFG/DDIM(clip)/以 v7 为弱模型的自引导都差(自引导需同 run 早期快照 → v7h 快照)。研究综合见 arch_ideation_log cycle 5: ① CADS+自引导(零训练) ② 能量分数随机去噪微调 ③ 非泄漏增广+16px 噪声调度平移+ZTSNR ④ UFOGen 对抗精修。
-- **在跑**: (1) GPU3 supervise.sh `v7h` → logs/v7h.log(80k 步, ~83 步/min → 约 09-07 11:00 UTC 完; 结束写 logs/v7h.done; 看进度 `grep "^\[" logs/v7h.log | tail -n 1`)。(2) GPU2 tmux `dv7h`: baseline/diag_v7h.sh 等 v7h.done 后自动跑 matched 引导扫描(v7h cfg4/7/10, CADS, guidance-interval, 自引导用 step10k/20k 快照)+ fd_decomp → logs/diag_v7h.log, 结束 DIAG_V7H_DONE。(3) GPU2 tmux `espilot`: 能量分数探针**先导**(v7 初始化, 有污染, 只看机制: pair 项是否保持非零、es vs 配对 ctrl 的 matched FD 差)10k 步 ×2 → logs/probe_es_pilot.log, 结束 PROBE_ES_pilot_DONE。GPU2 另有用户 ga_vllm 进程(别动)。
-- **已建**: src/v6/train_es.py(能量分数随机去噪, ξ 通道 4→8 零初始化, m=4 β=1 λ 预热, 16 步再加噪采样; --mse --m 1 --no_xi 为配对对照), sample_e.py 支持 es ckpt / --cads / --gi / --guide_ckpt, baseline/run_probe_es.sh, baseline/diag_v7h.sh。
-- **下一动作**: ① 每 tick 看三条日志一行; espilot 完成 → 记 experiment_log(pair 项轨迹 + es/ctrl matched FD + fd_decomp recall/coverage), 若 es 比 ctrl 差 ≥4 且 pair→0 则机制失败, 转 UFOGen 对抗精修或非泄漏增广+调度平移。② v7h.done 后: 干净 es 探针 `tmux new -d -s es "bash baseline/run_probe_es.sh 2 workdir/v7h/model_latest.pt \"\" 20000 > logs/probe_es.log 2>&1"`(等 dv7h 完成再启, 避免 GPU2 挤爆; es 先导占 ~48GB)。③ 收 diag_v7h → 新基线表(v7h 与 v7h+最佳零训练引导), 写入胜负线。④ DECIDE: es(干净) vs ctrl 与 v7h+引导, ≥4 点信号。同步 baseline/run_v7h.sh 修复版到服务器(训练结束后再 scp, 运行中的 bash 脚本不能覆盖)。
-- **更新时间**: 2026-09-06 19:25 服务器时(UTC)
+- **phase**: EVAL(v7h 引导扫描 + es 先导补测) → DECIDE(es 方向)
+- **direction**: 干净基线 v7h 已出: matched **21.98 / q16 12.64**(v7 污染值 16.66 中约 5 点是记忆)。es 先导(v7 初始化, 10k): ξ 被使用(pair≈fid, 无崩塌), 但后验采样带像素级散点 → 100 步 28.47/14.06, recall/coverage 不升 → 纯 es 形态失败; 最后一枚 hyb300(t≥300 能量分数 / t<300 MSE)在跑, 不优于 ctrl@100 则整个"随机去噪/评分规则"方向记入已证伪。
+- **在跑**: GPU2 tmux `dv7h` → logs/diag_v7h.log(v7h cfg4 21.98/12.64, cfg7 42.95/19.79 已出; 余 cfg10/CADS×3/gi/自引导×4, 每点 ~8 min, 结束 DIAG_V7H_DONE)。GPU3 tmux `es_steps` → logs/es_steps3.log(ctrl@100 步 + v7 fd_decomp, 结束 ES_STEPS_DONE); 之后 tmux `eshyb` 自动起 hyb300 训练 10k(~3 h)+matched 评测 → logs/probe_es_pilot_hyb300.log, 结束 HYB_DONE。GPU2 另有用户 ga_vllm 进程(别动)。
+- **下一动作**: ① dv7h 完成 → 表格进 experiment_log, 定"v7h+最佳零训练引导"为对照线, 写入胜负线。② es_steps3 完成 → 补 ctrl@100 行。③ hyb300 完成 → DECIDE: 与 ctrl@100 / v7(同污染)比, 原始 FD 差 ≥4 且 recall/coverage 升才算信号; 否则杀"随机去噪"方向, 转下一候选: 优先 **非泄漏增广 + 16px 噪声调度平移 + ZTSNR(从 v7h 微调, 对照 v7h 续训)**, 其次 UFOGen 式对抗 x0 精修; 或按 arch_ideation_log cycle 5 重新宽泛调研。④ 训练结束后 scp baseline/run_v7h.sh 修复版到服务器。
+- **更新时间**: 2026-09-07 06:58 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
