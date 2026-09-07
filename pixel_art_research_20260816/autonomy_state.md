@@ -52,10 +52,10 @@
 ## 当前状态
 - **cycle**: 5
 - **phase**: EVAL(v7h 引导扫描 + es 先导补测) → DECIDE(es 方向)
-- **direction**: 干净基线 v7h 已出: matched **21.98 / q16 12.64**(v7 污染值 16.66 中约 5 点是记忆)。es 先导(v7 初始化, 10k): ξ 被使用(pair≈fid, 无崩塌), 但后验采样带像素级散点 → 100 步 28.47/14.06, recall/coverage 不升 → 纯 es 形态失败; 最后一枚 hyb300(t≥300 能量分数 / t<300 MSE)在跑, 不优于 ctrl@100 则整个"随机去噪/评分规则"方向记入已证伪。
-- **在跑**: GPU2 tmux `dv7h` → logs/diag_v7h.log(v7h cfg4 21.98/12.64, cfg7 42.95/19.79 已出; 余 cfg10/CADS×3/gi/自引导×4, 每点 ~8 min, 结束 DIAG_V7H_DONE)。GPU3 tmux `es_steps` → logs/es_steps3.log(ctrl@100 步 + v7 fd_decomp, 结束 ES_STEPS_DONE); 之后 tmux `eshyb` 自动起 hyb300 训练 10k(~3 h)+matched 评测 → logs/probe_es_pilot_hyb300.log, 结束 HYB_DONE。GPU2 另有用户 ga_vllm 进程(别动)。
-- **下一动作**: ① dv7h 完成 → 表格进 experiment_log, 定"v7h+最佳零训练引导"为对照线, 写入胜负线。② es_steps3 完成 → 补 ctrl@100 行。③ hyb300 完成 → DECIDE: 与 ctrl@100 / v7(同污染)比, 原始 FD 差 ≥4 且 recall/coverage 升才算信号; 否则杀"随机去噪"方向, 转下一候选: 优先 **非泄漏增广 + 16px 噪声调度平移 + ZTSNR(从 v7h 微调, 对照 v7h 续训)**, 其次 UFOGen 式对抗 x0 精修; 或按 arch_ideation_log cycle 5 重新宽泛调研。④ 训练结束后 scp baseline/run_v7h.sh 修复版到服务器。
-- **更新时间**: 2026-09-07 06:58 服务器时(UTC)
+- **direction**: 干净基线 v7h matched **21.98 / q16 12.64**。**首个强正信号(零训练)**: 自引导(Karras 2024; 弱模型 = 同 run 10k 步 EMA 快照, w=2 替代 CFG) → **11.33 / q16 6.71**(−10.6 点, 地板 3.45), 样本更锐、对比更强、更多样(runs/derisk/v7h_autog10k_w2_crop.png)。其余零训练引导全劣: cfg7 42.95, cfg10 62.12, CADS 44.58/71.17/88.61, gi 32.57。es 先导: 纯形态杀(28.47 vs ctrl 15.03); hyb300 在跑, 意义已降(自引导线更低)。
+- **在跑**: GPU2 `dv7h`(余 autog10k_w3 / autog20k_w2 / autog10k+gi, 然后 fd_decomp; DIAG_V7H_DONE) → 接 `dv7h2`(自引导网格: 5k_w2, 10k_w1.5, 10k_w2.5, 40k_w2, 10k_w2_200步; logs/diag_v7h2.log, DIAG_V7H2_DONE)。GPU3 `eshyb` hyb300 训练 ~1600/10000 → logs/probe_es_pilot_hyb300.log(HYB_DONE)。
+- **下一动作**: ① 两轮自引导扫描完 → experiment_log 全表 + fd_decomp(recall/coverage 是否是自引导补上的), 胜负线改为 **对照 = v7h+最佳自引导**。② RESEARCH(自引导为核心的新颖机制, 自引导本身 novelty 0): 候选 (a) 分辨率退化弱模型(同模型喂错 bucket 标签 / 下采样-上采样 x_t 的预测)作引导方向 — 像素画特异, 零训练可先测; (b) 训练一个"故意欠拟合/低容量"的配套弱模型并与主模型联训(自引导的可控版); (c) 自引导 + 能量分数 or 自引导 + 结构 oracle 分析。先跑 (a) 零训练探针, 再写 arch_ideation_log。③ hyb300 完成记一行, 方向关闭。④ scp baseline/run_v7h.sh 修复版。
+- **更新时间**: 2026-09-07 07:25 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
