@@ -5,7 +5,7 @@
 
 ## 判据与硬约束
 - **指标(2026-09-06 修正)**: **公平 FD-DINOv2@16px**(src/v6/fd_fair.py, 参考集与生成同走 to_tensor 管线; 旧 fd_dino 数值全部作废, 见 experiment_log "指标修正")。n=3304(413 prompts×8, eval_probe.sh)。**真实地板 3.45, v7 = 53.21, 最强简单基线 probe_tv(TV w=0.1) = 42.82**, 越低越好。
-- **胜负线(2026-09-06 19:40 三次修正; 22:30 四次修正: 基线重训)**: 旧协议(413 词表 prompt×8)有 ~15 点 prompt 分布错配伪影, **作废**。新主指标 = **matched FAIR FD@16**: baseline/eval_matched.sh(3000 张 held-out 真实精灵的 caption, n=1, seed 0; 参考集不变, 地板 3.45)。**但 v7/probe_tv 的 matched 数字(16.66 / 28.02)被记忆污染**(held-out 只从参考集排除, 训练集含全部 oga; v7 8.4% 近逐像素复现), 只作参考。**干净基线 = v7h**(v7 配方随机初始化, 训练排除 ref∪held 5,928 张, 80k 步, 快照每 5k; 在训, 09-07 ~06:00 UTC 完)。判据: 探针(**必须从 v7h 微调或同配方训练**) matched FD 比 v7h(及 v7h+最佳零训练引导) 低 ≥4 点才算信号; 差异 <4 不作结论; 每个探针跑 fd_decomp.py 看 recall/coverage。
+- **胜负线(2026-09-06 19:40 三次修正; 22:30 四次修正: 基线重训)**: 旧协议(413 词表 prompt×8)有 ~15 点 prompt 分布错配伪影, **作废**。新主指标 = **matched FAIR FD@16**: baseline/eval_matched.sh(3000 张 held-out 真实精灵的 caption, n=1, seed 0; 参考集不变, 地板 3.45)。**但 v7/probe_tv 的 matched 数字(16.66 / 28.02)被记忆污染**(held-out 只从参考集排除, 训练集含全部 oga; v7 8.4% 近逐像素复现), 只作参考。**干净基线 = v7h**(v7 配方随机初始化, 训练排除 ref∪held 5,928 张, 80k 步, 快照每 5k; 在训, 09-07 ~06:00 UTC 完)。判据: 探针(**必须从 v7h 微调或同配方训练**) matched FD 比 v7h(及 v7h+最佳零训练引导) 低 ≥4 点才算信号; 差异 <4 不作结论; 每个探针跑 fd_decomp.py 看 recall/coverage。**(09-07 07:40 五次修正) 对照线 = v7h + 自引导(弱=同 run step10k EMA, w=2, 替代 CFG) = 11.33 / q16 6.71**(v7h 裸 21.98/12.64)。任何新机制探针也必须允许配自引导后再比(公平: 对照有自引导, 探针也有), 目标 ≤7.3 / q16 有实质下降(地板 3.45)。自引导本身是 Karras 2024 已发表方法, novelty=0, 只能作对照/组件。
 - **一个探针最多 ~1 天**(训练+采样+FD)。超时未出结果 → 杀掉记原因换下一个。
 - **每轮最多 2 探针并行**(GPU2 + GPU3)。优先"从 v7 断点微调 20k 步"的廉价形式; 只有机制上必须从头训时才从头(≤40k步)。
 - **硬规则**: 只用 node03(ssh emnlp) GPU2/GPU3; **node09(kw) 一律不碰**(ljq的); 共享账号只在 /mnt/data/kw/RoundSquisheen/pixel/pixel 内读写; 后台任务必走 supervise.sh + tmux; node03 需 PYTHONNOUSERSITE=1; 判断在跑看产出增长。
@@ -53,8 +53,9 @@
 - **cycle**: 5
 - **phase**: EVAL(v7h 引导扫描 + es 先导补测) → DECIDE(es 方向)
 - **direction**: 干净基线 v7h matched **21.98 / q16 12.64**。**首个强正信号(零训练)**: 自引导(Karras 2024; 弱模型 = 同 run 10k 步 EMA 快照, w=2 替代 CFG) → **11.33 / q16 6.71**(−10.6 点, 地板 3.45), 样本更锐、对比更强、更多样(runs/derisk/v7h_autog10k_w2_crop.png)。其余零训练引导全劣: cfg7 42.95, cfg10 62.12, CADS 44.58/71.17/88.61, gi 32.57。es 先导: 纯形态杀(28.47 vs ctrl 15.03); hyb300 在跑, 意义已降(自引导线更低)。
-- **在跑**: GPU2 `dv7h`(余 autog10k_w3 / autog20k_w2 / autog10k+gi, 然后 fd_decomp; DIAG_V7H_DONE) → 接 `dv7h2`(自引导网格: 5k_w2, 10k_w1.5, 10k_w2.5, 40k_w2, 10k_w2_200步; logs/diag_v7h2.log, DIAG_V7H2_DONE)。GPU3 `eshyb` hyb300 训练 ~1600/10000 → logs/probe_es_pilot_hyb300.log(HYB_DONE)。
-- **下一动作**: ① 两轮自引导扫描完 → experiment_log 全表 + fd_decomp(recall/coverage 是否是自引导补上的), 胜负线改为 **对照 = v7h+最佳自引导**。② RESEARCH(自引导为核心的新颖机制, 自引导本身 novelty 0): 候选 (a) 分辨率退化弱模型(同模型喂错 bucket 标签 / 下采样-上采样 x_t 的预测)作引导方向 — 像素画特异, 零训练可先测; (b) 训练一个"故意欠拟合/低容量"的配套弱模型并与主模型联训(自引导的可控版); (c) 自引导 + 能量分数 or 自引导 + 结构 oracle 分析。先跑 (a) 零训练探针, 再写 arch_ideation_log。③ hyb300 完成记一行, 方向关闭。④ scp baseline/run_v7h.sh 修复版。
+- **在跑**: GPU2 `dv7h2`(自引导网格: 5k_w2 **14.89/12.75** 完; 余 10k_w1.5, 10k_w2.5, 40k_w2, 10k_w2_200步; logs/diag_v7h2.log, DIAG_V7H2_DONE)。GPU3 `eshyb` hyb300 训练 3000/10000 → logs/probe_es_pilot_hyb300.log(HYB_DONE)。后台 subagent: 自引导变体文献综述(占位/未占位方向), 结果写 arch_ideation_log。
+- **diag_v7h 完(07:28, 全表已入 experiment_log)**: 自引导 10k_w2 11.33(mean_term 12.13→5.09, coverage .851→.894, recall 平 .902); 20k_w2 12.14(coverage .913 最高); w3 30.11; 叠 cfg7 崩 133。收益 = 纠正系统性均值偏移 + 样本回流形, 不是补新模式。
+- **下一动作**: ① ~~两轮自引导扫描完 → experiment_log 全表 + 胜负线~~ 已做(dv7h2 余项完成后补一行)。② RESEARCH(自引导为核心的新颖机制, 自引导本身 novelty 0): 候选 (a) 分辨率退化弱模型(同模型喂错 bucket 标签 / 下采样-上采样 x_t 的预测)作引导方向 — 像素画特异, 零训练可先测; (b) 训练一个"故意欠拟合/低容量"的配套弱模型并与主模型联训(自引导的可控版); (c) 自引导 + 能量分数 or 自引导 + 结构 oracle 分析。先跑 (a) 零训练探针, 再写 arch_ideation_log。③ hyb300 完成记一行, 方向关闭。④ scp baseline/run_v7h.sh 修复版。
 - **更新时间**: 2026-09-07 07:25 服务器时(UTC)
 
 ## 历史(每 cycle 一行)

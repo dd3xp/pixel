@@ -11,6 +11,7 @@ import math
 from pathlib import Path
 
 import torch
+import torch.nn.functional as F
 from diffusers import DDIMScheduler, DDPMScheduler, UNet2DConditionModel
 from PIL import Image
 from transformers import CLIPTextModel, CLIPTokenizer
@@ -52,7 +53,7 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
 
 @torch.no_grad()
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
-           cads=None, gi=(0.0, 1.0)):
+           cads=None, gi=(0.0, 1.0), guide_mode=None):
     scheduler.set_timesteps(steps)
     n = cond.shape[0]
     lab = torch.full((n,), BUCKETS.index(size), device=device, dtype=torch.long)
@@ -88,6 +89,20 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             continue
         if guide is not None:  # autoguidance (Karras et al. 2024): weak model's conditional prediction as the reference
             e_u = guide(x, t, encoder_hidden_states=cond, class_labels=lab).sample
+        elif guide_mode is not None:  # zero-training "bad versions" of the SAME model (pixel-art specific probes)
+            kind, _, arg = guide_mode.partition(":")
+            if kind == "bucket":  # wrong resolution embedding: model believes it is denoising a <arg>px sprite
+                lab_bad = torch.full_like(lab, BUCKETS.index(int(arg)))
+                e_u = model(x, t, encoder_hidden_states=cond, class_labels=lab_bad).sample
+            elif kind == "blur":  # degraded input: prediction from a k x k box-blurred x_t (loses sub-block detail)
+                k = int(arg or 2)
+                xb = F.interpolate(F.avg_pool2d(x, k), size=(size, size), mode="nearest")
+                e_u = model(xb, t, encoder_hidden_states=cond, class_labels=lab).sample
+            elif kind == "shift":  # degraded input: 1-px cyclic shift (breaks pixel-grid alignment)
+                xb = torch.roll(x, shifts=(1, 1), dims=(2, 3))
+                e_u = torch.roll(model(xb, t, encoder_hidden_states=cond, class_labels=lab).sample, shifts=(-1, -1), dims=(2, 3))
+            else:
+                raise ValueError(guide_mode)
         else:
             e_u = model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample
         x = scheduler.step(e_u + w * (e_c - e_u), t, x).prev_sample
@@ -128,6 +143,7 @@ def main():
     p.add_argument("--buckets", default=None, help="comma list, e.g. 12,16,20,24,32,48,64 for v7 models")
     p.add_argument("--sampler", default="ddpm", choices=["ddpm", "ddim"])
     p.add_argument("--guide_ckpt", default=None, help="plain 4ch ckpt of a WEAKER model -> autoguidance instead of CFG")
+    p.add_argument("--guide_mode", default=None, help="zero-training bad model from the same net: bucket:<px> | blur:<k> | shift")
     p.add_argument("--cads", action="store_true", help="CADS condition annealing (tau1/tau2/s/psi below)")
     p.add_argument("--cads_tau1", type=float, default=0.6)
     p.add_argument("--cads_tau2", type=float, default=0.9)
@@ -198,7 +214,8 @@ def main():
         # chunked so 3000-prompt matched evals fit next to other jobs (one 3000 batch needs ~70GB);
         # chunk i uses seed+i, so results are seed-reproducible per chunk size
         imgs = torch.cat([sample(model, scheduler, cond[i:i + args.chunk], uncond[i:i + args.chunk], size, device,
-                                 args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi))
+                                 args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi),
+                                 guide_mode=args.guide_mode)
                           for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
         for i, im in enumerate(rgba):
