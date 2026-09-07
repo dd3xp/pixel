@@ -19,10 +19,10 @@ from transformers import CLIPTextModel, CLIPTokenizer
 BUCKETS = [16, 24, 32, 48, 64]  # overridden by --buckets
 
 
-def build_model(device, n_class=None):
+def build_model(device, n_class=None, width=128):
     return UNet2DConditionModel(
         sample_size=64, in_channels=4, out_channels=4, layers_per_block=2,
-        block_out_channels=(128, 256, 512), cross_attention_dim=512,
+        block_out_channels=(width, 2 * width, 4 * width), cross_attention_dim=512,
         down_block_types=("CrossAttnDownBlock2D", "CrossAttnDownBlock2D", "DownBlock2D"),
         up_block_types=("UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D"),
         num_class_embeds=n_class or len(BUCKETS),
@@ -31,6 +31,10 @@ def build_model(device, n_class=None):
 
 def n_class_of(sd):  # 7 (v7) or 14 (train_coarse.py: fine + coarse labels)
     return sd["class_embedding.weight"].shape[0]
+
+
+def width_of(sd):  # base channel width (train_v7.py --width): 128 for v7/v7h, 96 for v7s
+    return sd["conv_in.weight"].shape[0]
 
 
 @torch.no_grad()
@@ -253,7 +257,7 @@ def main():
             args.steps = sd["es"].get("sample_steps", 16)
         print(f"es model use_xi={model.use_xi} steps={args.steps}", flush=True)
     else:
-        model = build_model(device, n_class_of(sd))
+        model = build_model(device, n_class_of(sd), width_of(sd))
         model.load_state_dict(sd)
     model.eval()
     if args.steps is None:
@@ -261,7 +265,7 @@ def main():
     guide = None
     if args.guide_ckpt:
         gsd = torch.load(args.guide_ckpt, map_location=device)
-        guide = build_model(device, n_class_of(gsd))
+        guide = build_model(device, n_class_of(gsd), width_of(gsd))
         guide.load_state_dict(gsd)
         guide.eval()
         print(f"autoguidance with weak model {args.guide_ckpt}", flush=True)

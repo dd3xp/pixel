@@ -200,6 +200,8 @@ def main():
                    help="text file, one sprite path per line, dropped from all sources (clean eval hold-out)")
     p.add_argument("--snap_every", type=int, default=0,
                    help="also keep EMA snapshots model_step{N}.pt every N steps (autoguidance bad model)")
+    p.add_argument("--width", type=int, default=128,
+                   help="base channel width; blocks = (w, 2w, 4w). 128 = v7/v7h; 96 = clean second model v7s")
     args = p.parse_args()
     for k in BATCH:
         BATCH[k] = max(8, int(BATCH[k] * args.bs_scale))
@@ -228,7 +230,7 @@ def main():
 
     model = UNet2DConditionModel(
         sample_size=64, in_channels=4, out_channels=4, layers_per_block=2,
-        block_out_channels=(128, 256, 512), cross_attention_dim=512,
+        block_out_channels=(args.width, 2 * args.width, 4 * args.width), cross_attention_dim=512,
         down_block_types=("CrossAttnDownBlock2D", "CrossAttnDownBlock2D", "DownBlock2D"),
         up_block_types=("UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D"),
         num_class_embeds=len(BUCKETS),
