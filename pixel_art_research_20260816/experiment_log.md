@@ -1402,3 +1402,14 @@ dseedR: 24px seed1 叠加 **47.86**(seed0 48.70) → 24px 两 seed 一致; 余 1
 两 seed 在每个分辩率上排序完全一致(裸 > 低桶 ≈ 自引导 > 复合), 泛化结论定稿。
 
 **cycle 8 起(19:51 UTC)**: ① GPU3 `v7s`(supervise.sh 直起): **干净第二模型** = v7h 配方(同数据同排除)但 width 96(41.3M vs 72.5M), seed 1, 60k 步, 快照每 5k(train_v7.py 加 `--width`, sample_e 由 conv_in 形状自动推宽度); 训完自动跑 matched@16 五行(cfg4 / bk12 w2 / autog10k w1.5 / 复合 w1.5 / bk20 反向) + fd_decomp, 末行 V7S_DONE; 预计 ~5.5h 训 + 2h 评。② GPU2 `dmisc`(tmux): v7_lowres bk12/裸 seed1; 复合参考的采样器鲁棒性 DDIM50 / DDPM50 / DDPM200(+ 裸 DDIM50, bk12 DDIM50); 20px 反向对照 bk24/bk32; 末行 DIAG_MISC_DONE。
+
+### 2026-09-07 21:20 UTC — dmisc 完: 第二模型 seed1、采样器鲁棒性、20px 反向对照
+
+| 项 | FD | 备注 |
+|---|---|---|
+| v7_lowres 裸 cfg4 seed1 / bk12 w2 seed1 | 15.29 / **7.08** | seed0 16.66 / 7.40 → 两 seed −8.2 / −9.3 一致(仍是污染模型, 只看相对) |
+| 复合参考 w1.5 DDPM 50 / 100 / 200 步 | **6.81** / 7.67 / 9.38 | 步数越少略好(mean_term 1.9/2.5/3.4: 外推误差随步数累积); 50 步 = 省一半算力还更好 → 论文默认可改 50 步(需 seed 复核) |
+| DDIM 50: 裸 / bk12 w2 / 复合 w1.5 | 204.42 / 34.18 / 68.98 | **DDIM 对该模型本身崩(裸 204, mean_term 142)**, 非引导问题; 引导下仍大幅改善(204→34); 鲁棒性结论以 DDPM 为准, DDIM 行入附录加注 |
+| 20px 反向对照 bk24 w2 / bk32 w2 | 46.62 / 59.13 | 裸 45.92: 更高桶无效(bk24)→有害(bk32), 与 12/16/24px 一致; 表(f) 20px 行补齐 |
+
+GPU2 → `dmech2`(tmux, 21:20, logs/diag_mech2.log, DIAG_MECH2_DONE): 20/24px 纯低/高桶信念(cfg 0)+ stats_simplicity@20/24(机制在别的分辩率复现: 低桶信念 TV < 强模型 < 高桶信念?); 32px 适用范围(地板 + 裸 / bk24 / bk16 / autog / 复合 bk24+10k / bk48 反向), 11 项 ~5h。
