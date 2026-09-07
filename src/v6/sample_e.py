@@ -57,7 +57,7 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
 
 @torch.no_grad()
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
-           cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None):
+           cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None, gi_snap=None, fdg=None):
     scheduler.set_timesteps(steps)
     apg_state = None
     n = cond.shape[0]
@@ -93,6 +93,8 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             x = scheduler.step(e_c, t, x).prev_sample
             continue
         ref = guide if guide is not None else model  # autoguidance (Karras et al. 2024): weak model as the reference
+        if gi_snap is not None and not (gi_snap[0] <= float(t) / T <= gi_snap[1]):
+            ref = model  # dual-reference scheduling: snapshot reference only inside its interval, label reference throughout
         if guide_mode is not None:  # zero-training "bad versions" of ref (pixel-art specific probes); stack with --guide_ckpt
             kind, _, arg = guide_mode.partition(":")
             if kind == "bucket":  # wrong resolution embedding: model believes it is denoising a <arg>px sprite
@@ -122,6 +124,11 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
         if apg is not None:
             e, apg_state = apg_step(scheduler, x, t, e_c, e_u, w, apg, apg_state)
             x = scheduler.step(e, t, x).prev_sample
+            continue
+        if fdg is not None:  # frequency-decoupled guidance (Sabour et al. 2025): 1-level Laplacian, w for high, fdg for low
+            d = e_c - e_u
+            low = F.interpolate(F.avg_pool2d(d, 2), size=(size, size), mode="nearest")
+            x = scheduler.step(e_c + (fdg - 1) * low + (w - 1) * (d - low), t, x).prev_sample
             continue
         x = scheduler.step(e_u + w * (e_c - e_u), t, x).prev_sample
     return ((x + 1) / 2).clamp(0, 1).cpu()
@@ -191,6 +198,8 @@ def main():
     p.add_argument("--guide_ckpt", default=None, help="plain 4ch ckpt of a WEAKER model -> autoguidance instead of CFG")
     p.add_argument("--cfg_alpha", type=float, default=None, help="separate guidance weight for the alpha channel")
     p.add_argument("--guide_mode", default=None, help="zero-training bad model from the same net: bucket:<px> | blur:<k> | shift")
+    p.add_argument("--gi_snap", type=float, nargs=2, default=None, help="t/T interval in which the --guide_ckpt reference is used (outside: same-weights label reference)")
+    p.add_argument("--fdg", type=float, default=None, help="guidance weight for the low-frequency (2x2 mean) part; --cfg applies to the residual")
     p.add_argument("--apg", default=None, help="adaptive projected guidance 'eta,r,beta[,rgb]' e.g. 0,0,-0.5,rgb (r=0: no norm clip)")
     p.add_argument("--cads", action="store_true", help="CADS condition annealing (tau1/tau2/s/psi below)")
     p.add_argument("--cads_tau1", type=float, default=0.6)
@@ -268,7 +277,7 @@ def main():
         # chunk i uses seed+i, so results are seed-reproducible per chunk size
         imgs = torch.cat([sample(model, scheduler, cond[i:i + args.chunk], uncond[i:i + args.chunk], size, device,
                                  args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi),
-                                 guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg)
+                                 guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg, gi_snap=args.gi_snap, fdg=args.fdg)
                           for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
         for i, im in enumerate(rgba):
