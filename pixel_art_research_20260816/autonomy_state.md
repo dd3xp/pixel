@@ -32,6 +32,7 @@
 | CFG 7/10、CADS、引导区间 (v7h 上零训练) | 42.95 / 62.12 / 44.6~88.6 / 32.57 (v7h 21.98) | 全劣; v7h 是"引导越弱越好"的模型, 缺的是纠错不是条件对齐 |
 | 自引导弱参考 = blur 输入 / 1px 平移输入 / 更高分辩率桶(20/24/64) | 223 / 18.95 / 17.1~19.3 | 输入退化崩(预测不可比); 高分辩率信念只收缩 recall; 通道解耦(rgb/alpha 权重)无信号 |
 | APG 第二组件(Sadat 2024, 叠 stack, rgb/full/仅投影/仅动量) | stack w1.5 9.94 / w2 10.9~13.4 (无 APG 7.67 / 10.83) | **杀(组件)**: 纠错方向=径向补对比度, 正是 APG 去掉的平行分量; 动量有害 |
+| FDG 频域分权(Sabour 2025, 1 层 2×2, w_low<w_high) / 双参考区间调度(快照仅 [0,.5]/[.5,1]/[.2,.8]) | FDG 8.96~18.33 / 区间 7.70(低噪声)/8.99(高噪声)/8.84(中段) vs 7.67 | **杀(两组件)**: 削低频 mean_term 单调升(补对比度本身是低频量); 快照贡献只在低噪声半程(诊断价值, 无增益). 引导侧第二组件三连无 → 不再从引导侧找 |
 | **probe_cg 训练版粗信念引导(v7h 微调 20k, 2×2 块平均粗视图第二标签集)** | coarse w1.5/2/3 = 21.53/35.22/59.38(裸 19.17; 同权 bk12 10.12, 自引导 9.10) | **杀**: 显式低通分支不是正确弱参考, w↑ mean_term 13→42 爆; 证伪"低分辩率信念=低通"解释 → 改为"条件诱导简单性先验" |
 教训: ①离散调色板整族作废; ②"手工先验没用"是旧指标误判, 硬边/分片恒定先验有效但 TV 本身无 novelty, 只能当基线; ③结构 S 决定一切, **但把 S 分解出来单独生成并不更容易**(sgen 19.17 vs 地板 1.40), 两阶段还引入曝光偏差 → "先结构再上色"大方向 1 杀+反证, 仅留"单模型非对称调度"当低优先备胎; ④先验证指标再解读 Δ; ⑤结构域 FD(fd_struct.py)显示 TV 也是结构最好的 → 短板是**局部离散结构(分片恒定/硬边/少色)**, 不是全局布局。⑥**颜色维度已被平凡手段(TV+q16)基本解决**, 剩余 35 中结构域占 15.5(地板 1.4); "架构化少色瓶颈"方向 1 杀且预期上限≈事后量化 → 不再投; 下一机制必须提升**单模型内部的局部结构质量**, 且 +q16 后 < 32。⑦(cycle 4) **"离散/少色假设"整族(有序离散、调色板损失、调色板头、投影自条件)5 个探针全 ≤ 事后量化 → 该假设族标废, 不再投任何"让输出更少色/更硬边"的机制**; 差异 <4 点不作结论(run 间方差 ±4), 2-3 点差别需多 seed。剩余 35→3.45 的差距**先诊断再建**: 采样/引导侧(CFG、步数、自引导)零训练扫描 + 训练目标层面"逃离均值回归"(评分规则/能量距离、对抗去噪、分类式输出、AR)。
 
@@ -56,7 +57,7 @@
 
 ## 当前状态
 - **cycle**: 7
-- **phase**: TRAIN(probe_cc 机制预测的训练版对比度不足参考, GPU3, 等 dapg 末项后自动起) + EVAL(dres24 末项 bk32 GPU2)。APG 第二组件**杀**(投影中性、动量有害, 与机制一致); dmech/dres20 完
+- **phase**: TRAIN(probe_cc, GPU3, 16:34 UTC 8000/20000, 无 FAILING, 预计 ~19:00 训完 + ~1.5h 评测)。GPU2 空闲(dsched 完)。引导侧第二组件 APG/FDG/区间调度**三连杀**; dmech/dres20/dres24 全完
 - **direction**: **跨分辩率自引导**(同一多分辩率模型以"更低分辩率标签下的自己"为弱参考, 零训练) —— 当前最优 = 叠加 快照10k+bucket:12 w1.5 **7.67 / seed1 7.32**(裸 v7h 21.98/21.05; 地板 3.45; matched seed 方差 ≈0.3~0.5)。**训练版 probe_cg 杀**(见已证伪), 机制(dmech 完, 09-07 14:20): **有效弱参考 = 局部对比度(TV)低于强模型且结构对齐的自身信念**; 分辩率标签是单调对比度旋钮(bk12 21.6 / bk24 31.9 / bk64 40.9 vs 强 32.0); "简单性先验"假说证伪; 显式低通分支有害因引入块结构。**泛化成立**: 20px 45.9→bk16 32.9/叠加 29.7; 24px 79.8→bk16 60.4(自引导 53.4); 12px 高桶参考变差 14.45(方向性); 第二模型 v7_lowres 16.66→7.40。论文定位: 推理侧引导机制 + 机制分析, 需 20/24px 泛化 + 第二模型 + 第二组件才够 ICLR。
 - **在跑**(tmux, 13:40 UTC 起, 每项 ~25 min):
   - GPU2 `dres24` → logs/diag_res24.log, 末行 DIAG_RES24_DONE: 24px matched@24(eval_matched_r.sh, fd_fair --size 24, 地板同算): v7h_r24_cfg4 / bk16_w2 / autog10k_w1p5 / bk20_w2 / bk12_w2 / bk16s10k_w1p5 / bk32_w2 + fd_decomp。**判据**: bk16 (或 bk12/bk20) 明显低于 cfg4 且 ≤ autog → 泛化成立; bk32 应无效(更高桶)。
@@ -65,9 +66,9 @@
   - **GPU3 `dapg`(14:34 移到 GPU3, NOWAIT=1 立即跑; GPU2 与用户 vLLM 共卡慢)** → logs/diag_apg.log, DIAG_APG_DONE: **APG(Sadat 2024, sample_e `--apg eta,r,beta[,rgb]`, x0 空间投影, rgb 变体只投 RGB)** 叠在 stack(bk12+10k)上 w 1.5/2/3 + full/proj-only/momentum 消融 + 单参考 bk12/autog w2 + fd_decomp。基线 stack w1.5 7.67(seed1 7.32)。**判据**: 任一 apg 行 < 7.2 → 组件有信号, 补 seed1; 全 ≥ 7.5 → APG 无益, 试 FDG(频域分权)/区间调度。
   - 已出: FD@20 地板 12.14, v7h_r20_cfg4 45.92(20px 差距 33.8 > 16px 的 18.5)。每项 ~6 min。
 - **在跑(15:20 起)**: GPU3 `probe_cc`(supervise.sh 直起, 15:20; **教训: 从 tmux 等待脚本里起 setsid nohup supervise 会静默死, 以后一律 ssh 直接起 + `< /dev/null`**; `OUT=workdir/probe_cc CG_ARGS="--degrade contrast --f 0.6" bash baseline/run_probe_cg.sh`; ~3.5 h 训 + 7 项评测; logs/probe_cc.log/.supervisor/.FAILING; 末行 CG_DONE)。dres24 **完**(bk32@24 = 101.67 反向对照, 高桶有害再证; DIAG_RES24_DONE)。GPU2 `dsched`(tmux, 15:25): 零训练组件 (a) 双参考区间 `--gi_snap`(快照仅 t/T∈[.2,.8]/[0,.5]/[.5,1]) (b) FDG 1 层 `--fdg w_low`(w_high=cfg 1.5/2/2.5, w_low 1.0/1.25) 共 9 项 + fd_decomp; logs/diag_sched.log, DIAG_SCHED_DONE; 判据同 APG: 任一 < 7.2 才算。
-- **下一动作(cycle 7, 更新)**: ① probe_cc: CG_DONE 后 coarse_w* vs 同权 bk12/自引导; 成立(< 同权 bk12 且 ≤7.67) → 机制预测被证实 = 论文核心证据(训练版 12px 也测: 排 eval_matched_r.sh 12/20/24 用 `--guide_mode coarse`); 不成立 → 机制解释需再修(看其 TV 统计), 论文仍以零训练版为主。② dres24 完 → 泛化表补全(bk32 反向对照)。③ GPU2 空后零训练: (a) 双参考分区间调度(快照仅中段 t, bk12 全程: 需 sample_e 加 `--gi_snap lo hi`), (b) FDG 1 层拉普拉斯分权 w_low<w_high; 各 3~4 项。④ 论文素材: 定性图 + 弱参考 TV vs FD 单调图(7 点) + seed2 关键行。
+- **下一动作(cycle 7, 更新 16:40)**: ⓪ GPU2 空 → 排论文素材: 定性图(同 seed 同 prompt: v7h 裸/autog/bk12/stack @16, 各 32 张拼图)+ 关键行 seed2(stack w1.5, bk12 w2, autog w1.5, 裸 cfg4 @16)+ 快照仅 [0,.5] 省算力版可作默认; 不需要 GPU 的: 弱参考 TV vs FD 单调图(7 点, dmech 表)。① probe_cc: CG_DONE 后 coarse_w* vs 同权 bk12/自引导; 成立(< 同权 bk12 且 ≤7.67) → 机制预测被证实 = 论文核心证据(训练版 12px 也测: 排 eval_matched_r.sh 12/20/24 用 `--guide_mode coarse`); 不成立 → 机制解释需再修(看其 TV 统计), 论文仍以零训练版为主。② dres24 完 → 泛化表补全(bk32 反向对照)。③ GPU2 空后零训练: (a) 双参考分区间调度(快照仅中段 t, bk12 全程: 需 sample_e 加 `--gi_snap lo hi`), (b) FDG 1 层拉普拉斯分权 w_low<w_high; 各 3~4 项。④ 论文素材: 定性图 + 弱参考 TV vs FD 单调图(7 点) + seed2 关键行。
 - **旧下一动作(cycle 7)**: ① 两个 dres 出数 → 写 experiment_log 分辩率泛化表(含地板@20/24/12), 判定泛化。② subagent 报告 → 写 arch_ideation_log cycle 7 RESEARCH, 选第二组件做零训练扫描(优先 APG: sample_e 加 `--apg` 投影, 叠在 bk12+10k 上, w 扫 1.5/2/3; 若 APG 允许更大 w 而不爆颜色 → 组件成立)。③ 机制实验(GPU 空后): `--cfg 0 --guide_mode bucket:12` 纯低桶信念样本 3000 张 @16 → FD + 统计(唯一色数/平区比例/TV) vs 真实 12px & 16px 精灵 & 块平均版; 同法 bucket:24 信念。写小脚本 src/v6/stats_simplicity.py。④ 若 20/24px 泛化失败 → 机制降为 16px 组件, 回 RESEARCH 换大方向(候选: 逃离均值回归的训练目标里剩余未试的分类式像素输出/AR 强基线)。⑤ 论文素材: 定性对比图(v7h 裸 vs 自引导 vs bk12 vs 叠加, 同 seed 同 prompt)。
-- **更新时间**: 2026-09-07 15:27 服务器时(UTC)
+- **更新时间**: 2026-09-07 16:40 服务器时(UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
