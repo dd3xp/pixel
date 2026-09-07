@@ -36,6 +36,18 @@ def degrade(x, k):
     return F.interpolate(F.avg_pool2d(x, k, ceil_mode=True), size=(h, h), mode="nearest")
 
 
+def degrade_contrast(x, f):
+    """Structure-aligned contrast deficiency (probe_cc): RGB of opaque pixels pulled toward the per-sprite mean colour,
+    rgb' = m + f (rgb - m); alpha and transparent pixels untouched.  Mimics what the bucket:12 belief looks like
+    (experiment_log 09-07 14:20: TV 21.6 vs 32.0, same colour count, no block structure) -- the mechanism predicts
+    THIS degradation is a compatible bad reference while the block average (probe_cg) is not."""
+    a = (x[:, 3:] > 0).float()
+    m = (x[:, :3] * a).sum((2, 3), keepdim=True) / a.sum((2, 3), keepdim=True).clamp(min=1)
+    rgb = m + f * (x[:, :3] - m)
+    rgb = rgb * a + x[:, :3] * (1 - a)
+    return torch.cat([rgb, x[:, 3:]], 1)
+
+
 def build_coarse(device):
     return UNet2DConditionModel(
         sample_size=64, in_channels=4, out_channels=4, layers_per_block=2,
@@ -76,6 +88,8 @@ def main():
     p.add_argument("--out", default="workdir/probe_cg")
     p.add_argument("--exclude", default="runs_out/holdout_exclude.txt")
     p.add_argument("--k", type=int, default=2, help="block size of the coarse degradation")
+    p.add_argument("--degrade", default="block", choices=["block", "contrast"], help="coarse view: block average | contrast deficiency")
+    p.add_argument("--f", type=float, default=0.6, help="contrast factor for --degrade contrast")
     p.add_argument("--coarse_p", type=float, default=0.5, help="fraction of samples trained as coarse view")
     p.add_argument("--ema", type=float, default=0.999)
     p.add_argument("--seed", type=int, default=0)
@@ -128,7 +142,8 @@ def main():
         x, b = x.to(device), b.to(device)
         coarse = torch.rand(x.shape[0], device=device) < args.coarse_p
         if coarse.any():
-            x = torch.where(coarse[:, None, None, None], degrade(x, args.k), x)
+            xd = degrade(x, args.k) if args.degrade == "block" else degrade_contrast(x, args.f)
+            x = torch.where(coarse[:, None, None, None], xd, x)
             b = b + coarse.long() * NB
         noise = torch.randn_like(x)
         t = torch.randint(0, 1000, (x.shape[0],), device=device)
