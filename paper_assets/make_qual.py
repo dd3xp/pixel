@@ -61,6 +61,7 @@ def main():
         "bucket:12 (w=2)": (21.6, 8.59), "snapshot 10k (w=1.5)": (27.3, 8.98), "unconditional (CFG w=4)": (27.3, 21.98),
         "bucket:24 (w=2)": (31.9, 17.27), "bucket:64 (w=2)": (40.9, 19.34),
         "2x2 block-avg branch, trained (w=1.5)": (14.2, 21.53), "2x2 block-avg branch (w=2)": (14.2, 35.22),
+        "contrast-shrunk branch, trained (w=1.5)": (15.9, 14.71),
     }
     try:
         import matplotlib
@@ -71,7 +72,7 @@ def main():
         return
     fig, ax = plt.subplots(figsize=(6, 4))
     for name, (tv, fd) in pts.items():
-        aligned = "block" not in name
+        aligned = "branch" not in name
         ax.scatter(tv, fd, c="C0" if aligned else "C3", marker="o" if aligned else "x", s=60)
         ax.annotate(name, (tv, fd), textcoords="offset points", xytext=(5, 4), fontsize=7)
     ax.axvline(32.0, ls="--", c="gray", lw=1)
@@ -80,7 +81,7 @@ def main():
     ax.text(15, 22.6, "bare v7h CFG w=4 = 21.98", fontsize=7, color="gray")
     ax.set_xlabel("TV of the pure weak reference (mean |dRGB|, opaque neighbours)")
     ax.set_ylabel("FD-DINOv2 @16 px after guidance")
-    ax.set_title("Structure-aligned references (o) help iff TV < strong model; misaligned (x) hurt regardless", fontsize=8)
+    ax.set_title("Own lower-bucket / snapshot beliefs (o) vs trained degraded-view branches (x); strong-model TV dashed", fontsize=8)
     fig.tight_layout()
     fig.savefig("paper_assets/fig_tv_vs_fd.png", dpi=200)
     print("wrote paper_assets/fig_tv_vs_fd.png")
