@@ -87,22 +87,27 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
         if w == 1.0:
             x = scheduler.step(e_c, t, x).prev_sample
             continue
-        if guide is not None:  # autoguidance (Karras et al. 2024): weak model's conditional prediction as the reference
-            e_u = guide(x, t, encoder_hidden_states=cond, class_labels=lab).sample
-        elif guide_mode is not None:  # zero-training "bad versions" of the SAME model (pixel-art specific probes)
+        ref = guide if guide is not None else model  # autoguidance (Karras et al. 2024): weak model as the reference
+        if guide_mode is not None:  # zero-training "bad versions" of ref (pixel-art specific probes); stack with --guide_ckpt
             kind, _, arg = guide_mode.partition(":")
             if kind == "bucket":  # wrong resolution embedding: model believes it is denoising a <arg>px sprite
                 lab_bad = torch.full_like(lab, BUCKETS.index(int(arg)))
-                e_u = model(x, t, encoder_hidden_states=cond, class_labels=lab_bad).sample
+                e_u = ref(x, t, encoder_hidden_states=cond, class_labels=lab_bad).sample
             elif kind == "blur":  # degraded input: prediction from a k x k box-blurred x_t (loses sub-block detail)
                 k = int(arg or 2)
                 xb = F.interpolate(F.avg_pool2d(x, k), size=(size, size), mode="nearest")
-                e_u = model(xb, t, encoder_hidden_states=cond, class_labels=lab).sample
+                e_u = ref(xb, t, encoder_hidden_states=cond, class_labels=lab).sample
             elif kind == "shift":  # degraded input: 1-px cyclic shift (breaks pixel-grid alignment)
                 xb = torch.roll(x, shifts=(1, 1), dims=(2, 3))
-                e_u = torch.roll(model(xb, t, encoder_hidden_states=cond, class_labels=lab).sample, shifts=(-1, -1), dims=(2, 3))
+                e_u = torch.roll(ref(xb, t, encoder_hidden_states=cond, class_labels=lab).sample, shifts=(-1, -1), dims=(2, 3))
+            elif kind == "bucketmix":  # average of the wrong-bucket and unconditional references (<arg>px)
+                lab_bad = torch.full_like(lab, BUCKETS.index(int(arg)))
+                e_u = 0.5 * (ref(x, t, encoder_hidden_states=cond, class_labels=lab_bad).sample
+                             + ref(x, t, encoder_hidden_states=uncond, class_labels=lab).sample)
             else:
                 raise ValueError(guide_mode)
+        elif guide is not None:
+            e_u = guide(x, t, encoder_hidden_states=cond, class_labels=lab).sample
         else:
             e_u = model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample
         if cfg_alpha is not None:  # channel-decoupled weight: RGB (palette) gets w, alpha (silhouette) gets cfg_alpha
