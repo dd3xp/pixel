@@ -53,7 +53,7 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
 
 @torch.no_grad()
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
-           cads=None, gi=(0.0, 1.0), guide_mode=None):
+           cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None):
     scheduler.set_timesteps(steps)
     n = cond.shape[0]
     lab = torch.full((n,), BUCKETS.index(size), device=device, dtype=torch.long)
@@ -105,6 +105,8 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
                 raise ValueError(guide_mode)
         else:
             e_u = model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample
+        if cfg_alpha is not None:  # channel-decoupled weight: RGB (palette) gets w, alpha (silhouette) gets cfg_alpha
+            w = torch.tensor([w, w, w, cfg_alpha], device=device).view(1, 4, 1, 1)
         x = scheduler.step(e_u + w * (e_c - e_u), t, x).prev_sample
     return ((x + 1) / 2).clamp(0, 1).cpu()
 
@@ -143,6 +145,7 @@ def main():
     p.add_argument("--buckets", default=None, help="comma list, e.g. 12,16,20,24,32,48,64 for v7 models")
     p.add_argument("--sampler", default="ddpm", choices=["ddpm", "ddim"])
     p.add_argument("--guide_ckpt", default=None, help="plain 4ch ckpt of a WEAKER model -> autoguidance instead of CFG")
+    p.add_argument("--cfg_alpha", type=float, default=None, help="separate guidance weight for the alpha channel")
     p.add_argument("--guide_mode", default=None, help="zero-training bad model from the same net: bucket:<px> | blur:<k> | shift")
     p.add_argument("--cads", action="store_true", help="CADS condition annealing (tau1/tau2/s/psi below)")
     p.add_argument("--cads_tau1", type=float, default=0.6)
@@ -215,7 +218,7 @@ def main():
         # chunk i uses seed+i, so results are seed-reproducible per chunk size
         imgs = torch.cat([sample(model, scheduler, cond[i:i + args.chunk], uncond[i:i + args.chunk], size, device,
                                  args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi),
-                                 guide_mode=args.guide_mode)
+                                 guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha)
                           for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
         for i, im in enumerate(rgba):
