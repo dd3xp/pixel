@@ -1642,3 +1642,16 @@ GPU2 空(diag_review3 完)。
 - best-CFG 行 CLIP: @12 w2 29.65/14.2% | @20 w2.5 30.02/18.3% | @24 w2 29.89/19.3% | @32 w2 29.43/20.6%; 复合 @20/24/32 = 29.48/29.33/28.78 → **R>16 时复合仍低 0.5~0.65 CLIP**, 16px 的"双坐标占优"暂只在 16px 成立 → diag_review6 (GPU3, logs/diag_review6.log, DIAG_REVIEW6_DONE): composed∘bucketu:16 w1.5 @20/24 + bucketu:24 @32 + bucketu:16 @12 (无更低桶, 测纯去文本) + CLIP + Inception; 另补 cfg1.5/cfg2/cfg3 各 R 的 CLIP 以画各 R 的 CFG 前沿。
 - best-CFG Inception FID/KID: @16 w1.5 9.31/1.88, w2 8.66/.89, w3 8.86/.67 (Inception 最优 w=2 非 1.5), PAG-mid w2 8.92/1.31; @12 6.45/1.00; @20 10.66/.67; @24 15.34/2.64; @32 19.37/2.77。复合 vs best-CFG Inception FID −8/−10/−14/−11% (DINO −40/−27/−29/−17%), KID 约减半 → Inception 下差距小得多但同号; 论文 Table 9 加 best-CFG 列并如实写。
 - 六稿 [TBD] 已填 (experiments 表 1/9/11 + 50 步 + 前沿段落 caveat; mechanism q16); 剩 TBD: 72.5M 参数核实(无 GPU, 可本地算), bucketu@20/24/32 (review6), 定性图加 best-CFG 行。
+
+## 09-08 12:25 diag_review6 完 (GPU3, 45 min): 对齐恢复变体在全部 R 成立
+| R | composed∘bucketu w1.5 FD / CLIP / R@1 | composed | best-CFG | 同 CLIP 的 CFG (w1.5) | Inception bucketu 变体 |
+|---|---|---|---|---|---|
+| 20 | **29.81 / 29.70 / 15.7%** (bucketu:16) | 29.66 / 29.48 | 39.53 / 30.02 | 42.61 / 29.75 | 9.84 / .33 (复合 9.62/.26) |
+| 24 | **49.78 / 29.60 / 16.6%** (bucketu:16) | 48.70 / 29.33 | 67.34 / 29.89 | 71.22 / 29.70 | 13.24 / 1.08 (13.26/1.46) |
+| 32 | **65.27 / 29.18 / 17.5%** (bucketu:24) | 69.27 / 28.78 | 83.65 / 29.43 | 92.21 / 29.15 | 17.61 / 1.86 (17.24/1.81) |
+| 12 | 9.28 / 29.58 / 13.8% (bucketu:16, 高桶) | autog 8.54 / 29.41 | 9.71 / 29.65 | 10.44 / 29.54 | — |
+- 去文本的错桶参考把 CLIP 拉回真实值 −0.16/−0.21/−0.47 而 FD 不变(@32 还降 4 点); 同 CLIP 下 CFG(w1.5) FD 高 30/30/29%。**前沿陈述全 R 成立**; 16px 的"双坐标压过 best-CFG 点"在 R>16 不逐字成立(best-CFG CLIP 略高于真实值), 稿中已如实分开写。
+- 12px 无更低桶: 去文本 + 高桶 9.28 略优 best-CFG 但劣于 autog → 12px 仍报 autog。
+- 补 CLIP: @20 cfg1.5/2 29.75/29.92; @24 cfg1.5/3 29.70/30.00; @32 cfg1.5/3 29.15/29.60; @12 cfg1.5/3 29.54/29.76。
+- 新图 paper_assets/fig_pareto_allR.png (4 面板 12/20/24/32; make_pareto_allR.py); draft_experiments §4.9 [TBD] 已填。
+- GPU3/GPU2 均空。补漏实验清单只剩 #11 人评(无 GPU) / #13 公开模型(optional) / 定性图加 best-CFG 行(可做, 无采样: 用已存 v7h_cfg1p5 样本)。
