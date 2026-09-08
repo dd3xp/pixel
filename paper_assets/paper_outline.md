@@ -111,6 +111,21 @@ composition takes roughly half of each [log §07:30 reading 5].
 Weight sensitivity: the bucket reference's w-curve is flat (10.21 → 8.59 → 11.20 → 13.87 for w = 1.5…3) whereas the
 snapshot reference explodes (8.98 → 30.11 for w = 1.5 → 3) [log §07:30 reading dv7h5].
 
+**Weight sweeps at 20 / 24 px (v7h, seed 0, matched FD at native R; diag_wsweep20 / diag_gpu3b, [log §09-08 07:00]).** Same
+shape as 16 px: the label reference degrades gracefully with w, the snapshot reference has a sharp optimum and explodes past it.
+
+| R | reference | w = 1.25 | 1.5 | 2 | 2.5 | 3 |
+|---|---|---|---|---|---|---|
+| 20 | bucket:16 | 40.96 | 37.48 | **32.89** | 35.15 | 38.53 |
+| 20 | snapshot 10 k | 36.75 | **31.78** | 33.66 | 42.02 | 59.04 |
+| 24 | bucket:16 | 71.12 | 63.09 | **60.41** | 65.77 | 74.61 |
+| 24 | snapshot 10 k | 64.85 | 53.36 | **52.52** | TBD | TBD |
+
+(bare: 20 px 45.92, 24 px 78.96 ± .74. Seed-0 values; the 20/24 px w = 1.5 snapshot and w = 2 label entries are the seed-0
+members of the 3-seed rows in Table b.) Worst-over-sweep / best: label ref 1.25× (20 px) and 1.23× (24 px); snapshot
+ref 1.86× (20 px, w ≤ 3). At 24 px the snapshot optimum moves to w = 2 (52.52 < 53.36), so the Table-b composed row
+(w = 1.5) is not tuned in the snapshot's favour.
+
 ### Table (b) — Resolution generalisation, matched FD at the native resolution (fd_fair --size R). Sources: **[log §14:05]** (seed 0, 12/16/20 px), **[log §15:10]**, **[log §16:35]** (24 px completion), **[log §19:05 + §19:35]** (dseedR seed 1). Seed-1 values for 20/24 px as given in the task brief (dseedR).
 
 Weights v7h throughout; snapshot = 10 k EMA; "lower" = nearest lower bucket unless stated.

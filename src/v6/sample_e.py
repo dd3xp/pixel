@@ -120,6 +120,15 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
                 lab_bad = torch.full_like(lab, BUCKETS.index(int(arg)))
                 e_u = 0.5 * (ref(x, t, encoder_hidden_states=cond, class_labels=lab_bad).sample
                              + ref(x, t, encoder_hidden_states=uncond, class_labels=lab).sample)
+            elif kind == "shrink":  # interventional control: the strong prediction itself with its x0 contrast shrunk by f
+                f = float(arg or 0.7)  # toward the per-image channel mean (no second network call; 1 NFE/step)
+                ab = scheduler.alphas_cumprod.to(device)[t]
+                sa, sb = ab.sqrt(), (1 - ab).sqrt()
+                x0_c = (x - sb * e_c) / sa
+                m = x0_c.mean(dim=(2, 3), keepdim=True)
+                e_u = (x - sa * (m + f * (x0_c - m))) / sb
+            elif kind == "pag":  # Perturbed-Attention Guidance (Ahn et al. 2024): identity self-attention in <arg> layers
+                e_u = pag_forward(ref, arg or "mid", x, t, cond, lab)
             else:
                 raise ValueError(guide_mode)
         elif guide is not None:
@@ -142,6 +151,45 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             e = e + (cfg_text - 1) * (e_c - model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample)
         x = scheduler.step(e, t, x).prev_sample
     return ((x + 1) / 2).clamp(0, 1).cpu()
+
+
+class _IdentityAttnProcessor:
+    """PAG perturbed self-attention: the attention map is replaced by the identity, so out = to_out(to_v(h))."""
+
+    def __call__(self, attn, hidden_states, encoder_hidden_states=None, attention_mask=None, temb=None, *a, **k):
+        residual = hidden_states
+        if getattr(attn, "spatial_norm", None) is not None:
+            hidden_states = attn.spatial_norm(hidden_states, temb)
+        nd = hidden_states.ndim
+        if nd == 4:
+            b, c, h, w_ = hidden_states.shape
+            hidden_states = hidden_states.view(b, c, h * w_).transpose(1, 2)
+        if getattr(attn, "group_norm", None) is not None:
+            hidden_states = attn.group_norm(hidden_states.transpose(1, 2)).transpose(1, 2)
+        out = attn.to_out[1](attn.to_out[0](attn.to_v(hidden_states)))
+        if nd == 4:
+            out = out.transpose(-1, -2).reshape(b, c, h, w_)
+        if getattr(attn, "residual_connection", False):
+            out = out + residual
+        return out / getattr(attn, "rescale_output_factor", 1.0)
+
+
+def pag_forward(net, layers, x, t, cond, lab):
+    """One forward pass of `net` with identity self-attention (attn1) in the chosen blocks.
+    layers: comma list of mid | d0 | d1 | u1 | u2 | all  (down_blocks.i / up_blocks.i self-attention; mid = mid_block)."""
+    if getattr(net, "_pag_key", None) != layers:
+        orig = net.attn_processors
+        pref = {"mid": "mid_block.", "d0": "down_blocks.0.", "d1": "down_blocks.1.", "u1": "up_blocks.1.", "u2": "up_blocks.2."}
+        sel = [pref[s] for s in layers.split(",")] if layers != "all" else list(pref.values())
+        bad = {k: (_IdentityAttnProcessor() if k.endswith("attn1.processor") and any(k.startswith(p) for p in sel) else v)
+               for k, v in orig.items()}
+        assert any(isinstance(v, _IdentityAttnProcessor) for v in bad.values()), layers
+        net._pag_orig, net._pag_bad, net._pag_key = orig, bad, layers
+    net.set_attn_processor(dict(net._pag_bad))  # diffusers pops entries from the dict it is given -> pass copies
+    try:
+        return net(x, t, encoder_hidden_states=cond, class_labels=lab).sample
+    finally:
+        net.set_attn_processor(dict(net._pag_orig))
 
 
 def apg_step(scheduler, x, t, e_c, e_u, w, apg, state):
@@ -207,7 +255,8 @@ def main():
     p.add_argument("--sampler", default="ddpm", choices=["ddpm", "ddim"])
     p.add_argument("--guide_ckpt", default=None, help="plain 4ch ckpt of a WEAKER model -> autoguidance instead of CFG")
     p.add_argument("--cfg_alpha", type=float, default=None, help="separate guidance weight for the alpha channel")
-    p.add_argument("--guide_mode", default=None, help="zero-training bad model from the same net: bucket:<px> | blur:<k> | shift")
+    p.add_argument("--guide_mode", default=None, help="zero-training bad model from the same net: bucket:<px> | bucketu:<px> | blur:<k> | shift | "
+                                                            "shrink:<f> (x0-contrast-shrunk own prediction) | pag:<mid,d1,...>")
     p.add_argument("--gi_snap", type=float, nargs=2, default=None, help="t/T interval in which the --guide_ckpt reference is used (outside: same-weights label reference)")
     p.add_argument("--cfg_text", type=float, default=None, help="extra plain-CFG weight added to the reference guidance, e += (wt-1)(e_c - e_uncond)")
     p.add_argument("--fdg", type=float, default=None, help="guidance weight for the low-frequency (2x2 mean) part; --cfg applies to the residual")

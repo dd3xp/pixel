@@ -1555,3 +1555,24 @@ v7s(干净第二模型): @16 两 seed 裸 28.00/27.75 = 27.88 ± .18; bk12 12.80
 结论: 标签参考与 CFG 完全同价(±1%, 同显存); 快照/复合多一份权重 +556 MiB(72.5M 参数 fp32), 时间同; 对齐修法 cfg_text 版 +43% 时间。#15 DONE。
 
 **勘误(09-08 06:40)**: dseed2 表(09-07 17:35)与 dalign 表(09-08 04:10)中 bucket:12 w2 seed0 的 q16 写成 8.15 —— 8.15 是 APG-rgb 变体的 q16; 正确值(服务器 fair_fd16.json)为 **8.99**(seed1 8.78, seed2 8.57)。dalign 表中裸/bk12 的 mean/cov 应为 12.13/9.85 与 2.55/6.04(表 a′ 原值)。paper_outline 与 draft_*.md 已改。
+
+## 2026-09-08 07:00 UTC — 20px w 扫描完 (diag_wsweep20, GPU2) + 24px 部分 (diag_gpu3b, GPU3); 审稿实验批次开跑
+
+v7h seed 0, matched FD@R (bare: 20px 45.92, 24px 78.96±.74):
+
+| R | 参考 | w1.25 | 1.5 | 2 | 2.5 | 3 |
+|---|---|---|---|---|---|---|
+| 20 | bucket:16 | 40.96 | 37.48 | **32.89** | 35.15 | 38.53 |
+| 20 | 快照 10k | 36.75 | **31.78** | 33.66 | 42.02 | 59.04 |
+| 24 | bucket:16 | 71.12 | 63.09 | **60.41** | 65.77 | 74.61 |
+| 24 | 快照 10k | 64.85 | 53.36 | **52.52** | (跑中) | (跑中) |
+
+结论: 与 16px 同形 —— 标签参考的 w 曲线平缓(全扫描最差/最好 1.25×@20, 1.23×@24), 快照参考有尖峰且 w≥2.5 爆(1.86×@20)。
+24px 快照最优点移到 w=2(52.52<53.36), 表(b) 复合行 w=1.5 未偏袒快照。已写 paper_outline 表(a″) 下方新表; #6 DONE(24px 两项补齐后填 TBD)。
+
+**审稿视角(paper_assets/review_pass1.md) 三大担忧 → 廉价实验 diag_review1 (baseline/diag_review1.sh, PART=A GPU2 / PART=B GPU3, 07:00 起, .done 可续):**
+- R1 CFG 向下扫 w=1/1.5/2/3 @16 + CLIP → 对齐匹配 / Pareto 表述(担忧 1: 引导行付 −0.5 CLIP, 头条未在同对齐下验证)。
+- R2 干预式参考 `--guide_mode shrink:f`(sample_e 新增): 强模型自身 x0 预测向逐图均值收缩 f=0.5/0.7/0.85, 1 NFE; 等价于 x0 空间纯对比度放大 (w−1)(1−f)。若它复现 bk12 的增益 → "机制"只是对比度; 若不 → 参考携带的是结构信息而非对比度(担忧 2: 机制 ≤10 点相关, 需干预)。
+- R3 PAG 基线 `--guide_mode pag:mid|mid,d1`(sample_e 新增, diffusers attn processor 换恒等自注意; 注意 set_attn_processor 会 pop 传入 dict, 需传副本): w1.5/2/3, mid+d1, +cfg_text 1.5(担忧 3: 新颖性 vs PAG/SEG, 未引未比)。
+- R4 50 步 裸/autog/复合(采样步敏感性)。
+- 收尾: clip_score + fd_decomp 全部新行。DIAG_REVIEW1_DONE。
