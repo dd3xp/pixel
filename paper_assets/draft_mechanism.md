@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-09-09).** These section drafts were merged into `paper_assets/draft_full.md`, which is now the single source of truth and has since been re-baselined, compressed and corrected (3-seed 32 px rows, citation audit, number audit). Numbers here may be stale. Edit `draft_full.md`, not this file.
+
 # 5 Mechanism analysis
 
 Why does a lower bucket label give a useful weak reference while a higher one does not, and what does the correction change? We use statistics of the *pure* weak-reference beliefs (a characterisation), a decomposition of FD, two trained reference branches and one untrained interventional control (the tests that carry the mechanistic weight), and two further metric families. Numbers are from `paper_outline.md` Tables a′, c, d, e, f, g′, h, j and log entries dmech, dmech2, dcc12, dsched, diag_metric2. "Strong model" statistics below are of the CFG $w=4$ samples; the statistics of the best-CFG ($w=1.5$) samples were not measured [TBD].

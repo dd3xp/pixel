@@ -25,7 +25,7 @@ single frontier. We show that a *bucketed* multi-resolution model already contai
 autoguidance needs: the same weights, the same noisy input and the same text, but the label of a *lower* resolution
 bucket, yield a structure-aligned prediction with systematically lower local contrast, and extrapolating the strong
 prediction away from it removes the error at zero training cost. Against the *best* CFG weight at each resolution
-(not the training default), composing this reference with an early snapshot lowers FD-DINOv2 by 40 / 27 / 29 / 17 %
+(not the training default), composing this reference with an early snapshot lowers FD-DINOv2 by 40 / 27 / 29 / 20 %
 at 16 / 20 / 24 / 32 px (16 px: 12.5 -> 7.5, floor 3.45; 3 seeds) and by 45 / 35 / 36 % on a second, narrower model,
 at equal or better CLIP alignment than the CFG optimum, whereas perturbed-attention guidance matches CFG at every
 weight. The effect is directional (higher-bucket references hurt everywhere) and an interventional control shows the
@@ -165,7 +165,7 @@ Seed 0 unless a ± is given; best-w row re-run with seeds 1/2 where it is used a
 | v7h @16 | **12.24 / 13.32 / 11.91 = 12.49 ± .72** | 12.98 | 14.56 | 16.67 | 21.52 ± .47 | **12.49 ± .72** (w1.5) | 8.52 ± .29 | 8.73 ± .26 | **7.53 ± .19** | **−40 % / −65 %** |
 | v7h @20 | 42.61 | 40.57 | **39.53 / 39.57 / 39.61 = 39.57 ± .04** | 42.99 | 47.04 ± 1.11 | **39.57 ± .04** (w2.5) | 32.75 ± .60 | 31.57 ± .29 | **28.90 ± .69** | **−27 % / −39 %** |
 | v7h @24 | 71.22 | **67.34 / 68.66 / 67.31 = 67.77 ± .77** | — | 72.93 | 78.96 ± .74 | **67.77 ± .77** (w2) | 59.32 ± 1.37 | 54.15 ± .72 | **48.23 ± .43** | **−29 % / −39 %** |
-| v7h @32 | 92.21 | **83.65** | — | 86.99 | 96.85 | **83.65** (w2) | 77.45 | 75.23 | **69.27** | **−17 % / −28 %** |
+| v7h @32 | 92.21 | **83.65** | — | 86.99 | 96.85 | **84.63 ± 1.62** (w2, 3 seed) | 77.45 | 75.23 | **68.07 ± 1.09** (3 seed) | **−20 % / −30 %** |
 | v7s @16 | 19.29 | **19.10** | 20.34 | 22.96 | 28.00 / 27.75 | **19.10** (w2, s0) | 12.80 / 12.74 | 13.95 / 15.17 | **10.54 / 10.28** | **−45 % / −62 %** |
 | v7s @20 | 61.62 | 57.48 | **56.30** | 59.73 | 63.32 | **56.30** (w2.5) | 45.81 | 39.13 | **36.31** | **−35 % / −43 %** |
 | v7s @24 | 99.23 | **93.78** | 93.96 | 94.72 | 99.47 | **93.78** (w2) | 78.18 | 66.83 | **60.20** | **−36 % / −39 %** |

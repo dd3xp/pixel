@@ -82,7 +82,8 @@
   - **subagent 文献核实**(输出 paper_assets/refs.bib + citation_audit.md, 不改 draft): 稿中 `[cite? ...]` 有一批 2025/2026 的键(SGGBR2026 / IG2025 / SSG2026 / CDG2026 / S2Guidance2025 / InSituAG2025 / TVCFG2025 / PixDiffPIG2025 / SpriteSheetDiffusion2024 / SWG2024 / NovelAI2022 / Koulischer2025 / diffusers)疑似上一轮调研留下的占位/杜撰, **投稿前必须逐条核实或删**; 同时补 5 个 [TODO cite](clean-fid / CLIP / BLIP / Ho2020 / OGA)。
   **下一 tick**: 两者出结果 → 表 3/4 换 3-seed 均值 + 按 citation_audit 处理未核实引用(核不到就删该句主张), 提交推送。
 - **09-09 05:10 本地 更新**: 文献核实**完**(experiment_log 04:45): refs.bib 45 条, 7 处不匹配已改(含 SDXL negative_original_size 效应写反、Sabour2025 查无此人、ScaleCrafter/PixelOE/SSG 归类错), PixDiffPIG2025 查无此文已删; **稿中 [cite?]/[TODO cite]/[TBD] 全部归零, 引用键与 bib 双向一一对应**。diag_review8 **完**(experiment_log 21:01): bucketu 3-seed 29.97±0.56 / 49.07±0.62 / 66.53±1.09, 已入表 4 与 §4.9。**GPU3 在跑 `diag_review9`**(~30 min): 补 32px 复合与 best-CFG 的 seed 1/2(此前只有 seed 0, 使"32px 双坐标占优"成了 3-seed vs 单 seed)。**下一 tick**: review9 出数 → 32px 三行全 3-seed 后重述该主张 → 之后论文侧只剩"最后 490 词取舍"与 OGA 许可审计(需人)。
-- **更新时间**: 2026-09-09 05:10 本地 (服务器 09-08 21:10 UTC)
+- **09-09 06:10 本地 更新**: diag_review9 **完**(experiment_log 22:01): 32px 三行全 3-seed → **头条 −17% 改善为 −20%**(复合 68.07±1.09 vs best-CFG 84.63±1.62), 摘要/表 2/outline 同步; bucketu@32 领先复合 1.55 但 sd 1.1 → 措辞降级为"提示性"。六个分节稿加 SUPERSEDED 抬头, **draft_full.md 为唯一真相源**。**GPU 全空, 实验清单已尽**。**论文侧剩余(均需人或定稿决定)**: ① 最后 ~490 词取舍; ② OGA 逐资产许可审计; ③ #11 人评。**下一 tick 建议**: 无 GPU 待办时做低风险收尾 —— 检查 fig_tv_vs_fd 等图注与新数字一致、附录与主表重复内容去重、通读一遍 draft_full 找逻辑断点。
+- **更新时间**: 2026-09-09 06:10 本地 (服务器 09-08 22:10 UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。

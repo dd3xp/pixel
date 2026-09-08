@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-09-09).** These section drafts were merged into `paper_assets/draft_full.md`, which is now the single source of truth and has since been re-baselined, compressed and corrected (3-seed 32 px rows, citation audit, number audit). Numbers here may be stale. Edit `draft_full.md`, not this file.
+
 # 3 Method
 
 All numbers are taken from `paper_outline.md` (Tables a, a′, a″, b, d, e, i, j, j′) and the experiment log; values the outline marks TBD are flagged.

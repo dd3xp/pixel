@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-09-09).** These section drafts were merged into `paper_assets/draft_full.md`, which is now the single source of truth and has since been re-baselined, compressed and corrected (3-seed 32 px rows, citation audit, number audit). Numbers here may be stale. Edit `draft_full.md`, not this file.
+
 # 4 Experiments
 
 All numbers in this section are copied from `paper_outline.md` (tables (a)–(j′); the 20/24 px weight sweeps from the table under Table (a″), diag_wsweep20 / diag_gpu3b; the CFG weight curves, PAG, `shrink:f` and 50-step rows from Tables (j) and (j′)); entries the outline marks TBD are left as [TBD].
