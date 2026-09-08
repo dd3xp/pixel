@@ -115,10 +115,10 @@ Weights v7h throughout; snapshot = 10 k EMA; "lower" = nearest lower bucket unle
 
 | R | Floor | CFG w = 4 (bare) | Lower-bucket ref, w = 2 | Other lower bucket, w = 2 | Autoguidance 10 k, w = 1.5 | **Composed (lower + 10 k), w = 1.5** | Higher-bucket ref, w = 2 (reverse control) |
 |---|---|---|---|---|---|---|---|
-| 12 | 3.37 | 12.91 / 12.81 | — (no lower bucket exists) | — | **9.18 / 8.70** | — | bk16 **14.45** (worse than bare) (s0) |
+| 12 | 3.37 | 13.02 ± .28 (3 s) | — (no lower bucket exists) | — | **8.54 ± .73** (3 s) | — | bk16 **14.45** (worse than bare) (s0) |
 | 16 | 3.45 | 21.98 / 21.05 | bk12 **8.59** / 8.20 | — | 8.98 / 8.73 | **7.67 / 7.32** | bk20 17.14, bk24 17.27, bk64 19.34 |
-| 20 | 12.14 | 45.92 / 48.14 | bk16 **32.89** / 32.09 | bk12 35.85 (s0) | 31.78 / 31.24 | **29.66 / 28.72** | bk24 **46.62** (≈ bare), bk32 **59.13** (worse) (s0) |
-| 24 | 12.96 | 79.80 / 78.68 | bk16 **60.41** / 57.78 | bk12 57.70, bk20 66.20 (s0) | 53.36 / 54.77 | **48.70 / 47.86** (bk16 + 10 k) | bk32 **101.67** (worse than bare) |
+| 20 | 12.14 | 47.04 ± 1.11 (3 s) | bk16 **32.75 ± .60** (3 s) | bk12 35.85 (s0) | 31.57 ± .29 (3 s) | **28.90 ± .69** (3 s) | bk24 **46.62** (≈ bare), bk32 **59.13** (worse) (s0) |
+| 24 | 12.96 | 78.96 ± .74 (3 s) | bk16 **59.32 ± 1.37** (3 s) | bk12 57.70, bk20 66.20 (s0) | 54.15 ± .72 (3 s) | **48.23 ± .43** (3 s; bk16 + 10 k) | bk32 **101.67** (worse than bare) |
 | 32 | 13.77 | 96.85 | bk24 **77.45** | bk16 91.26 | 75.23 | **69.27** (bk24 + 10 k) | bk48 **113.93** (worse than bare) |
 
 Cell format: seed 0 / seed 1 (32 px seed 0 only, **[log §09-08 02:00, dmech2]**). Caption points: (i) relative gain of the
@@ -135,14 +135,15 @@ that has a lower bucket (16/20/24/32); at 32 px autoguidance (75.23) edges the l
 | Model @16 px | CFG w = 4 (bare) | bucket:12 ref, w = 2 | Autoguidance 10 k, w = 1.5 | Composed, w = 1.5 | Reverse bucket:20 w = 2 | Δ bare → composed |
 |---|---|---|---|---|---|---|
 | v7h (72.5 M, clean, Table a) | 21.98 (q16 12.64) | 8.59 (q16 8.15) | 8.98 (q16 7.82) | **7.67** (q16 8.34) | 17.14 (q16 18.64) | −65 % |
-| **v7s (41.3 M, clean)** | 28.00 (q16 13.60) | 12.80 (q16 10.00) | 13.95 (q16 9.35) | **10.54** (q16 9.57) | 25.31 (q16 24.14) | −62 % |
+| **v7s (41.3 M, clean)**, s0 / s1 | 28.00 / 27.75 (q16 13.60 / 13.72) | 12.80 / 12.74 (q16 10.00 / 10.04) | 13.95 / 15.17 (q16 9.35 / 10.02) | **10.54 / 10.28** (q16 9.57 / 9.06) | 25.31 (q16 24.14) | −63 % |
+| v7s @20 px (s0) | 63.32 | bk16 45.81 | 39.13 | **36.31** | — | −43 % |
+| v7s @24 px (s0) | 99.47 | bk16 78.18 | 66.83 | **60.20** | — | −39 % |
 | v7_lowres (contaminated; appendix) | 16.66 / 15.29 (s0 / s1) | 7.40 / 7.08 | — | — | — | (bucket:12: −56 %) |
 
 FD decomposition on v7s mirrors v7h: mean term 16.48 → 5.50 (bucket:12) / 7.04 (autoguidance) / 3.84 (composed);
 cov term 11.51 → 7.31 / 6.91 / 6.70 — the label reference fixes the mean shift, the snapshot fixes coverage, the
 composition takes both. Reverse control identical in kind: bucket:20 is slightly better raw but far worse after q16 and
-has precision ↑ .925 / recall ↓ .848 (over-guidance contraction). Seed 1 for v7s and v7s at 20/24 px are running
-(diag_v7s2).
+has precision ↑ .925 / recall ↓ .848 (over-guidance contraction). On v7s the ordering bare > label ref > autoguidance > composed holds at 16, 20 and 24 px [log §09-08 05:50].
 
 ### Table (d) — Mechanism: statistics of the *pure* weak-reference samples (sampled with `--cfg 0`, i.e. following only e_weak) vs their effect when used as guidance reference. Sources: **[log §14:20 UTC, dmech]** and **[log §19:35 UTC, dcc12]**; probe_cg/probe_cc guided FD from **[log §13:11]** and **[log §19:05]**.
 
@@ -425,9 +426,9 @@ not the label reference alone, as the method.
 | # | Experiment | Items | Est. GPU-h | Why |
 |---|---|---|---|---|
 | 1 | ~~12 px seed 1: bare / autoguidance~~ **DONE** (dseedR; bk16 reverse s1 not run) | 3 | 1.3 | complete Table b |
-| 2 | Seed 2 at 12/20/24 px for bare / lower / autog / composed (3-seed mean ± sd at every resolution) | 11 | 4.6 | consistency with Table a |
+| 2 | ~~Seed 2 at 12/20/24 px~~ **DONE** (Table b now 3-seed mean ± sd at 12/16/20/24; composed − autog = 4–8 sd at 16/20/24) | 11 | 4.6 | consistency with Table a |
 | 3 | ~~Second model v7_lowres~~ superseded by v7s (contaminated model → appendix) | 5 | 2.1 | complete Table c |
-| 4 | ~~Clean second model~~ **DONE** (v7s, Table c; seed 1 + 20/24 px rows running in diag_v7s2) | train ~12 h + 8 | 15.3 | current second model is contaminated; reviewers will ask |
+| 4 | ~~Clean second model~~ **DONE** (v7s, Table c: 2 seeds @16 + 20/24 px rows) | train ~12 h + 8 | 15.3 | current second model is contaminated; reviewers will ask |
 | 5 | ~~Higher-bucket reverse controls at 20 px (bk24, bk32)~~ **DONE seed 0** (dmisc); seed 1 optional | 4 | 1.7 | complete Table f |
 | 6 | Guidance-weight sweeps at 20/24 px (w ∈ {1.25,1.5,2,2.5,3}) for label ref and autoguidance | 20 | 8.3 | show flat-vs-steep w-curve generalises |
 | 7 | ~~bucket beliefs at 20/24 px~~ **DONE** (dmech2, Table d second block); per-resolution TV-vs-FD plot **DONE** (`paper_assets/fig_tv_vs_fd_r.png`, make_tv_fd_r.py: x = TV_ref/TV_strong, y = FD_guided/FD_bare, 16/20/24 px, 10 points; all x<1 same-caption beliefs give y<1, all x≥1 give y≈1 or >1); still open: probe_cg *sampled* branch stats (‡ row) | ~8 | 3.3 | mechanism claim at more than one resolution |
