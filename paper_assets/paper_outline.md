@@ -333,6 +333,20 @@ seed spread); the composed advantage is clear at 20/24/32. Recommendation in the
 (each pixel is a patch, the metric the domain needs), Inception as secondary, and advertise the composed reference,
 not the label reference alone, as the method.
 
+### Table (i) — Cost: wall-clock and peak memory for 1000 samples @16 px (A100-80GB, exclusive; v7h 72.5 M; DDPM 100 steps; batch 500; includes model load). Source: **[log §09-08 06:05, diag_time]**, `logs/diag_time.txt`.
+
+| Configuration | NFE / step | s per 1000 samples | Peak memory (MiB) |
+|---|---|---|---|
+| No guidance (w = 1) | 1 | 42.5 | 4951 |
+| CFG w = 4 (bare) | 2 | 73.8 | 4951 |
+| bucket:12 label reference, w = 2 | 2 | 72.7 | 4951 |
+| Autoguidance (snapshot 10 k), w = 1.5 | 2 | 73.3 | 5507 |
+| Composed (snapshot under bucket:12), w = 1.5 | 2 | 74.0 | 5507 |
+| Composed + cfg_text 1.5 (alignment variant, Table g″) | 3 | 105.9 | 5507 |
+
+The label reference costs exactly what CFG costs (same weights, same memory); snapshot-based references hold one
+extra copy of the weights (+556 MiB) at the same wall-clock; the 3-NFE alignment variant is +43 %.
+
 ## 4. Section-by-section outline
 
 ### 1 Introduction
@@ -439,7 +453,7 @@ not the label reference alone, as the method.
 | 12 | ~~Sampler robustness~~ **DONE** (dmisc, log §21:20): composed DDPM 50/100/200 = 6.81/7.67/9.38; DDIM50 broken for the bare model itself (204.42) → appendix with caveat | 6 | 2.5 | show it is not a 100-step artefact |
 | 13 | Applicability beyond our model: a public multi-resolution/bucketed model (e.g. SDXL with `original_size` micro-conditioning at 256–512 px, or Matryoshka/FiT) with FD at that resolution | setup + ~10 | 1–2 GPU-days | generality claim beyond pixel art; also settles the SDXL `negative_original_size` relation empirically |
 | 14 | ~~32 px regime~~ **DONE seed 0** (dmech2, Table b row 32): bare is *farther* from the floor at 32 px (96.85 vs 13.77), all references still help, composed best (69.27); 48/64 px and seed 1 optional | ~9 | 3.8 | delimit the operating regime |
-| 15 | Wall-clock / NFE table: CFG vs bucket-ref vs composed vs snaplo (memory and time for 3000 samples) | 4 timings | 0.3 | quantify the "same cost as CFG" claim |
+| 15 | ~~Wall-clock / NFE table~~ **DONE** (Table i) | 4 timings | 0.3 | quantify the "same cost as CFG" claim |
 | 16 | ~~Qualitative figures~~ **DONE** (paper_assets/fig_qual_{12,16,20,24,32}px.png via make_qual_r.py, prompt-aligned) | — | 0 | paper figures |
 | 17 | Verify and record exact parameter count, bucket-embedding details, training-data composition for the Method section | — | 0 | reproducibility |
 
