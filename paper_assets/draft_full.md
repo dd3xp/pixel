@@ -237,7 +237,7 @@ Re-tuning CFG does not move the samples the same way [log §09-08 19:05]. Loweri
 
 ## Appendix
 
-Contents (everything demoted from the main body): A.1 CFG weight curves and zero-training baselines (Table A1); A.2 the 16 px frontier table (Table A2); A.3 alignment variants and the frontier at 12–32 px (Table A3, Figure A1); A.4 qualitative figures at 12 / 20 / 24 / 32 px (Figures A2–A5); A.5 reverse controls (Table A4); A.6 trained degraded-view branches, paired controls (Table A5); A.7 FD decomposition (Table A6); A.8 pure-belief statistics at 20 / 24 px (Table A7, Figure A6); A.9 16-colour quantisation at 20 / 24 / 32 px; A.10 Inception clean-FID / KID in full (Table A8); A.11 cost (Table A9); A.12 sampler robustness; A.13 falsified second components (Table A10); A.14 why higher-bucket references fail; A.15 an operational rule for reference selection; A.16 the contaminated third model; A.17 broader impact.
+Contents (everything demoted from the main body): A.1 CFG weight curves and zero-training baselines (Table A1); A.2 the 16 px frontier table (Table A2); A.3 alignment variants and the frontier at 12–32 px (Table A3, Figure A1); A.4 qualitative figures at 12 / 20 / 24 / 32 px (Figures A2–A5); A.5 reverse controls (Table A4); A.6 trained degraded-view branches, paired controls (Table A5); A.7 FD decomposition (Table A6); A.8 pure-belief statistics at 20 / 24 px (Table A7, Figure A6); A.9 16-colour quantisation at 20 / 24 / 32 px; A.10 Inception KID and the full second-metric discussion (Table A8); A.11 cost (Table A9); A.12 sampler robustness; A.13 falsified second components (Table A10); A.14 why higher-bucket references fail; A.15 an operational rule for reference selection; A.16 the contaminated third model; A.17 broader impact.
 
 ### A.1 CFG weight curves, guidance-weight sweeps and other zero-training baselines
 
@@ -394,21 +394,18 @@ The reference's own FD is anti-correlated with its usefulness: at 20 px bucket:2
 
 Quantising every sample to 16 colours before FD (seed 0) helps the bare model at the $w = 4$ default substantially (21.98 → 12.64 / 45.92 → 42.65 / 79.80 → 64.38 / 96.85 → 81.41 at 16 / 20 / 24 / 32 px; q16 of the best-CFG samples at 16 px, $w = 1.5$: 12.24 → 11.55, a much smaller gain, because there is less colour bleeding left to remove) and does not help, or hurts, the guided rows (label reference 8.59 → 8.99 / 32.89 → 37.31 / 60.41 → 62.85 / 77.45 → 85.75; autoguidance 8.98 → 7.82 / 31.78 → 35.72 / 53.36 → 53.00 / 75.23 → 76.79; composed 7.67 → 8.34 / 29.66 → 34.09 / 48.70 → 51.37 / 69.27 → 74.57). At 16 px autoguidance and composed swap order after q16 (7.82 vs 8.34), and the composed margin over the $w = 4$ default shrinks from −35 / −39 / −28 % to −20 / −20 / −8 % at 20 / 24 / 32 px. Part of the gain is in the colour domain — bleeding that a 16-colour palette partly removes — and that part grows with resolution.
 
-### A.10 Inception-v3 clean-FID / KID in full
+### A.10 Inception KID and the second-metric comparison
 
 On natural-image features after nearest-neighbour upsampling to 64 px, the composed reference is best or tied-best at every resolution on v7h (FID 7.97 vs autoguidance 7.84 at 16 px, within the 3-seed spread; 9.62 vs 9.85, 13.26 vs 13.83, 17.24 vs 18.56 at 20 / 24 / 32 px) and on v7s at 20 and 24 px (10.22 vs 10.42, 13.85 vs 14.66), the one exception being v7s at 16 px, where autoguidance leads (8.25 vs 8.49), and higher-bucket references are harmful here too (11.26 / 15.45 / 22.56 / 25.83 vs bare 9.57 / 11.82 / 16.13 / 19.77). The label-only reference is Inception-weak: it lowers FID at 16 and 20 px (9.57 → 8.61, 11.82 → 10.75) but is flat or slightly worse at 24 and 32 px (16.13 → 16.45, KID 2.40 → 3.19; 19.77 → 20.10, KID 2.34 → 3.31), and on the second model it lags autoguidance (9.77 vs 8.25). Rank agreement between the metric families is high (Spearman .98 / .86 / .96 / .68 / .83 at 12 / 16 / 20 / 24 / 32 px; n = 9 / 121 / 18 / 17 / 6; Pearson .91–.99), so this is a difference in sensitivity, not a contradiction. Inception FID / KID of best-CFG: @16 $w$1.5 9.31 / 1.88, $w$2 8.66 / .89, $w$1 10.65 / 3.01, $w$3 8.86 / .67, PAG-mid $w$2 8.92 / 1.31; @12 $w$2 6.45 / 1.00; @20 $w$2.5 10.66 / .67; @24 $w$2 15.34 / 2.64; @32 $w$2 19.37 / 2.77. Composed∘`bucketu` at 20 / 24 / 32 px: 9.84 / .33, 13.24 / 1.08, 17.61 / 1.86.
 
-**Table A8.** Inception-v3 clean-FID / KID (×10⁻³), white composite, NEAREST ×4 to 64 px, same samples as Tables 1–3. Held-out real floor: FID 4.93 / 6.72 / 8.23 / 8.99 / 9.75 at 12 / 16 / 20 / 24 / 32 px. 16 px FID: seeds 0 / 1 / 2.
+**Table A8.** Kernel Inception Distance (KID × 10⁻³) on the same samples; the clean-FID half of every row is Table 5, which this table does not repeat. Held-out real floor FID 4.93 / 6.72 / 8.23 / 8.99 / 9.75 at 12 / 16 / 20 / 24 / 32 px. KID was not computed for v7s.
 
-| $R$ | Bare CFG $w=4$ | Best CFG (DINOv2-optimal $w$) | Lower-bucket ref $w=2$ | Autoguidance 10 k | Composed | Reverse (higher bucket) |
-|---|---|---|---|---|---|---|
-| 16 (3 seeds, FID) | 9.57 / 9.61 / — | 9.31 ($w$1.5); 8.66 ($w$2) | bk12 8.61 / 8.63 / 8.64 | **7.84** / 7.97 / 7.71 | 7.97 / 7.86 / 7.95 | bk24 11.26, bk64 11.29 |
-| 16 (KID) | 1.12 | 1.88 ($w$1.5); .89 ($w$2) | .78 | .55 | .63 | 2.71 |
-| 20 (FID / KID) | 11.82 / 1.01 | 10.66 / .67 ($w$2.5) | bk16 10.75 / 1.03 | 9.85 / .58 | **9.62 / .26** | bk32 15.45 / 3.71 |
-| 24 (FID / KID) | 16.13 / 2.40 | 15.34 / 2.64 ($w$2) | bk16 **16.45 / 3.19** (no gain) | 13.83 / 1.96 | **13.26 / 1.46** | bk32 22.56 / 7.55 |
-| 32 (FID / KID) | 19.77 / 2.34 | 19.37 / 2.77 ($w$2) | bk24 **20.10 / 3.31** (no gain) | 18.56 / 2.91 | **17.24 / 1.81** | bk48 25.83 / 7.58 |
-| v7s @16 (FID) | 10.33 | — | bk12 9.77 | **8.25** | 8.49 | bk20 12.86 |
-| v7s @20 / @24 (FID) | 13.06 / 16.82 | — | 11.73 / 17.85 | 10.42 / 14.66 | **10.22 / 13.85** | — |
+| $R$ | Bare CFG $w=4$ | Best CFG | Lower-bucket ref $w=2$ | Autoguidance 10 k | Composed | Composed∘`bucketu` | Reverse (higher bucket) |
+|---|---|---|---|---|---|---|---|
+| 16 | 1.12 | 1.88 ($w$1.5); .89 ($w$2) | bk12 .78 | .55 | **.63** | — | bk24 2.71 |
+| 20 | 1.01 | .67 ($w$2.5) | bk16 1.03 | .58 | **.26** | .33 | bk32 3.71 |
+| 24 | 2.40 | 2.64 ($w$2) | bk16 3.19 (no gain) | 1.96 | **1.46** | 1.08 | bk32 7.55 |
+| 32 | 2.34 | 2.77 ($w$2) | bk24 3.31 (no gain) | 2.91 | **1.81** | 1.86 | bk48 7.58 |
 
 ### A.11 Cost
 
