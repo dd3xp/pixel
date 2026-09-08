@@ -130,16 +130,19 @@ structurally aligned, see Table d; (iv) 12 px has no lower bucket, so only snaps
 limitation, stated as such; (v) the ordering bare > lower-bucket ≈ autoguidance > composed holds at every resolution
 that has a lower bucket (16/20/24/32); at 32 px autoguidance (75.23) edges the label reference (77.45).
 
-### Table (c) — Second model (v7_lowres). Source: **[log §14:05]**; bare/q16 from **[log §2026-09-06 19:00, cycle 5 (3)]**.
+### Table (c) — Second model, **clean**: v7s (v7h recipe and data, evaluation sprites excluded; width 96 → 41.3 M params vs 72.5 M; seed 1; 60 k steps; snapshot = its own step 10 k). Source: **[log §09-08 03:50, v7s]**. v7_lowres (memorisation-contaminated, trained on the evaluation sprites) goes to the appendix as a third model.
 
-v7_lowres = the original v7 model (initialised from v6e10, 60 k steps, buckets [12,16,20,24,32,48,64]). Caveat that must
-be in the caption: its training set contains the evaluation sprites (memorisation contamination; 8.4 % of its samples are
-near pixel-exact copies), so only the *relative* drop is meaningful.
+| Model @16 px | CFG w = 4 (bare) | bucket:12 ref, w = 2 | Autoguidance 10 k, w = 1.5 | Composed, w = 1.5 | Reverse bucket:20 w = 2 | Δ bare → composed |
+|---|---|---|---|---|---|---|
+| v7h (72.5 M, clean, Table a) | 21.98 (q16 12.64) | 8.59 (q16 8.15) | 8.98 (q16 7.82) | **7.67** (q16 8.34) | 17.14 (q16 18.64) | −65 % |
+| **v7s (41.3 M, clean)** | 28.00 (q16 13.60) | 12.80 (q16 10.00) | 13.95 (q16 9.35) | **10.54** (q16 9.57) | 25.31 (q16 24.14) | −62 % |
+| v7_lowres (contaminated; appendix) | 16.66 / 15.29 (s0 / s1) | 7.40 / 7.08 | — | — | — | (bucket:12: −56 %) |
 
-| Model @16 px | CFG w = 4 (bare) | bucket:12 ref, w = 2 | Autoguidance | Composed | Δ (bare → bucket:12) |
-|---|---|---|---|---|---|
-| v7h (clean, Table a) | 21.98 (q16 12.64) | 8.59 (q16 8.99) | 8.98 | 7.67 | −13.4 (−61 %) |
-| v7_lowres (contaminated) | 16.66 (q16 11.29) | **7.40** (q16 7.86) | **TBD** | **TBD** | −9.3 (−56 %) |
+FD decomposition on v7s mirrors v7h: mean term 16.48 → 5.50 (bucket:12) / 7.04 (autoguidance) / 3.84 (composed);
+cov term 11.51 → 7.31 / 6.91 / 6.70 — the label reference fixes the mean shift, the snapshot fixes coverage, the
+composition takes both. Reverse control identical in kind: bucket:20 is slightly better raw but far worse after q16 and
+has precision ↑ .925 / recall ↓ .848 (over-guidance contraction). Seed 1 for v7s and v7s at 20/24 px are running
+(diag_v7s2).
 
 ### Table (d) — Mechanism: statistics of the *pure* weak-reference samples (sampled with `--cfg 0`, i.e. following only e_weak) vs their effect when used as guidance reference. Sources: **[log §14:20 UTC, dmech]** and **[log §19:35 UTC, dcc12]**; probe_cg/probe_cc guided FD from **[log §13:11]** and **[log §19:05]**.
 
@@ -371,8 +374,8 @@ colour domain (bleeding); the composed row still wins at every R after quantisat
 |---|---|---|---|---|
 | 1 | ~~12 px seed 1: bare / autoguidance~~ **DONE** (dseedR; bk16 reverse s1 not run) | 3 | 1.3 | complete Table b |
 | 2 | Seed 2 at 12/20/24 px for bare / lower / autog / composed (3-seed mean ± sd at every resolution) | 11 | 4.6 | consistency with Table a |
-| 3 | Second model v7_lowres: autoguidance and composed (seed 0 + 1), bucket:12 seed 1 | 5 | 2.1 | complete Table c |
-| 4 | **Clean second model**: retrain a second architecture/size variant (e.g. different width or bucket set) with the evaluation split excluded, then 4 rows × 2 seeds | train ~12 h + 8 | 15.3 | current second model is contaminated; reviewers will ask |
+| 3 | ~~Second model v7_lowres~~ superseded by v7s (contaminated model → appendix) | 5 | 2.1 | complete Table c |
+| 4 | ~~Clean second model~~ **DONE** (v7s, Table c; seed 1 + 20/24 px rows running in diag_v7s2) | train ~12 h + 8 | 15.3 | current second model is contaminated; reviewers will ask |
 | 5 | ~~Higher-bucket reverse controls at 20 px (bk24, bk32)~~ **DONE seed 0** (dmisc); seed 1 optional | 4 | 1.7 | complete Table f |
 | 6 | Guidance-weight sweeps at 20/24 px (w ∈ {1.25,1.5,2,2.5,3}) for label ref and autoguidance | 20 | 8.3 | show flat-vs-steep w-curve generalises |
 | 7 | ~~bucket beliefs at 20/24 px~~ **DONE** (dmech2, Table d second block); still open: probe_cg *sampled* branch stats (‡ row) and TV-vs-FD plot per resolution (no GPU) | ~8 | 3.3 | mechanism claim at more than one resolution |
