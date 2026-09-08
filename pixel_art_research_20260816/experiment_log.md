@@ -1576,3 +1576,14 @@ v7h seed 0, matched FD@R (bare: 20px 45.92, 24px 78.96±.74):
 - R3 PAG 基线 `--guide_mode pag:mid|mid,d1`(sample_e 新增, diffusers attn processor 换恒等自注意; 注意 set_attn_processor 会 pop 传入 dict, 需传副本): w1.5/2/3, mid+d1, +cfg_text 1.5(担忧 3: 新颖性 vs PAG/SEG, 未引未比)。
 - R4 50 步 裸/autog/复合(采样步敏感性)。
 - 收尾: clip_score + fd_decomp 全部新行。DIAG_REVIEW1_DONE。
+
+## 2026-09-08 07:15 UTC — **重要: 裸基线 CFG w=4 过引导; CFG 曲线最优在 w≈1.5–2 (diag_review1 R1 首批)**
+
+v7h @16 seed 0, matched FD: CFG w=1 **16.39**, w=1.5 **12.24**, w=2 (跑中), w=3 (跑中), w=4 21.98(旧基线), w=7 42.95, w=10 62.12。
+PAG(mid 层恒等自注意)w1.5 12.57 / w2 12.62 ≈ 与同权普通 CFG 持平 → PAG 在此设定下无增益(基线行有了)。
+
+影响: 头条 "−62% vs 裸 CFG4" 不诚实; 应对 **最优调参 CFG(w≈1.5, 12.24)**: bk12 8.52±.29 (−30%), autog 8.73 (−29%), 复合 7.53±.19 (**−38%**)。
+更干净的表述: **同 w 下只换参考** —— w=2: CFG-uncond 参考 ≈12.x vs 错桶参考 8.52; w=1.5: CFG 12.24 vs 快照 8.73 vs 复合 7.53。
+CLIP 对齐比较也要用低 w CFG(其 CLIP 必然 < 30.06, 可能与引导行相当 → 对齐代价说法或可撤回), 等 diag_review1 收尾 clip_score。
+所有其它分辩率/模型的裸行同样要重调: 起 `diag_review2`(GPU3, 07:12): v7h @20/24/12/32 w1.5/2, v7h @16 w1.5 seed1/2, v7s @16/20/24 w1.5/2 (16 项)。
+论文所有 "bare" 列改为 "best CFG (w swept over {1,1.5,2,3,4,7,10})", 表(a″) 的 CFG 行合并进主表 CFG 曲线; 摘要/贡献/引言的百分数全部重算。
