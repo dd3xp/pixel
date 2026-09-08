@@ -252,6 +252,31 @@ Rules out the trivial explanation "any wrong label acts as an unconditional-like
 
 ---
 
+### Table (g) — Text faithfulness: CLIP ViT-B/32 100·cos (retrieval R@1 among 1 + 99 captions, chance 1 %) of the SAME saved samples as the FD rows. Source: **[log §09-08 02:15, dclip]**. Seed 0 / seed 1.
+
+| R | Real | CFG w = 4 (bare) | Lower-bucket ref, w = 2 | Autoguidance 10 k, w = 1.5 | Composed, w = 1.5 | Higher-bucket ref (reverse) |
+|---|---|---|---|---|---|---|
+| 12 | 29.55 (13.9 %) | 29.76 / 29.74 (15 %) | — | 29.41 / 29.39 (13 %) | — | bk16 29.32 (11.8 %) |
+| 16 | 29.80 (16.4 %) | 30.06 / 30.04 / 30.03 (18 %) | bk12 29.37 / 29.38 / 29.37 (13 %) | 29.58 / 29.53 / 29.57 (15 %) | 29.51 / 29.47 / 29.54 (14 %) | bk24 29.58, bk64 29.60 (15 %) |
+| 20 | 29.86 (19.3 %) | 30.16 / 30.09 (20 %) | bk16 29.34 / 29.35 (14 %) | 29.45 / 29.52 (15–16 %) | 29.48 / 29.49 (15 %) | bk32 29.62 (16 %) |
+| 24 | 29.81 (20.2 %) | 30.11 / 30.12 (20 %) | bk16 29.09 / 29.11 (13 %) | 29.35 / 29.38 (15 %) | 29.33 / 29.34 (15 %) | bk32 29.48 (16 %) |
+| 32 | 29.65 (20.9 %) | 29.72 (21.5 %) | bk24 28.49 (14 %) | 28.69 (15 %) | 28.78 (15 %) | bk48 28.85 (17.5 %) |
+
+Honest reading for the Limitations section: every reference-guidance row — autoguidance included — pays a small
+text-alignment cost relative to CFG w = 4 (−0.5 @16 px, growing to −0.9 @32 px; R@1 18 → 14 %), because a w = 2
+reference term replaces the w = 4 CFG term and the text direction is weakened. The cost is method-independent
+(snapshot and label references are equal within 0.2; composed is in between), grows with w (bk12 w = 3: 29.25) and is
+absent for reverse (higher-bucket) references. Bare CFG w = 4 is *above* the real sprites (30.06 vs 29.80). A
+zero-training fix is being tested (diag_align: unconditional + wrong-bucket reference `bucketu`, and an additive CFG
+term `--cfg_text`); if none recovers CLIP ≥ bare without an FD cost > seed sd, the paper states the trade-off.
+
+**Table (g′) — q16 (16-colour quantisation) at 20/24/32 px, seed 0 [log §09-08 02:15].** Bare → q16: 45.92 → 42.65 /
+79.80 → 64.38 / 96.85 → 81.41; lower-bucket w = 2: 32.89 → 37.31 / 60.41 → 62.85 / 77.45 → 85.75; autoguidance:
+31.78 → 35.72 / 53.36 → 53.00 / 75.23 → 76.79; composed: 29.66 → **34.09** / 48.70 → **51.37** / 69.27 → **74.57**.
+Quantisation helps the bare model a lot and does not help the guided rows, so part of the guidance gain is in the
+colour domain (bleeding); the composed row still wins at every R after quantisation, but the margin shrinks from
+−35/−39/−28 % to −20/−20/−8 %. Same pattern as 16 px (Table a, +q16 column).
+
 ## 4. Section-by-section outline
 
 ### 1 Introduction
@@ -351,15 +376,15 @@ Rules out the trivial explanation "any wrong label acts as an unconditional-like
 | 5 | ~~Higher-bucket reverse controls at 20 px (bk24, bk32)~~ **DONE seed 0** (dmisc); seed 1 optional | 4 | 1.7 | complete Table f |
 | 6 | Guidance-weight sweeps at 20/24 px (w ∈ {1.25,1.5,2,2.5,3}) for label ref and autoguidance | 20 | 8.3 | show flat-vs-steep w-curve generalises |
 | 7 | ~~bucket beliefs at 20/24 px~~ **DONE** (dmech2, Table d second block); still open: probe_cg *sampled* branch stats (‡ row) and TV-vs-FD plot per resolution (no GPU) | ~8 | 3.3 | mechanism claim at more than one resolution |
-| 8 | q16 appendix at 20/24 px for the four main rows | 8 | 3.3 | colour-vs-structure split beyond 16 px |
+| 8 | ~~q16 appendix at 20/24 px~~ **DONE** (+32 px; Table g′) | 8 | 3.3 | colour-vs-structure split beyond 16 px |
 | 9 | Second metric family on saved samples: Inception FID / KID and precision–recall at all resolutions (re-scoring only if samples were kept; otherwise regenerate) | ~16 | 1–7 | rule out DINOv2-specific effects |
-| 10 | Text-faithfulness: CLIP score of the four main rows at 12/16/20/24 (2 seeds) | 32 (cheap, ~10 min each) | ~5 | guidance must not trade alignment for FD |
+| 10 | ~~CLIP score~~ **DONE** (Table g; small alignment cost found, fix probe diag_align running) | 32 | ~5 | guidance must not trade alignment for FD |
 | 11 | Human preference study (bare vs autog vs composed, ~50 prompts × 3 raters) | — | 0 GPU; sampling ≈ 0.5 | ICLR reviewers expect it for a perceptual domain |
 | 12 | ~~Sampler robustness~~ **DONE** (dmisc, log §21:20): composed DDPM 50/100/200 = 6.81/7.67/9.38; DDIM50 broken for the bare model itself (204.42) → appendix with caveat | 6 | 2.5 | show it is not a 100-step artefact |
 | 13 | Applicability beyond our model: a public multi-resolution/bucketed model (e.g. SDXL with `original_size` micro-conditioning at 256–512 px, or Matryoshka/FiT) with FD at that resolution | setup + ~10 | 1–2 GPU-days | generality claim beyond pixel art; also settles the SDXL `negative_original_size` relation empirically |
 | 14 | ~~32 px regime~~ **DONE seed 0** (dmech2, Table b row 32): bare is *farther* from the floor at 32 px (96.85 vs 13.77), all references still help, composed best (69.27); 48/64 px and seed 1 optional | ~9 | 3.8 | delimit the operating regime |
 | 15 | Wall-clock / NFE table: CFG vs bucket-ref vs composed vs snaplo (memory and time for 3000 samples) | 4 timings | 0.3 | quantify the "same cost as CFG" claim |
-| 16 | Qualitative figures at 12/20/24 px (same seed/prompt grids as fig_qual_16px) | 4 small samplings | 0.5 | paper figures |
+| 16 | ~~Qualitative figures~~ **DONE** (paper_assets/fig_qual_{12,16,20,24,32}px.png via make_qual_r.py, prompt-aligned) | — | 0 | paper figures |
 | 17 | Verify and record exact parameter count, bucket-embedding details, training-data composition for the Method section | — | 0 | reproducibility |
 
 Rough total without item 13: ~55–65 GPU-h (≈ 3 days on two GPUs); with item 13: +1–2 GPU-days.
