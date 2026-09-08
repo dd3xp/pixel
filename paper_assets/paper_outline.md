@@ -155,8 +155,26 @@ its error direction is spatially structured. Pairs with the trained probe_cc res
 
 Sampler steps (50-step DDPM, seed 0): CFG4 20.81, autoguidance 9.11, composed **6.63** (100-step: 21.98 / 8.98 / 7.67).
 
-CFG curve at other R (seed 0, in progress, diag_review2/3): 12 px w1.5 10.44 (w4 13.02 ± .28); 20 px w1.5 / 2 / 2.5 = 42.61 /
-40.57 / 39.53 (w4 45.92), w3 TBD; 24 px w1.5 / 2 = 71.22 / 67.34 (w4 78.96 ± .74), w3 TBD; 32 px TBD.
+**Table (j′) — CFG weight curves at every R / model and the resulting best-CFG rows (diag_review2/3/4, [log 09-08 §10:10]).**
+Seed 0 unless a ± is given; best-w row re-run with seeds 1/2 where it is used as a 3-seed baseline.
+
+| Model @R | w=1.5 | 2 | 2.5 | 3 | 4 (default) | **best CFG** | label ref | autog 10 k | **composed** | Δ composed vs best CFG / vs w=4 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| v7h @12 | 10.44 | 9.71 | TBD | TBD | 13.02 ± .28 | **9.71** (w2, s0) | — | 8.54 ± .73 | — | autog −12 % / −34 % |
+| v7h @16 | **12.24 / 13.32 / 11.91 = 12.49 ± .72** | 12.98 | — | 16.67 | 21.52 ± .47 | **12.49 ± .72** (w1.5) | 8.52 ± .29 | 8.73 ± .26 | **7.53 ± .19** | **−40 % / −65 %** |
+| v7h @20 | 42.61 | 40.57 | **39.53 / 39.57 / 39.61 = 39.57 ± .04** | 42.99 | 47.04 ± 1.11 | **39.57 ± .04** (w2.5) | 32.75 ± .60 | 31.57 ± .29 | **28.90 ± .69** | **−27 % / −39 %** |
+| v7h @24 | 71.22 | **67.34 / 68.66 / 67.31 = 67.77 ± .77** | — | 72.93 | 78.96 ± .74 | **67.77 ± .77** (w2) | 59.32 ± 1.37 | 54.15 ± .72 | **48.23 ± .43** | **−29 % / −39 %** |
+| v7h @32 | 92.21 | **83.65** | — | 86.99 | 96.85 | **83.65** (w2) | 77.45 | 75.23 | **69.27** | **−17 % / −28 %** |
+| v7s @16 | 19.29 | **19.10** | TBD | TBD | 28.00 / 27.75 | **19.10** (w2, s0) | 12.80 / 12.74 | 13.95 / 15.17 | **10.54 / 10.28** | **−45 % / −62 %** |
+| v7s @20 | 61.62 | **57.48** | TBD | TBD | 63.32 | **57.48** (w2) | 45.81 | 39.13 | **36.31** | **−37 % / −43 %** |
+| v7s @24 | 99.23 | **93.78** | TBD | TBD | 99.47 | **93.78** (w2) | 78.18 | 66.83 | **60.20** | **−36 % / −39 %** |
+
+Reading for the paper: (i) the over-guidance of w = 4 is largest at 16 px (−42 % from re-tuning alone) and small at 20–32 px
+(−14 … −16 %) and for v7s (−32 % @16, −9 % @20, −6 % @24); (ii) **the composed reference beats best-CFG at every R and
+both models by 17–45 %**, and every gap is ≥ 10 seed-sd where 3 seeds exist; (iii) the *label-only* reference beats best-CFG by
+32 % @16 but only 17 % / 12 % / 7 % at 20 / 24 / 32 px — so the free variant is a 16 px result plus a component of the
+composed method, and the paper must say so; (iv) autoguidance alone beats best-CFG by 30 / 20 / 20 / 10 % at 16/20/24/32.
+Best-CFG w differs by R (1.5 @16, 2.5 @20, 2 @24/32) — CFG needs per-resolution tuning while the guided rows use fixed w.
 
 ### Table (b) — Resolution generalisation, matched FD at the native resolution (fd_fair --size R). Sources: **[log §14:05]** (seed 0, 12/16/20 px), **[log §15:10]**, **[log §16:35]** (24 px completion), **[log §19:05 + §19:35]** (dseedR seed 1). Seed-1 values for 20/24 px as given in the task brief (dseedR).
 
