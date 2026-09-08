@@ -115,16 +115,20 @@ Weights v7h throughout; snapshot = 10 k EMA; "lower" = nearest lower bucket unle
 
 | R | Floor | CFG w = 4 (bare) | Lower-bucket ref, w = 2 | Other lower bucket, w = 2 | Autoguidance 10 k, w = 1.5 | **Composed (lower + 10 k), w = 1.5** | Higher-bucket ref, w = 2 (reverse control) |
 |---|---|---|---|---|---|---|---|
-| 12 | 3.37 | 12.91 / **TBD** (s1) | — (no lower bucket exists) | — | **9.18** / **TBD** (s1) | — | bk16 **14.45** (worse than bare) / **TBD** (s1) |
+| 12 | 3.37 | 12.91 / 12.81 | — (no lower bucket exists) | — | **9.18 / 8.70** | — | bk16 **14.45** (worse than bare) (s0) |
 | 16 | 3.45 | 21.98 / 21.05 | bk12 **8.59** / 8.20 | — | 8.98 / 8.73 | **7.67 / 7.32** | bk20 17.14, bk24 17.27, bk64 19.34 |
-| 20 | 12.14 | 45.92 / 48.14 | bk16 **32.89** / 32.09 | bk12 35.85 / TBD | 31.78 / 31.24 | **29.66 / 28.72** | bk24, bk32: not run (TBD) |
+| 20 | 12.14 | 45.92 / 48.14 | bk16 **32.89** / 32.09 | bk12 35.85 (s0) | 31.78 / 31.24 | **29.66 / 28.72** | bk24 **46.62** (≈ bare), bk32 **59.13** (worse) (s0) |
 | 24 | 12.96 | 79.80 / 78.68 | bk16 **60.41** / 57.78 | bk12 57.70, bk20 66.20 (s0) | 53.36 / 54.77 | **48.70 / 47.86** (bk16 + 10 k) | bk32 **101.67** (worse than bare) |
+| 32 | 13.77 | 96.85 | bk24 **77.45** | bk16 91.26 | 75.23 | **69.27** (bk24 + 10 k) | bk48 **113.93** (worse than bare) |
 
-Cell format: seed 0 / seed 1. Caption points: (i) relative gain of the composed reference: 16 px −65 %, 20 px −35 %,
-24 px −39 % (seed 0); (ii) the bare model is much further from the floor at 20/24 px (gap 33.8 / 66.8 vs 18.5 at 16 px)
-because training data is 16 px-dominated [log §14:05 reading 3]; (iii) at 24 px a *farther* lower bucket (bk12 57.70) is
-slightly better than the nearest (bk16 60.41), consistent with "the lower the reference contrast, the better"
-[log §15:10]; (iv) 12 px has no lower bucket, so only snapshot autoguidance applies — a real limitation, stated as such.
+Cell format: seed 0 / seed 1 (32 px seed 0 only, **[log §09-08 02:00, dmech2]**). Caption points: (i) relative gain of the
+composed reference: 16 px −65 %, 20 px −35 %, 24 px −39 %, 32 px −28 % (seed 0); (ii) the bare model is much further from
+the floor at 20/24/32 px (gap 33.8 / 66.8 / 83.1 vs 18.5 at 16 px) because training data is 16 px-dominated
+[log §14:05 reading 3]; (iii) at 24 px a *farther* lower bucket (bk12 57.70) is slightly better than the nearest
+(bk16 60.41), but at 32 px the farther bucket is clearly worse (bk16 91.26 vs bk24 77.45) — the belief must stay
+structurally aligned, see Table d; (iv) 12 px has no lower bucket, so only snapshot autoguidance applies — a real
+limitation, stated as such; (v) the ordering bare > lower-bucket ≈ autoguidance > composed holds at every resolution
+that has a lower bucket (16/20/24/32); at 32 px autoguidance (75.23) edges the label reference (77.45).
 
 ### Table (c) — Second model (v7_lowres). Source: **[log §14:05]**; bare/q16 from **[log §2026-09-06 19:00, cycle 5 (3)]**.
 
@@ -171,6 +175,29 @@ Same-weights paired controls inside the trained probes (so the comparison is not
 | probe_cc (contrast-shrink) | 20.63 (q16 12.66) | **14.71** (q16 9.17) | 9.43 (q16 8.97) | 8.77 (q16 7.78) | [log §19:05] |
 | probe_cc @12 px (no lower bucket) | 11.78 | 9.66 (w = 1.25) / 10.07 (w = 1.5) | — | 8.16 | [log §19:35] |
 
+Same analysis at 20 and 24 px (pure beliefs sampled with `--cfg 0`, matched protocol, seed 0; **[log §09-08 02:00, dmech2]**):
+
+| R | Reference (sampled alone) | FD (alone) | opaque | ncol | flat | **TV** | FD when used as ref (w = 2) | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 20 | Real 20 px | 12.14 | .345 | 33 | .277 | 29.9 | — | — |
+| 20 | Strong, v7h CFG w = 4 | 45.92 | .362 | 96 | .056 | **31.0** | — | — |
+| 20 | **bucket:16 belief** | 94.02 | .395 | 107 | .030 | **21.8** | **32.89** | effective |
+| 20 | bucket:12 belief | 179.63 | .455 | 121 | .018 | **16.9** | 35.85 | effective, weaker (opaque .455 ≫ .362: structure drift) |
+| 20 | bucket:24 belief | 66.07 | .355 | 97 | .038 | 28.5 (≈ strong) | 46.62 (≈ bare) | ineffective |
+| 20 | *after guidance*: bk16 w2 / composed | 32.89 / 29.66 | .339 / .350 | 81 / 78 | .072 / .072 | 32.5 / 29.7 | — | — |
+| 24 | Real 24 px | 12.96 | .333 | 29 | .345 | 29.0 | — | — |
+| 24 | Strong, v7h CFG w = 4 | 79.80 | .363 | 130 | .067 | **30.3** | — | — |
+| 24 | **bucket:16 belief** | 173.39 | .425 | 142 | .028 | **18.2** | **60.41** | effective |
+| 24 | bucket:32 belief | 60.16 | .307 | 86 | .097 | **31.3** (> strong) | 101.67 (worse than bare) | harmful |
+| 24 | *after guidance*: bk16 w2 / composed | 60.41 / 48.70 | .308 / .323 | 102 / 95 | .087 / .083 | 34.7 / 29.6 | — | — |
+
+Third and fourth replication of the pattern: the reference that helps has *lower* TV than the strong prediction
+(21.8 / 16.9 @20, 18.2 @24) while the ineffective/harmful ones have TV ≈ or > strong (28.5 @20, 31.3 @24); the
+reference's own FD is anti-correlated with its usefulness (bucket:24 is the best-looking belief at 20 px, FD 66 vs
+94/180, and the worst reference; bucket:32 at 24 px is the best-looking, FD 60, and actively harmful). Also confirms
+the "structure-aligned" clause: at 20 px the farthest bucket (12) has the lowest TV but drifts in opacity (.455 vs .362)
+and is a weaker reference than bucket:16; the same holds at 32 px (bk16 91.26 vs bk24 77.45, Table b).
+
 Mechanism statement to defend: an effective weak reference must (i) have lower local contrast (TV) than the strong
 prediction — necessary: bk24/bk64 fail — and (ii) be structure-aligned with unchanged colour/structure statistics —
 necessary: probe_cg (TV 14 but block grid) is harmful, probe_cc (TV 15.9 but fewer colours, higher flat) is weaker than
@@ -216,7 +243,9 @@ only in the low-noise half ([0, .5] ≈ full schedule; [.5, 1] ≈ single bucket
 |---|---|---|---|---|
 | 12 px | 12.91 | — (none) / autog 9.18 | bk16: **14.45** | worse (+1.5) |
 | 16 px | 21.98 | bk12 8.59 / 7.67 | bk20: 17.14; bk24: 17.27; bk64: 19.34 (q16 18.64 / 21.02 / 24.56 vs bare 12.64) | slightly better raw, worse after q16; precision ↑ .935, recall ↓ .85–.88 = over-guidance contraction |
+| 20 px | 45.92 | bk16 32.89 / 29.66 | bk24: **46.62**; bk32: **59.13** | ≈ bare (+0.7) / worse (+13.2) [log §21:20, dmisc] |
 | 24 px | 79.80 | bk16 60.41 / 48.70 | bk32: **101.67** | worse (+21.9) |
+| 32 px | 96.85 | bk24 77.45 / 69.27 | bk48: **113.93** | worse (+17.1) [log §09-08 02:00, dmech2] |
 
 Rules out the trivial explanation "any wrong label acts as an unconditional-like reference" (ICG-style); bucketmix:12
 (9.42) is between bucket:12 (8.59) and CFG, not equal to CFG [log §07:30].
@@ -315,20 +344,20 @@ Rules out the trivial explanation "any wrong label acts as an unconditional-like
 
 | # | Experiment | Items | Est. GPU-h | Why |
 |---|---|---|---|---|
-| 1 | 12 px seed 1: bare / autoguidance / bk16 reverse control (running in dseedR) | 3 | 1.3 | complete Table b |
+| 1 | ~~12 px seed 1: bare / autoguidance~~ **DONE** (dseedR; bk16 reverse s1 not run) | 3 | 1.3 | complete Table b |
 | 2 | Seed 2 at 12/20/24 px for bare / lower / autog / composed (3-seed mean ± sd at every resolution) | 11 | 4.6 | consistency with Table a |
 | 3 | Second model v7_lowres: autoguidance and composed (seed 0 + 1), bucket:12 seed 1 | 5 | 2.1 | complete Table c |
 | 4 | **Clean second model**: retrain a second architecture/size variant (e.g. different width or bucket set) with the evaluation split excluded, then 4 rows × 2 seeds | train ~12 h + 8 | 15.3 | current second model is contaminated; reviewers will ask |
-| 5 | Higher-bucket reverse controls at 20 px (bk24, bk32), 2 seeds | 4 | 1.7 | complete Table f |
+| 5 | ~~Higher-bucket reverse controls at 20 px (bk24, bk32)~~ **DONE seed 0** (dmisc); seed 1 optional | 4 | 1.7 | complete Table f |
 | 6 | Guidance-weight sweeps at 20/24 px (w ∈ {1.25,1.5,2,2.5,3}) for label ref and autoguidance | 20 | 8.3 | show flat-vs-steep w-curve generalises |
-| 7 | Pure-reference statistics for the probe_cg *sampled* branch (fill the ‡ row of Table d), and for bucket:16/20 beliefs at 20/24 px + TV-vs-FD plot per resolution | ~8 | 3.3 | mechanism claim at more than one resolution |
+| 7 | ~~bucket beliefs at 20/24 px~~ **DONE** (dmech2, Table d second block); still open: probe_cg *sampled* branch stats (‡ row) and TV-vs-FD plot per resolution (no GPU) | ~8 | 3.3 | mechanism claim at more than one resolution |
 | 8 | q16 appendix at 20/24 px for the four main rows | 8 | 3.3 | colour-vs-structure split beyond 16 px |
 | 9 | Second metric family on saved samples: Inception FID / KID and precision–recall at all resolutions (re-scoring only if samples were kept; otherwise regenerate) | ~16 | 1–7 | rule out DINOv2-specific effects |
 | 10 | Text-faithfulness: CLIP score of the four main rows at 12/16/20/24 (2 seeds) | 32 (cheap, ~10 min each) | ~5 | guidance must not trade alignment for FD |
 | 11 | Human preference study (bare vs autog vs composed, ~50 prompts × 3 raters) | — | 0 GPU; sampling ≈ 0.5 | ICLR reviewers expect it for a perceptual domain |
-| 12 | Sampler robustness: DDIM 50 / DDPM 50 / 200 steps for composed and bucket:12 | 6 | 2.5 | show it is not a 100-step artefact |
+| 12 | ~~Sampler robustness~~ **DONE** (dmisc, log §21:20): composed DDPM 50/100/200 = 6.81/7.67/9.38; DDIM50 broken for the bare model itself (204.42) → appendix with caveat | 6 | 2.5 | show it is not a 100-step artefact |
 | 13 | Applicability beyond our model: a public multi-resolution/bucketed model (e.g. SDXL with `original_size` micro-conditioning at 256–512 px, or Matryoshka/FiT) with FD at that resolution | setup + ~10 | 1–2 GPU-days | generality claim beyond pixel art; also settles the SDXL `negative_original_size` relation empirically |
-| 14 | Higher-resolution buckets of our own model (32/48/64 px): does the label reference still help where the bare model is already close to the floor? floors + 3 rows × 2 seeds | ~9 | 3.8 | delimit the operating regime |
+| 14 | ~~32 px regime~~ **DONE seed 0** (dmech2, Table b row 32): bare is *farther* from the floor at 32 px (96.85 vs 13.77), all references still help, composed best (69.27); 48/64 px and seed 1 optional | ~9 | 3.8 | delimit the operating regime |
 | 15 | Wall-clock / NFE table: CFG vs bucket-ref vs composed vs snaplo (memory and time for 3000 samples) | 4 timings | 0.3 | quantify the "same cost as CFG" claim |
 | 16 | Qualitative figures at 12/20/24 px (same seed/prompt grids as fig_qual_16px) | 4 small samplings | 0.5 | paper figures |
 | 17 | Verify and record exact parameter count, bucket-embedding details, training-data composition for the Method section | — | 0 | reproducibility |
