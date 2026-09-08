@@ -51,7 +51,7 @@ Table 2 collects the weight sweeps at 16 px (seed 0) and the sweeps of both sing
 | **Label reference `bucket:16`, 20 px** | 1.25 / 1.5 / 2 / 2.5 / 3 | 40.96 / 37.48 / **32.89** / 35.15 / 38.53 |
 | Autoguidance (snapshot 10 k), 20 px | 1.25 / 1.5 / 2 / 2.5 / 3 | 36.75 / **31.78** / 33.66 / 42.02 / 59.04 |
 | **Label reference `bucket:16`, 24 px** | 1.25 / 1.5 / 2 / 2.5 / 3 | 71.12 / 63.09 / **60.41** / 65.77 / 74.61 |
-| Autoguidance (snapshot 10 k), 24 px | 1.25 / 1.5 / 2 / 2.5 / 3 | 64.85 / 53.36 / **52.52** / [TBD] / [TBD] |
+| Autoguidance (snapshot 10 k), 24 px | 1.25 / 1.5 / 2 / 2.5 / 3 | 64.85 / 53.36 / **52.52** / 66.53 / 83.41 |
 
 ## 4.4 Generalisation across resolutions
 

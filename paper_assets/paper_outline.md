@@ -119,12 +119,12 @@ shape as 16 px: the label reference degrades gracefully with w, the snapshot ref
 | 20 | bucket:16 | 40.96 | 37.48 | **32.89** | 35.15 | 38.53 |
 | 20 | snapshot 10 k | 36.75 | **31.78** | 33.66 | 42.02 | 59.04 |
 | 24 | bucket:16 | 71.12 | 63.09 | **60.41** | 65.77 | 74.61 |
-| 24 | snapshot 10 k | 64.85 | 53.36 | **52.52** | TBD | TBD |
+| 24 | snapshot 10 k | 64.85 | 53.36 | **52.52** | 66.53 | 83.41 |
 
 (bare: 20 px 45.92, 24 px 78.96 ± .74. Seed-0 values; the 20/24 px w = 1.5 snapshot and w = 2 label entries are the seed-0
 members of the 3-seed rows in Table b.) Worst-over-sweep / best: label ref 1.25× (20 px) and 1.23× (24 px); snapshot
-ref 1.86× (20 px, w ≤ 3). At 24 px the snapshot optimum moves to w = 2 (52.52 < 53.36), so the Table-b composed row
-(w = 1.5) is not tuned in the snapshot's favour.
+ref 1.86× (20 px) and 1.59× (24 px), w ≤ 3. At 24 px the snapshot optimum moves to w = 2 (52.52 < 53.36), so the Table-b composed row
+(w = 1.5) is not tuned in the snapshot's favour. **#6 DONE (09-08 07:20).**
 
 ### Table (b) — Resolution generalisation, matched FD at the native resolution (fd_fair --size R). Sources: **[log §14:05]** (seed 0, 12/16/20 px), **[log §15:10]**, **[log §16:35]** (24 px completion), **[log §19:05 + §19:35]** (dseedR seed 1). Seed-1 values for 20/24 px as given in the task brief (dseedR).
 
