@@ -13,9 +13,13 @@
 - 同一大方向连杀 2 个 → 大方向标废, 换方向。
 
 ## 当前状态
-- **phase**: RESEARCH
-- **在跑**: GPU3 `diag_review10`(收尾中, 论文机制节的对照修复, 跑完即止, **不再开新的论文任务**)。
-- **下一动作**: arch_scout 调研报告(subagent 在写 `pixel_art_research_20260816/arch_scout_2026-09-09.md`)出来后, 按报告排候选队列, 选第 1 个进 BUILD。
+- **phase**: TRAIN (cycle 9)
+- **在跑(两块卡都满)**:
+  - GPU2 `probe_src` → logs/probe_src.log, 80k 步, 末行 PROBE_SRC_DONE。(目标桶,源桶) 双标签条件。**与 ga_vllm 共卡, 会慢**。
+  - GPU3 `probe_vpred` → logs/probe_vpred.log, 80k 步, 末行 PROBE_VPRED_DONE。eps→v-prediction 诊断; 训完自动扫 CFG。
+- **TRAIN 期只做一件事**: 查两条日志与 .FAILING, 回一行进度。**不许改论文, 不许起核稿 subagent**。
+- **下一动作**: ① 训完 probe_src → 写 `baseline/eval_src.sh` 扫源标签(src ∈ 7 桶 × CFG 1.5/2/3)出 FD@16, 与 v7h best-CFG 12.49 / 复合 7.53 对比; ② 训完 probe_vpred → 已自动出 CFG 扫描, 直接判据处置; ③ 若 probe_src 有效, 立刻测"源条件 + 跨分辩率引导"是否叠加(引导若被吸收 = 更强的论文故事: 采样技巧只是缺失条件变量的代用品)。
+- **背景事实(已复核, cycle 9 的立论基础)**: FD@16 参照集里只有 **7.1%** 是原生 ≤16px, 93% 是 17~64px 降采样 → 语料是无标注的降采样混合, 桶嵌入只给输出尺寸 → 均值回归。详见 experiment_log 09-09 09:00。
 
 ## 反跑偏规则(2026-09-09 加, 因为 09-07~09-09 整整两天偏成了论文润色)
 1. **tick 不许花在论文润色上**: 不改 draft_full.md / refs.bib / 图注 / 字数 / 附录, 不起核稿 subagent。论文侧未处理项(read_through.md 的 major/moderate 余项)**等用户回来再说**。
@@ -27,8 +31,13 @@
 - 候选外部对比: ① SD-πXL(Binninger 2024, SIGGRAPH Asia, 优化式, 已知在极低分辩率崩, 但要有数); ② 公开桶化扩散模型(SDXL size-conditioning 那套)上验证引导规则可迁移 —— **需要下载公开权重、跑大模型, 涉及范围扩张, 等用户点头**; ③ 现成像素化/生成 sprite 的 GAN(Coutinho 2022)。
 - 排期: 新架构探针在训练时的等待期用来做 ①③(不占 GPU 也能做的部分)。
 
-## 候选队列(RESEARCH 出结果后在此重排; 队列为空 = 该起调研)
-- 待 arch_scout_2026-09-09.md 填入。
+## 候选队列(来自 arch_scout_2026-09-09.md, 已按优先级排)
+1. ~~A2 源尺寸条件~~ → **在跑 = probe_src**(最高预期收益; novelty 与 SDXL micro-conditioning 撞车, 但配上"93% 参照是降采样"的实测, 故事是"模型在对无标注混合求平均", 比 SDXL 那条强)。
+2. ~~A4 x0/v-prediction~~ → **在跑 = probe_vpred**(零 novelty, 纯诊断, 后续架构都继承)。
+3. **A1 掩码离散扩散 over 每通道 256 级原始像素 token** —— 报告的头号架构候选, 自估通过 7.53 概率 ~30%。注意: 之前的 v6f 离散失败是**混淆实验**(用的是 DawnBringer32 全语料 32 色词表, 而每张精灵中位就有 34 色), 不能当作离散已被证伪。开跑前先做零 GPU 证伪: 把 held-out 真实图过一遍该离散化再对未量化参照算 fd_fair, **地板 >4.5 就直接毙**。
+4. **A3 MAR + copy-or-create 指针头** —— 报告称四次检索未找到图像生成里的 copy/pointer 头, 是唯一真正开放的点子。
+5. A5 VAR 式 next-scale / A6 Matryoshka / A7 R3GAN 上限探针 —— 已降级, 理由见报告。
+- **零 GPU 通用证伪器(每个离散化候选开跑前必做)**: 真实图过该离散化 → 对未量化参照算 fd_fair → 地板超 ~4.5 即毙。这条十分钟就能杀掉 v6f 与 v_ord。
 
 ## 循环协议(每 cycle)
 1. **RESEARCH**: 起 2-3 个 subagent 并行——(a)该方向文献机制/怎么做的, (b)novelty 撞车检查(最像的 3 篇+相似度), (c)极低分辩率可行性/坑。汇总写 arch_ideation_log.md。判定: 有新机制且未撞车 → BUILD; 否则 → 下一个候选。
