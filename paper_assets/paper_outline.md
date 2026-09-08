@@ -378,7 +378,7 @@ colour domain (bleeding); the composed row still wins at every R after quantisat
 | 4 | ~~Clean second model~~ **DONE** (v7s, Table c; seed 1 + 20/24 px rows running in diag_v7s2) | train ~12 h + 8 | 15.3 | current second model is contaminated; reviewers will ask |
 | 5 | ~~Higher-bucket reverse controls at 20 px (bk24, bk32)~~ **DONE seed 0** (dmisc); seed 1 optional | 4 | 1.7 | complete Table f |
 | 6 | Guidance-weight sweeps at 20/24 px (w ∈ {1.25,1.5,2,2.5,3}) for label ref and autoguidance | 20 | 8.3 | show flat-vs-steep w-curve generalises |
-| 7 | ~~bucket beliefs at 20/24 px~~ **DONE** (dmech2, Table d second block); still open: probe_cg *sampled* branch stats (‡ row) and TV-vs-FD plot per resolution (no GPU) | ~8 | 3.3 | mechanism claim at more than one resolution |
+| 7 | ~~bucket beliefs at 20/24 px~~ **DONE** (dmech2, Table d second block); per-resolution TV-vs-FD plot **DONE** (`paper_assets/fig_tv_vs_fd_r.png`, make_tv_fd_r.py: x = TV_ref/TV_strong, y = FD_guided/FD_bare, 16/20/24 px, 10 points; all x<1 same-caption beliefs give y<1, all x≥1 give y≈1 or >1); still open: probe_cg *sampled* branch stats (‡ row) | ~8 | 3.3 | mechanism claim at more than one resolution |
 | 8 | ~~q16 appendix at 20/24 px~~ **DONE** (+32 px; Table g′) | 8 | 3.3 | colour-vs-structure split beyond 16 px |
 | 9 | Second metric family on saved samples: Inception FID / KID and precision–recall at all resolutions (re-scoring only if samples were kept; otherwise regenerate) | ~16 | 1–7 | rule out DINOv2-specific effects |
 | 10 | ~~CLIP score~~ **DONE** (Table g; small alignment cost found, fix probe diag_align running) | 32 | ~5 | guidance must not trade alignment for FD |
