@@ -1,0 +1,503 @@
+% Bibliography for the pixel-art guidance paper.
+% Keys are exactly as they appear in paper_assets/draft_full.md.
+% See paper_assets/citation_audit.md for the verification record, including
+% keys that are MISMATCHED or UNRESOLVED and therefore not defined here.
+
+% ===========================================================================
+% Guidance
+% ===========================================================================
+
+@article{HoSalimans2022,
+  title         = {Classifier-Free Diffusion Guidance},
+  author        = {Ho, Jonathan and Salimans, Tim},
+  journal       = {arXiv preprint arXiv:2207.12598},
+  year          = {2022},
+  note          = {A short version appeared at the NeurIPS 2021 Workshop on Deep Generative Models and Downstream Applications},
+  eprint        = {2207.12598},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG}
+}
+
+@inproceedings{Karras2024,
+  title         = {Guiding a Diffusion Model with a Bad Version of Itself},
+  author        = {Karras, Tero and Aittala, Miika and Kynk{\"a}{\"a}nniemi, Tuomas and Lehtinen, Jaakko and Aila, Timo and Laine, Samuli},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2024},
+  eprint        = {2406.02507},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Kynkaanniemi2024,
+  title         = {Applying Guidance in a Limited Interval Improves Sample and Distribution Quality in Diffusion Models},
+  author        = {Kynk{\"a}{\"a}nniemi, Tuomas and Aittala, Miika and Karras, Tero and Laine, Samuli and Aila, Timo and Lehtinen, Jaakko},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2024},
+  eprint        = {2404.07724},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Sadat2024apg,
+  title         = {Eliminating Oversaturation and Artifacts of High Guidance Scales in Diffusion Models},
+  author        = {Sadat, Seyedmorteza and Hilliges, Otmar and Weber, Romann M.},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2025},
+  eprint        = {2410.02416},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+% WARNING: the key name is misleading. This paper (FDG) is by Sadat et al.,
+% not by Sabour. Recommended rename: Sadat2025fdg. See citation_audit.md.
+@article{Sadat2025fdg,
+  title         = {Guidance in the Frequency Domain Enables High-Fidelity Sampling at Low CFG Scales},
+  author        = {Sadat, Seyedmorteza and Vontobel, Tobias and Salehi, Farnood and Weber, Romann M.},
+  journal       = {arXiv preprint arXiv:2506.19713},
+  year          = {2025},
+  eprint        = {2506.19713},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Sadat2024cads,
+  title         = {{CADS}: Unleashing the Diversity of Diffusion Models through Condition-Annealed Sampling},
+  author        = {Sadat, Seyedmorteza and Buhmann, Jakob and Bradley, Derek and Hilliges, Otmar and Weber, Romann M.},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2024},
+  eprint        = {2310.17347},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Chung2024,
+  title         = {{CFG++}: Manifold-constrained Classifier Free Guidance for Diffusion Models},
+  author        = {Chung, Hyungjin and Kim, Jeongsol and Park, Geon Yeong and Nam, Hyelin and Ye, Jong Chul},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2025},
+  eprint        = {2406.08070},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Sadat2024icg,
+  title         = {No Training, No Problem: Rethinking Classifier-Free Guidance for Diffusion Models},
+  author        = {Sadat, Seyedmorteza and Kansy, Manuel and Hilliges, Otmar and Weber, Romann M.},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2025},
+  eprint        = {2407.02687},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Hong2023,
+  title         = {Improving Sample Quality of Diffusion Models Using Self-Attention Guidance},
+  author        = {Hong, Susung and Lee, Gyuseong and Jang, Wooseok and Kim, Seungryong},
+  booktitle     = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
+  pages         = {7462--7471},
+  year          = {2023},
+  eprint        = {2210.00939},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Hong2024,
+  title         = {Smoothed Energy Guidance: Guiding Diffusion Models with Reduced Energy Curvature of Attention},
+  author        = {Hong, Susung},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2024},
+  eprint        = {2408.00760},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Ahn2024,
+  title         = {Self-Rectifying Diffusion Sampling with Perturbed-Attention Guidance},
+  author        = {Ahn, Donghoon and Cho, Hyoungwon and Min, Jaewon and Jang, Wooseok and Kim, Jungwoo and Kim, SeonHwa and Park, Hyun Hee and Jin, Kyong Hwan and Kim, Seungryong},
+  booktitle     = {European Conference on Computer Vision (ECCV)},
+  year          = {2024},
+  eprint        = {2403.17377},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{SWG2024,
+  title         = {Guiding a diffusion model using sliding windows},
+  author        = {Adaloglou, Nikolas and Kaiser, Tim and Iagudin, Damir and Kollmann, Markus},
+  booktitle     = {British Machine Vision Conference (BMVC)},
+  year          = {2025},
+  eprint        = {2411.10257},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{S2Guidance2025,
+  title         = {{S$^2$-Guidance}: Stochastic Self-Guidance for Training-Free Enhancement of Diffusion Models},
+  author        = {Chen, Chubin and Zhu, Jiashu and Feng, Xiaokun and Huang, Nisha and Zhu, Chen and Wu, Meiqi and Mao, Fangyuan and Wu, Jiahong and Chu, Xiangxiang and Li, Xiu},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2026},
+  eprint        = {2508.12880},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+% NOTE: the draft says this work "reported ineffective". The paper does not say
+% that about itself -- it presents the method as a cost-free baseline. See the
+% MISMATCH table in citation_audit.md before citing it this way.
+@inproceedings{InSituAG2025,
+  title         = {In-situ Autoguidance: Eliciting Self-Correction in Diffusion Models},
+  author        = {Gu, Enhao and Hou, Haolin},
+  booktitle     = {ICML 2025 Workshop},
+  year          = {2025},
+  eprint        = {2510.17136},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{CDG2026,
+  title         = {Guiding Diffusion Models with Semantically Degraded Conditions},
+  author        = {Han, Shilong and Zhang, Yuming and Wang, Hongxia},
+  booktitle     = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year          = {2026},
+  eprint        = {2603.10780},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@article{SGGBR2026,
+  title         = {Improving Diffusion Generalization with Weak-to-Strong Segmented Guidance},
+  author        = {Yuan, Liangyu and Huang, Yufei and Lei, Mingkun and Zhao, Tong and Wang, Ruoyu and Chi, Changxi and Wang, Yiwei and Zhang, Chi},
+  journal       = {arXiv preprint arXiv:2603.20584},
+  year          = {2026},
+  eprint        = {2603.20584},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{IG2025,
+  title         = {Guiding a Diffusion Transformer with the Internal Dynamics of Itself},
+  author        = {Zhou, Xingyu and Li, Qifan and Hu, Xiaobin and Chen, Hai and Gu, Shuhang},
+  booktitle     = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  year          = {2026},
+  eprint        = {2512.24176},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+% NOTE: SSG keeps the backbone FROZEN and trains only a post-hoc adapter, so it
+% does not belong in a list of "jointly trained" heads. See citation_audit.md.
+@article{SSG2026,
+  title         = {A Frozen Pixel-Space Diffusion Model Can Guide Itself with Its Own Samples},
+  author        = {Fu, Zixuan and Wang, Chong and Guo, Lanqing and Zhou, Kailai and Nie, Jiahao and Wen, Bihan},
+  journal       = {arXiv preprint arXiv:2607.29122},
+  year          = {2026},
+  eprint        = {2607.29122},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Koulischer2025,
+  title         = {Feedback Guidance of Diffusion Models},
+  author        = {Koulischer, Felix and Handke, Florian and Deleu, Johannes and Demeester, Thomas and Ambrogioni, Luca},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2025},
+  eprint        = {2506.06085},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG}
+}
+
+@inproceedings{TVCFG2025,
+  title         = {Stage-wise Dynamics of Classifier-Free Guidance in Diffusion Models},
+  author        = {Jin, Cheng and Shi, Qitan and Gu, Yuantao},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2026},
+  eprint        = {2509.22007},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+% ===========================================================================
+% Multi-resolution / bucketed diffusion
+% ===========================================================================
+
+@inproceedings{Podell2023,
+  title         = {{SDXL}: Improving Latent Diffusion Models for High-Resolution Image Synthesis},
+  author        = {Podell, Dustin and English, Zion and Lacey, Kyle and Blattmann, Andreas and Dockhorn, Tim and M{\"u}ller, Jonas and Penna, Joe and Rombach, Robin},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2024},
+  eprint        = {2307.01952},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@misc{NovelAI2022,
+  title        = {{NovelAI} Improvements on {Stable Diffusion}},
+  author       = {{Anlatan (NovelAI)}},
+  year         = {2022},
+  month        = {October},
+  howpublished = {NovelAI blog, \url{https://blog.novelai.net/novelai-improvements-on-stable-diffusion-e10d38db82ac}},
+  note         = {Origin of aspect-ratio bucketing; reference implementation at \url{https://github.com/NovelAI/novelai-aspect-ratio-bucketing}}
+}
+
+@inproceedings{Gu2023,
+  title         = {Matryoshka Diffusion Models},
+  author        = {Gu, Jiatao and Zhai, Shuangfei and Zhang, Yizhe and Susskind, Josh and Jaitly, Navdeep},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2024},
+  eprint        = {2310.15111},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Lu2024,
+  title         = {{FiT}: Flexible Vision Transformer for Diffusion Model},
+  author        = {Lu, Zeyu and Wang, Zidong and Huang, Di and Wu, Chengyue and Liu, Xihui and Ouyang, Wanli and Bai, Lei},
+  booktitle     = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
+  series        = {Proceedings of Machine Learning Research},
+  volume        = {235},
+  pages         = {33160--33176},
+  year          = {2024},
+  eprint        = {2402.12376},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{He2023,
+  title         = {{ScaleCrafter}: Tuning-free Higher-Resolution Visual Generation with Diffusion Models},
+  author        = {He, Yingqing and Yang, Shaoshu and Chen, Haoxin and Cun, Xiaodong and Xia, Menghan and Zhang, Yong and Wang, Xintao and He, Ran and Chen, Qifeng and Shan, Ying},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2024},
+  eprint        = {2310.07702},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Hoogeboom2023,
+  title         = {simple diffusion: End-to-end diffusion for high resolution images},
+  author        = {Hoogeboom, Emiel and Heek, Jonathan and Salimans, Tim},
+  booktitle     = {Proceedings of the 40th International Conference on Machine Learning (ICML)},
+  series        = {Proceedings of Machine Learning Research},
+  volume        = {202},
+  year          = {2023},
+  eprint        = {2301.11093},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@misc{diffusers,
+  title        = {Diffusers: State-of-the-art diffusion models},
+  author       = {von Platen, Patrick and Patil, Suraj and Lozhkov, Anton and Cuenca, Pedro and Lambert, Nathan and Rasul, Kashif and Davaadorj, Mishig and Nair, Dhruv and Paul, Sayak and Berman, William and Xu, Yiyi and Liu, Steven and Wolf, Thomas},
+  year         = {2022},
+  publisher    = {GitHub},
+  journal      = {GitHub repository},
+  howpublished = {\url{https://github.com/huggingface/diffusers}},
+  note         = {Micro-conditioning documentation: \url{https://huggingface.co/docs/diffusers/api/pipelines/stable_diffusion/stable_diffusion_xl}}
+}
+
+% ===========================================================================
+% Pixel art
+% ===========================================================================
+
+@inproceedings{Gerstner2012,
+  title     = {Pixelated Image Abstraction},
+  author    = {Gerstner, Timothy and DeCarlo, Doug and Alexa, Marc and Finkelstein, Adam and Gingold, Yotam and Nealen, Andrew},
+  booktitle = {Proceedings of the 10th International Symposium on Non-Photorealistic Animation and Rendering (NPAR)},
+  pages     = {29--36},
+  year      = {2012},
+  publisher = {Eurographics Association},
+  note      = {Extended version: Computers \& Graphics 37(5):333--347, 2013, doi:10.1016/j.cag.2012.12.007}
+}
+
+@article{Han2018,
+  title     = {Deep Unsupervised Pixelization},
+  author    = {Han, Chu and Wen, Qiang and He, Shengfeng and Zhu, Qianshu and Tan, Yinjie and Han, Guoqiang and Wong, Tien-Tsin},
+  journal   = {ACM Transactions on Graphics},
+  volume    = {37},
+  number    = {6},
+  pages     = {243:1--243:11},
+  year      = {2018},
+  note      = {SIGGRAPH Asia 2018},
+  doi       = {10.1145/3272127.3275082}
+}
+
+@article{Wu2022,
+  title     = {Make Your Own Sprites: Aliasing-Aware and Cell-Controllable Pixelization},
+  author    = {Wu, Zongwei and Chai, Liangyu and Zhao, Nanxuan and Deng, Bailin and Liu, Yongtuo and Wen, Qiang and Wang, Junle and He, Shengfeng},
+  journal   = {ACM Transactions on Graphics},
+  volume    = {41},
+  number    = {6},
+  pages     = {193:1--193:16},
+  year      = {2022},
+  note      = {SIGGRAPH Asia 2022},
+  doi       = {10.1145/3550454.3555482}
+}
+
+@misc{PixelOE2024,
+  title        = {Detail-Oriented Pixelization based on Contrast-Aware Outline Expansion},
+  author       = {Yeh, Shin-Ying},
+  year         = {2024},
+  month        = {March},
+  howpublished = {\url{https://github.com/KohakuBlueleaf/PixelOE}},
+  note         = {Software; a classical (non-learned) image-processing pipeline}
+}
+
+@inproceedings{Coutinho2022,
+  title     = {On the Challenges of Generating Pixel Art Character Sprites Using {GAN}s},
+  author    = {Coutinho, Flavio and Chaimowicz, Luiz},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence and Interactive Digital Entertainment (AIIDE)},
+  volume    = {18},
+  number    = {1},
+  pages     = {87--94},
+  year      = {2022},
+  doi       = {10.1609/aiide.v18i1.21951},
+  eprint        = {2208.06413},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@article{SpriteSheetDiffusion2024,
+  title         = {Sprite Sheet Diffusion: Generate Game Character for Animation},
+  author        = {Hsieh, Cheng-An and Zhang, Jing and Yan, Ava},
+  journal       = {arXiv preprint arXiv:2412.03685},
+  year          = {2024},
+  eprint        = {2412.03685},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Binninger2024,
+  title     = {{SD-$\pi$XL}: Generating Low-Resolution Quantized Imagery via Score Distillation},
+  author    = {Binninger, Alexandre and Sorkine-Hornung, Olga},
+  booktitle = {SIGGRAPH Asia 2024 Conference Papers},
+  year      = {2024},
+  doi       = {10.1145/3680528.3687570},
+  eprint        = {2410.06236},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+% ===========================================================================
+% Backbone, data, captioning
+% ===========================================================================
+
+@inproceedings{Ho2020,
+  title         = {Denoising Diffusion Probabilistic Models},
+  author        = {Ho, Jonathan and Jain, Ajay and Abbeel, Pieter},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2020},
+  eprint        = {2006.11239},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG}
+}
+
+@inproceedings{Li2022blip,
+  title         = {{BLIP}: Bootstrapping Language-Image Pre-training for Unified Vision-Language Understanding and Generation},
+  author        = {Li, Junnan and Li, Dongxu and Xiong, Caiming and Hoi, Steven},
+  booktitle     = {Proceedings of the 39th International Conference on Machine Learning (ICML)},
+  series        = {Proceedings of Machine Learning Research},
+  volume        = {162},
+  pages         = {12888--12900},
+  year          = {2022},
+  eprint        = {2201.12086},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@misc{OpenGameArt,
+  title        = {{OpenGameArt.org}},
+  author       = {{OpenGameArt.org}},
+  year         = {2025},
+  howpublished = {\url{https://opengameart.org}},
+  note         = {Community repository of freely licensed game art. Individual submissions carry per-asset licences (CC0, CC-BY, CC-BY-SA, GPL, OGA-BY); state the subset used and its licence terms}
+}
+
+% ===========================================================================
+% Evaluation
+% ===========================================================================
+
+@article{Oquab2023,
+  title         = {{DINOv2}: Learning Robust Visual Features without Supervision},
+  author        = {Oquab, Maxime and Darcet, Timoth{\'e}e and Moutakanni, Th{\'e}o and Vo, Huy V. and Szafraniec, Marc and Khalidov, Vasil and Fernandez, Pierre and Haziza, Daniel and Massa, Francisco and El-Nouby, Alaaeldin and Assran, Mahmoud and Ballas, Nicolas and Galuba, Wojciech and Howes, Russell and Huang, Po-Yao and Li, Shang-Wen and Misra, Ishan and Rabbat, Michael and Sharma, Vasu and Synnaeve, Gabriel and Xu, Hu and Jegou, Herv{\'e} and Mairal, Julien and Labatut, Patrick and Joulin, Armand and Bojanowski, Piotr},
+  journal       = {Transactions on Machine Learning Research (TMLR)},
+  year          = {2024},
+  eprint        = {2304.07193},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Stein2023,
+  title         = {Exposing flaws of generative model evaluation metrics and their unfair treatment of diffusion models},
+  author        = {Stein, George and Cresswell, Jesse C. and Hosseinzadeh, Rasa and Sui, Yi and Ross, Brendan Leigh and Villecroze, Valentin and Liu, Zhaoyan and Caterini, Anthony L. and Taylor, J. Eric T. and Loaiza-Ganem, Gabriel},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2023},
+  eprint        = {2306.04675},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG}
+}
+
+@inproceedings{Heusel2017,
+  title         = {{GAN}s Trained by a Two Time-Scale Update Rule Converge to a Local Nash Equilibrium},
+  author        = {Heusel, Martin and Ramsauer, Hubert and Unterthiner, Thomas and Nessler, Bernhard and Hochreiter, Sepp},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2017},
+  eprint        = {1706.08500},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG}
+}
+
+@inproceedings{Parmar2022,
+  title         = {On Aliased Resizing and Surprising Subtleties in {GAN} Evaluation},
+  author        = {Parmar, Gaurav and Zhang, Richard and Zhu, Jun-Yan},
+  booktitle     = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+  pages         = {11410--11420},
+  year          = {2022},
+  eprint        = {2104.11222},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
+
+@inproceedings{Kynkaanniemi2019,
+  title         = {Improved Precision and Recall Metric for Assessing Generative Models},
+  author        = {Kynk{\"a}{\"a}nniemi, Tuomas and Karras, Tero and Laine, Samuli and Lehtinen, Jaakko and Aila, Timo},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2019},
+  eprint        = {1904.06991},
+  archiveprefix = {arXiv},
+  primaryclass  = {stat.ML}
+}
+
+@inproceedings{Naeem2020,
+  title         = {Reliable Fidelity and Diversity Metrics for Generative Models},
+  author        = {Naeem, Muhammad Ferjad and Oh, Seong Joon and Uh, Youngjung and Choi, Yunjey and Yoo, Jaejun},
+  booktitle     = {Proceedings of the 37th International Conference on Machine Learning (ICML)},
+  series        = {Proceedings of Machine Learning Research},
+  volume        = {119},
+  pages         = {7176--7185},
+  year          = {2020},
+  eprint        = {2002.09797},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG}
+}
+
+@inproceedings{Binkowski2018,
+  title         = {Demystifying {MMD} {GAN}s},
+  author        = {Bi{\'n}kowski, Miko{\l}aj and Sutherland, Danica J. and Arbel, Michael and Gretton, Arthur},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2018},
+  eprint        = {1801.01401},
+  archiveprefix = {arXiv},
+  primaryclass  = {stat.ML}
+}
+
+@inproceedings{Radford2021,
+  title         = {Learning Transferable Visual Models From Natural Language Supervision},
+  author        = {Radford, Alec and Kim, Jong Wook and Hallacy, Chris and Ramesh, Aditya and Goh, Gabriel and Agarwal, Sandhini and Sastry, Girish and Askell, Amanda and Mishkin, Pamela and Clark, Jack and Krueger, Gretchen and Sutskever, Ilya},
+  booktitle     = {Proceedings of the 38th International Conference on Machine Learning (ICML)},
+  series        = {Proceedings of Machine Learning Research},
+  volume        = {139},
+  pages         = {8748--8763},
+  year          = {2021},
+  eprint        = {2103.00020},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.CV}
+}
