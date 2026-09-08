@@ -269,9 +269,34 @@ Honest reading for the Limitations section: every reference-guidance row — aut
 text-alignment cost relative to CFG w = 4 (−0.5 @16 px, growing to −0.9 @32 px; R@1 18 → 14 %), because a w = 2
 reference term replaces the w = 4 CFG term and the text direction is weakened. The cost is method-independent
 (snapshot and label references are equal within 0.2; composed is in between), grows with w (bk12 w = 3: 29.25) and is
-absent for reverse (higher-bucket) references. Bare CFG w = 4 is *above* the real sprites (30.06 vs 29.80). A
-zero-training fix is being tested (diag_align: unconditional + wrong-bucket reference `bucketu`, and an additive CFG
-term `--cfg_text`); if none recovers CLIP ≥ bare without an FD cost > seed sd, the paper states the trade-off.
+absent for reverse (higher-bucket) references. Bare CFG w = 4 is *above* the real sprites (30.06 vs 29.80), i.e. CFG
+over-aligns; the guided rows sit 0.3 *below* real.
+
+**Table (g″) — zero-training alignment fixes, 16 px seed 0 [log §09-08 04:10, dalign].** (a) `bucketu:12` = reference
+under the wrong bucket AND the empty caption, so the guidance direction contains the CFG text direction (same 2 NFE);
+(b) `--cfg_text` = an additive plain-CFG term on top of the reference term (3 NFE).
+
+| Row | FD | +q16 | mean / cov | CLIP 100·cos | R@1 |
+|---|---|---|---|---|---|
+| bare CFG w = 4 (ref: Table a/g) | 21.98 | 12.64 | 13.0 / 9.0 | 30.06 | 18.3 % |
+| bucket:12 w = 2 (un-fixed) | 8.59 | 8.15 | 2.9 / 5.7 | 29.37 | 13.1 % |
+| composed w = 1.5 (un-fixed) | **7.67** | 8.34 | 2.4 / 5.3 | 29.51 | 14.4 % |
+| (a) bucketu:12 w = 2 | 12.10 | 9.24 | 5.15 / 6.96 | 29.84 | 16.1 % |
+| (a) bucketu:12 w = 1.5 | 10.45 | 8.60 | 4.48 / 5.97 | 29.77 | 16.4 % |
+| (a) composed, ref under bucketu:12, w = 1.5 | 8.60 | 9.32 | 2.38 / 6.21 | 29.77 | 16.1 % |
+| (a) composed, ref under bucketu:12, w = 1.25 | 9.46 | 9.60 | 3.54 / 5.91 | 29.65 | 15.7 % |
+| (b) bucket:12 w = 2 + cfg_text 1.5 | 9.50 | 8.71 | 3.25 / 6.24 | 29.71 | 16.2 % |
+| (b) composed w = 1.5 + cfg_text 1.5 | 9.19 | 8.57 | 3.19 / 5.99 | 29.72 | 15.4 % |
+| (b) composed w = 1.5 + cfg_text 2 | 11.10 | 9.48 | 4.26 / 6.85 | 29.89 | 15.9 % |
+
+Verdict: **no free fix**. None of the seven rows reaches CLIP ≥ 30.06; the points lie on an FD–CLIP frontier
+(CLIP 29.37 @ 8.59 → 29.77 @ 8.60/10.45 → 29.89 @ 11.10), every +0.1 CLIP costs ≈ +0.5–1 FD, and the FD lost is
+mostly mean_term (colour/contrast shift returns as the CFG direction re-enters). The cheapest point is the composed
+reference under `bucketu:12` at w = 1.5: FD 8.60 (+0.9 over composed, 3× seed sd), CLIP back to the *real-data* level
+(29.77 vs real 29.80, R@1 16.1 % vs real 16.4 %), same 2 NFE. Paper treatment: main table keeps the un-fixed composed
+row (7.67); Limitations states the alignment cost (−0.5 CLIP / −4 % R@1 at 16 px, growing with R, shared by
+autoguidance), and the appendix gives Table (g″) as the trade-off with the `bucketu` variant as the operating point
+that restores real-level alignment at +0.9 FD.
 
 **Table (g′) — q16 (16-colour quantisation) at 20/24/32 px, seed 0 [log §09-08 02:15].** Bare → q16: 45.92 → 42.65 /
 79.80 → 64.38 / 96.85 → 81.41; lower-bucket w = 2: 32.89 → 37.31 / 60.41 → 62.85 / 77.45 → 85.75; autoguidance:
@@ -381,7 +406,7 @@ colour domain (bleeding); the composed row still wins at every R after quantisat
 | 7 | ~~bucket beliefs at 20/24 px~~ **DONE** (dmech2, Table d second block); per-resolution TV-vs-FD plot **DONE** (`paper_assets/fig_tv_vs_fd_r.png`, make_tv_fd_r.py: x = TV_ref/TV_strong, y = FD_guided/FD_bare, 16/20/24 px, 10 points; all x<1 same-caption beliefs give y<1, all x≥1 give y≈1 or >1); still open: probe_cg *sampled* branch stats (‡ row) | ~8 | 3.3 | mechanism claim at more than one resolution |
 | 8 | ~~q16 appendix at 20/24 px~~ **DONE** (+32 px; Table g′) | 8 | 3.3 | colour-vs-structure split beyond 16 px |
 | 9 | Second metric family on saved samples: Inception FID / KID and precision–recall at all resolutions (re-scoring only if samples were kept; otherwise regenerate) | ~16 | 1–7 | rule out DINOv2-specific effects |
-| 10 | ~~CLIP score~~ **DONE** (Table g; small alignment cost found, fix probe diag_align running) | 32 | ~5 | guidance must not trade alignment for FD |
+| 10 | ~~CLIP score~~ **DONE** (Table g; alignment cost found; fix probe **DONE** Table g″: no free fix, FD–CLIP frontier, bucketu composed = real-level CLIP at +0.9 FD) | 32 | ~5 | guidance must not trade alignment for FD |
 | 11 | Human preference study (bare vs autog vs composed, ~50 prompts × 3 raters) | — | 0 GPU; sampling ≈ 0.5 | ICLR reviewers expect it for a perceptual domain |
 | 12 | ~~Sampler robustness~~ **DONE** (dmisc, log §21:20): composed DDPM 50/100/200 = 6.81/7.67/9.38; DDIM50 broken for the bare model itself (204.42) → appendix with caveat | 6 | 2.5 | show it is not a 100-step artefact |
 | 13 | Applicability beyond our model: a public multi-resolution/bucketed model (e.g. SDXL with `original_size` micro-conditioning at 256–512 px, or Matryoshka/FiT) with FD at that resolution | setup + ~10 | 1–2 GPU-days | generality claim beyond pixel art; also settles the SDXL `negative_original_size` relation empirically |
