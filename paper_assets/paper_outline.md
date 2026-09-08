@@ -389,8 +389,7 @@ colour domain (bleeding); the composed row still wins at every R after quantisat
 Rank agreement with FD-DINOv2 over *all* saved rows: Spearman .98 (12 px, n = 9), .86 (16 px, n = 121), .96 (20 px,
 n = 18), .68 (24 px, n = 17), .83 (32 px, n = 6); Pearson .91–.99.
 
-Reading (goes into Results and Limitations): (i) the composed reference is best or tied-best at every R, on both
-models and under all three metrics, and higher-bucket (reverse) references are harmful under all three → the main
+Reading (goes into Results and Limitations): (i) the composed reference is best or tied-best at every R on v7h and at 20/24 px on v7s (v7s@16 autog 8.25 < composed 8.49 — 唯一例外), on all three metrics, and higher-bucket (reverse) references are harmful under all three → the main
 claim and the direction test do not depend on DINOv2. (ii) The gain of the **label-only** lower-bucket reference is
 DINOv2-visible but Inception-weak: it still lowers FID at 16/20 px, but at 24/32 px FID/KID are flat or slightly
 worse (16.13 → 16.45, KID 2.40 → 3.19), and on v7s bk12 lags autoguidance (9.77 vs 8.25). Consistent with the q16

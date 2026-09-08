@@ -76,7 +76,8 @@
 - **15:45 更新**: 用户回来问进度, 电脑重启 → 会话 cron 重建(15 min)。**draft_full.md 合稿完**(experiment_log 15:40): 主体 10.2k 词超预算 35%, 13 处数字不一致已在源头修正。**下一 tick(不需 GPU)**: ① 起 subagent 做 review_pass2: 逐数字对 draft_full.md ↔ paper_outline/experiment_log 核对 + 压主体到 ~7k 词(优先砍 §4/§5 重复叙述, 数字进表不进正文); ② 用 experiment_log 给机制节 probe 配方/mean_term 补 [log §] 引用; ③ 可选 GPU 小活: best-CFG 样本的纯信念/TV 统计(stats_simplicity.py 对 v7h_cfg1p5 样本)填 §5 [TBD]。
 - **15:55 更新**: 起了 ① GPU3 `diag_review7`(logs/diag_review7.log, DIAG_REVIEW7_DONE, ~15 min, 无采样): snaplo q16 / 复合 seed1-2 与 cfg1.5 三 seed 的 fd_decomp P-R-D-C / best-CFG 样本 simplicity 统计 → 填 draft_full 表 1 [TBD]、表 A6 [TBD]、§5 best-CFG 信念统计 [TBD]; ② subagent review_pass2(数字逐条溯源 + 主体压到 ~7k 词 + 机制节 [log §] 引用) → 输出 paper_assets/review_pass2.md, 只改 draft_full.md。**下一 tick**: 两者出结果后填 TBD、看 review_pass2 的未溯源清单逐条处理、提交推送。
 - **09-09 03:20 本地(服务器 09-08 19:20) 更新**: 期间 Fable 触顶, 循环空转数 tick, 现切 Opus 5 恢复。diag_review7 **完**(experiment_log 19:05): snaplo q16 8.00 / 复合与 best-CFG 三 seed 的 P-R-D-C / **best-CFG 样本简单性统计** → **draft_full.md [TBD] 归零**; 新结论: CFG 降到 w1.5 是把 TV 压到真实值以下换 FD(27.9 vs 真实 30.2), 只有引导行同时降色数且保住 TV。review_pass2 subagent 上一轮**限额中断**: 压缩(任务2)已落盘(主体 10.2k→8.85k 词), 机制节 [log §] 引用(任务3)已补且数字经核对全部在 log 中有源, 但 **review_pass2.md 未写出**。**下一动作**: 重起 review_pass2(Opus) 只做"数字逐条溯源 + 主体压到 ~7k", GPU 无待办。
-- **更新时间**: 2026-09-08 19:20 服务器时(UTC)
+- **09-09 04:05 本地 更新**: review_pass2 **完**(experiment_log 03:55; paper_assets/review_pass2.md): 正文 8,866→7,489 词, 数字零改动; 未溯源仅参数量(已补记 log); 4 项矛盾已改, 其中 **Inception "两模型皆最优" 过强 → 三处改为诚实版**(v7s@16 autog 领先)。draft_full.md 无 [TBD], 仅剩 5 个文献 [TODO cite]。**论文侧待办(无 GPU)**: ① 最后 490 词的取舍(砍主表 5/6 之一 or 删百分比三元组) —— 定稿时决定; ② 补 5 条参考文献 bibtex; ③ 可选: 附录与主表重复内容去重。**实验侧**: 补漏清单只剩 #11 人评(需人)与 #13 公开模型(可选) → **GPU 端已无待办**。
+- **更新时间**: 2026-09-09 04:05 本地 (服务器 09-08 20:05 UTC)
 
 ## 历史(每 cycle 一行)
 - cycle 0 (09-05~06): 有序离散 v_ord 探针 → 252.3 杀; 连续+TV/调色板双探针 → 旧指标 70.65/66.26 "杀"(**后证 TV 被误杀, 公平 FD 42.82 优于 v7 53.21**)。
