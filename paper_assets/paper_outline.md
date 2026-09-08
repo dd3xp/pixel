@@ -126,6 +126,38 @@ members of the 3-seed rows in Table b.) Worst-over-sweep / best: label ref 1.25�
 ref 1.86× (20 px) and 1.59× (24 px), w ≤ 3. At 24 px the snapshot optimum moves to w = 2 (52.52 < 53.36), so the Table-b composed row
 (w = 1.5) is not tuned in the snapshot's favour. **#6 DONE (09-08 07:20).**
 
+### Table (j) — **CFG weight curve and alignment–fidelity frontier @16 px (v7h, seed 0). Source: [log 09-08 §07:15, §07:52, §08:05]; figure `fig_pareto_fd_clip.png` (make_pareto.py).**
+
+**The recipe default w = 4 is over-guided: the CFG optimum is w = 1.5 (FD 12.24).** Every "bare" comparison in the paper must
+therefore be against best-CFG (w swept over {1, 1.5, 2, 3, 4, 7, 10}), with w = 4 kept as the training-default row.
+
+| CFG w | 1 | **1.5** | 2 | 3 | 4 (default) | 7 | 10 |
+|---|---|---|---|---|---|---|---|
+| FD | 16.39 | **12.24** | 12.98 | 16.67 | 21.98 | 42.95 | 62.12 |
+| mean / cov term | 9.47 / 6.92 | 5.87 / 6.37 | 6.32 / 6.66 | 8.70 / 7.97 | 12.13 / 9.85 | 27.01 / 15.94 | 41.15 / 20.97 |
+| CLIP 100cos / R@1 | 29.43 / 13.8 % | 29.74 / 15.9 % | 29.87 / 16.8 % | 30.01 / 17.4 % | 30.06 / 18.3 % | 30.04 / 17.9 % | 30.05 / 17.3 % |
+
+Reference-guidance rows against this frontier (same seed): bucket:12 w2 **8.59** / CLIP 29.37; autoguidance w1.5 8.98 / 29.58;
+composed w1.5 **7.67** / 29.51; composed∘bucketu:12 w1.5 8.60 / **29.77** (= real 29.80); composed + CFG term 1.5 (3 NFE) 9.19 /
+29.72; composed + CFG term 2 (3 NFE) 11.10 / 29.89. **At every CLIP level the guided rows are 3–5 FD below the CFG curve**; CFG
+cannot reach FD < 12.2 at any w, and the "alignment cost" of the guided rows (−0.3 … −0.5 CLIP vs w = 4) is exactly the
+cost CFG itself pays for lowering w (w = 1.5: 29.74). Headline vs best-CFG: composed −37 % (3-seed 7.53 vs 12.24 s0),
+bucket:12 −30 %, autoguidance −29 %; vs the w = 4 default −65 %.
+
+PAG baseline (Ahn et al. 2024; identity self-attention in the mid block, `pag:mid`): w1.5 / 2 / 3 = 12.57 / 12.62 / 12.90, CLIP
+29.45 / 29.41 / 29.45; mid + down_blocks.1 w2 13.05; PAG w2 + CFG term 1.5 (3 NFE) 11.73 / 29.74. PAG ≈ same-w CFG (a gentler
+CFG that does not explode at w = 3) and pays the same CLIP; it does not remove the systematic error.
+
+Interventional control (`shrink:f`, 1 NFE): reference = the strong model's own x̂₀ with contrast shrunk toward the per-image mean by
+f — i.e. guidance = uniform contrast amplification of the strong prediction. f = 0.5 / 0.7 / 0.85 at w2: FD **374.6 / 200.4 / 74.8**;
+f = 0.7 w3: 444.4 (CLIP 28.5–29.5, R@1 5–12 %). Monotonically harmful → the bucket reference is *not* a "low-contrast scalar";
+its error direction is spatially structured. Pairs with the trained probe_cc result (per-pixel learned shrink: helpful but weak).
+
+Sampler steps (50-step DDPM, seed 0): CFG4 20.81, autoguidance 9.11, composed **6.63** (100-step: 21.98 / 8.98 / 7.67).
+
+CFG curve at other R (seed 0, in progress, diag_review2/3): 12 px w1.5 10.44 (w4 13.02 ± .28); 20 px w1.5 / 2 / 2.5 = 42.61 /
+40.57 / 39.53 (w4 45.92), w3 TBD; 24 px w1.5 / 2 = 71.22 / 67.34 (w4 78.96 ± .74), w3 TBD; 32 px TBD.
+
 ### Table (b) — Resolution generalisation, matched FD at the native resolution (fd_fair --size R). Sources: **[log §14:05]** (seed 0, 12/16/20 px), **[log §15:10]**, **[log §16:35]** (24 px completion), **[log §19:05 + §19:35]** (dseedR seed 1). Seed-1 values for 20/24 px as given in the task brief (dseedR).
 
 Weights v7h throughout; snapshot = 10 k EMA; "lower" = nearest lower bucket unless stated.
