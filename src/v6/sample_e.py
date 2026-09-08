@@ -61,7 +61,7 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
 
 @torch.no_grad()
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
-           cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None, gi_snap=None, fdg=None):
+           cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None, gi_snap=None, fdg=None, cfg_text=None):
     scheduler.set_timesteps(steps)
     apg_state = None
     n = cond.shape[0]
@@ -113,6 +113,9 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
                 e_u = torch.roll(ref(xb, t, encoder_hidden_states=cond, class_labels=lab).sample, shifts=(-1, -1), dims=(2, 3))
             elif kind == "coarse":  # train_coarse.py: the network's own trained coarse-view labels (idx + 7)
                 e_u = ref(x, t, encoder_hidden_states=cond, class_labels=lab + len(BUCKETS)).sample
+            elif kind == "bucketu":  # wrong bucket AND no text: the reference lacks contrast and text, so the guidance
+                lab_bad = torch.full_like(lab, BUCKETS.index(int(arg)))  # direction also carries the CFG (alignment) term
+                e_u = ref(x, t, encoder_hidden_states=uncond, class_labels=lab_bad).sample
             elif kind == "bucketmix":  # average of the wrong-bucket and unconditional references (<arg>px)
                 lab_bad = torch.full_like(lab, BUCKETS.index(int(arg)))
                 e_u = 0.5 * (ref(x, t, encoder_hidden_states=cond, class_labels=lab_bad).sample
@@ -134,7 +137,10 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             low = F.interpolate(F.avg_pool2d(d, 2), size=(size, size), mode="nearest")
             x = scheduler.step(e_c + (fdg - 1) * low + (w - 1) * (d - low), t, x).prev_sample
             continue
-        x = scheduler.step(e_u + w * (e_c - e_u), t, x).prev_sample
+        e = e_u + w * (e_c - e_u)
+        if cfg_text is not None:  # additive plain-CFG term on top of the reference guidance (3 NFE/step): keeps text alignment
+            e = e + (cfg_text - 1) * (e_c - model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample)
+        x = scheduler.step(e, t, x).prev_sample
     return ((x + 1) / 2).clamp(0, 1).cpu()
 
 
@@ -203,6 +209,7 @@ def main():
     p.add_argument("--cfg_alpha", type=float, default=None, help="separate guidance weight for the alpha channel")
     p.add_argument("--guide_mode", default=None, help="zero-training bad model from the same net: bucket:<px> | blur:<k> | shift")
     p.add_argument("--gi_snap", type=float, nargs=2, default=None, help="t/T interval in which the --guide_ckpt reference is used (outside: same-weights label reference)")
+    p.add_argument("--cfg_text", type=float, default=None, help="extra plain-CFG weight added to the reference guidance, e += (wt-1)(e_c - e_uncond)")
     p.add_argument("--fdg", type=float, default=None, help="guidance weight for the low-frequency (2x2 mean) part; --cfg applies to the residual")
     p.add_argument("--apg", default=None, help="adaptive projected guidance 'eta,r,beta[,rgb]' e.g. 0,0,-0.5,rgb (r=0: no norm clip)")
     p.add_argument("--cads", action="store_true", help="CADS condition annealing (tau1/tau2/s/psi below)")
@@ -281,7 +288,7 @@ def main():
         # chunk i uses seed+i, so results are seed-reproducible per chunk size
         imgs = torch.cat([sample(model, scheduler, cond[i:i + args.chunk], uncond[i:i + args.chunk], size, device,
                                  args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi),
-                                 guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg, gi_snap=args.gi_snap, fdg=args.fdg)
+                                 guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg, gi_snap=args.gi_snap, fdg=args.fdg, cfg_text=args.cfg_text)
                           for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
         for i, im in enumerate(rgba):
