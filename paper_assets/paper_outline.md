@@ -17,20 +17,19 @@ DDPM 100 steps, EMA weights; lower is better). Floor = 3000 held-out real sprite
 2. **Guiding Pixel-Art Diffusion Away From Its Coarser Self: Zero-Training Guidance for Bucketed Multi-Resolution Models**
 3. **Contrast-Deficient Self-Guidance: Resolution Labels as a Free Weak Reference for Very-Low-Resolution Sprite Generation**
 
-### Abstract (draft, ~150 words)
+### Abstract (draft, ~150 words; rewritten 09-08 against the best-CFG baseline)
 
-Diffusion models of very-low-resolution pixel art (12–24 px RGBA sprites) suffer from a systematic error that
-classifier-free guidance cannot fix: the denoiser regresses towards the mean, producing bleeding colours and
-insufficient local contrast. We show that a *bucketed* multi-resolution model already contains the weak reference that
-autoguidance needs. Feeding the same weights, the same noisy input and the same text, but the label of a *lower*
-resolution bucket, yields a structure-aligned prediction with systematically lower local contrast; extrapolating the
-strong prediction away from it (e = e_weak + w(e_strong − e_weak)) removes the error at zero training cost and without
-storing any second model. On a clean 16 px baseline, FD-DINOv2 drops from 21.5 to 8.5 (autoguidance with an early
-snapshot: 8.7); composing the two references reaches 7.5 (floor 3.45). The effect transfers to 20, 24 and 32 px
-(3-seed 47.0 → 28.9 and 79.0 → 48.2 at 20/24 px) and to a smaller independently trained model (28.0 → 10.5), is
-strictly directional (higher-bucket references hurt at every resolution and under Inception FID/KID as well), and is explained by a controlled mechanism study:
-an effective weak reference must be lower in total variation *and* structure-aligned, a condition that explicit low-pass
-branches violate.
+Diffusion models of very-low-resolution pixel art (12-32 px RGBA sprites) regress towards the mean, producing bleeding
+colours and insufficient local contrast, and classifier-free guidance trades this error against text alignment along a
+single frontier. We show that a *bucketed* multi-resolution model already contains the weak reference that
+autoguidance needs: the same weights, the same noisy input and the same text, but the label of a *lower* resolution
+bucket, yield a structure-aligned prediction with systematically lower local contrast, and extrapolating the strong
+prediction away from it removes the error at zero training cost. Against the *best* CFG weight at each resolution
+(not the training default), composing this reference with an early snapshot lowers FD-DINOv2 by 40 / 27 / 29 / 17 %
+at 16 / 20 / 24 / 32 px (16 px: 12.5 -> 7.5, floor 3.45; 3 seeds) and by 45 / 37 / 36 % on a second, narrower model,
+at equal or better CLIP alignment than the CFG optimum, whereas perturbed-attention guidance matches CFG at every
+weight. The effect is directional (higher-bucket references hurt everywhere) and an interventional control shows the
+reference is not a low-contrast scalar: uniformly shrinking the strong prediction's own contrast is catastrophic.
 
 ---
 

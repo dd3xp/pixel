@@ -122,7 +122,7 @@ Table 6 compares the free label reference with two trained degraded-view branche
 
 ## 4.8 Sampler robustness
 
-The composed reference is not an artefact of the 100-step sampler. With 50 DDPM steps (16 px, seed 0) the ordering is unchanged and the margins widen: CFG $w=4$ 20.81, autoguidance 9.11, composed **6.63**, against 21.98 / 8.98 / 7.67 at 100 steps [TBD: best-CFG $w=1.5$ at 50 steps not run; an earlier 50-step composed run gave 6.81 — reconcile with 6.63 before submission]. With 200 steps the composed reference gives 9.38, so fewer steps are slightly *better* for it, consistent with extrapolation error accumulating over steps (the 50-step result awaits a seed check). DDIM-50 is unusable for this model irrespective of guidance (bare 204.42), so DDIM rows appear only in the appendix with that caveat.
+The composed reference is not an artefact of the 100-step sampler. With 50 DDPM steps (16 px, seed 0) the ordering is unchanged and the margins widen: CFG $w=4$ 20.81, autoguidance 9.11, composed **6.63** (an independent repeat of the same configuration, run on a different GPU, gave 6.81; mean 6.72), against 21.98 / 8.98 / 7.67 at 100 steps [TBD: best-CFG $w=1.5$ at 50 steps, diag_review5]. With 200 steps the composed reference gives 9.38, so fewer steps are slightly *better* for it, consistent with extrapolation error accumulating over steps (the 50-step result awaits a seed check). DDIM-50 is unusable for this model irrespective of guidance (bare 204.42), so DDIM rows appear only in the appendix with that caveat.
 
 ## 4.9 Alignment–fidelity frontier
 
