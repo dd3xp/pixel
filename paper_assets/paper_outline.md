@@ -26,8 +26,9 @@ autoguidance needs. Feeding the same weights, the same noisy input and the same 
 resolution bucket, yields a structure-aligned prediction with systematically lower local contrast; extrapolating the
 strong prediction away from it (e = e_weak + w(e_strong − e_weak)) removes the error at zero training cost and without
 storing any second model. On a clean 16 px baseline, FD-DINOv2 drops from 21.5 to 8.5 (autoguidance with an early
-snapshot: 8.7); composing the two references reaches 7.5 (floor 3.45). The effect transfers to 20 and 24 px and to a
-second model, is strictly directional (higher-bucket references hurt), and is explained by a controlled mechanism study:
+snapshot: 8.7); composing the two references reaches 7.5 (floor 3.45). The effect transfers to 20, 24 and 32 px
+(3-seed 47.0 → 28.9 and 79.0 → 48.2 at 20/24 px) and to a smaller independently trained model (28.0 → 10.5), is
+strictly directional (higher-bucket references hurt at every resolution and under Inception FID/KID as well), and is explained by a controlled mechanism study:
 an effective weak reference must be lower in total variation *and* structure-aligned, a condition that explicit low-pass
 branches violate.
 
@@ -40,9 +41,10 @@ branches violate.
    identical cost (2 forwards/step). At 16 px it matches early-snapshot autoguidance (8.52 ± 0.29 vs 8.73 ± 0.26 over 3
    seeds) with no snapshot, and composing both references gives 7.53 ± 0.19, a 65 % reduction from the CFG baseline
    21.52 ± 0.47 [log §17:35]. This is not a new network architecture; the model, data and training recipe are unchanged.
-2. **Generality and directionality evidence.** The gain reproduces at 20 px (45.9 → 29.7) and 24 px (79.8 → 48.7), on a
-   second independently trained model (16.66 → 7.40), and is directional at three resolutions: *higher*-bucket references
-   are worse than no guidance at 12 and 24 px and far weaker at 16 px [log §14:05, §15:10, §16:35].
+2. **Generality and directionality evidence.** The gain reproduces at 20 px (3-seed 47.04 → 28.90), 24 px (78.96 → 48.23)
+   and 32 px (96.85 → 69.27), on a clean, smaller, independently trained model v7s at 16/20/24 px (28.0 → 10.5 / 63.3 → 36.3 /
+   99.5 → 60.2), and is directional at every resolution: *higher*-bucket references are worse than no guidance at 12, 20,
+   24 and 32 px and far weaker at 16 px, under FD-DINOv2 and under Inception FID/KID [Tables b, c, h].
 3. **A mechanism study with controlled trained ablations.** Pure weak-reference statistics show that every effective
    reference has lower total variation than the strong model while keeping its colour count and structure; a trained 2×2
    block-average branch (lower TV but block structure) is *harmful*, a trained contrast-shrunk branch (structure-aligned)
@@ -69,7 +71,7 @@ unconditional prediction as reference.
 | Real held-out (floor) | — | — | 3.45 | — | — | **3.45** | — |
 | CFG w = 4 (baseline) | unconditional | no | 21.98 | 21.05 | 21.54 | **21.52 ± 0.47** | 12.64 / 12.68 / 12.55 |
 | Autoguidance w = 1.5 (Karras 2024) | snapshot 10 k | stores snapshot | 8.98 | 8.73 | 8.47 | **8.73 ± 0.26** | 7.82 / 7.98 / 7.82 |
-| **Cross-res self-guidance w = 2 (ours)** | bucket:12, same weights | **no** | 8.59 | 8.20 | 8.76 | **8.52 ± 0.29** | 8.15 / TBD / 8.57 |
+| **Cross-res self-guidance w = 2 (ours)** | bucket:12, same weights | **no** | 8.59 | 8.20 | 8.76 | **8.52 ± 0.29** | 8.99 / 8.78 / 8.57 |
 | **Composed w = 1.5 (ours)** | snapshot 10 k under bucket:12 | stores snapshot | 7.67 | 7.32 | 7.61 | **7.53 ± 0.19** | 8.34 / 8.02 / 8.42 |
 | Composed, snapshot only for t/T ∈ [0, 0.5] ("snaplo") | as above, final weights outside interval | stores snapshot | 7.70 | 7.16 | 8.02 | **7.63 ± 0.43** | TBD / 8.16 / 8.44 |
 
@@ -134,7 +136,7 @@ that has a lower bucket (16/20/24/32); at 32 px autoguidance (75.23) edges the l
 
 | Model @16 px | CFG w = 4 (bare) | bucket:12 ref, w = 2 | Autoguidance 10 k, w = 1.5 | Composed, w = 1.5 | Reverse bucket:20 w = 2 | Δ bare → composed |
 |---|---|---|---|---|---|---|
-| v7h (72.5 M, clean, Table a) | 21.98 (q16 12.64) | 8.59 (q16 8.15) | 8.98 (q16 7.82) | **7.67** (q16 8.34) | 17.14 (q16 18.64) | −65 % |
+| v7h (72.5 M, clean, Table a) | 21.98 (q16 12.64) | 8.59 (q16 8.99) | 8.98 (q16 7.82) | **7.67** (q16 8.34) | 17.14 (q16 18.64) | −65 % |
 | **v7s (41.3 M, clean)**, s0 / s1 | 28.00 / 27.75 (q16 13.60 / 13.72) | 12.80 / 12.74 (q16 10.00 / 10.04) | 13.95 / 15.17 (q16 9.35 / 10.02) | **10.54 / 10.28** (q16 9.57 / 9.06) | 25.31 (q16 24.14) | −63 % |
 | v7s @20 px (s0) | 63.32 | bk16 45.81 | 39.13 | **36.31** | — | −43 % |
 | v7s @24 px (s0) | 99.47 | bk16 78.18 | 66.83 | **60.20** | — | −39 % |
@@ -279,9 +281,9 @@ under the wrong bucket AND the empty caption, so the guidance direction contains
 
 | Row | FD | +q16 | mean / cov | CLIP 100·cos | R@1 |
 |---|---|---|---|---|---|
-| bare CFG w = 4 (ref: Table a/g) | 21.98 | 12.64 | 13.0 / 9.0 | 30.06 | 18.3 % |
-| bucket:12 w = 2 (un-fixed) | 8.59 | 8.15 | 2.9 / 5.7 | 29.37 | 13.1 % |
-| composed w = 1.5 (un-fixed) | **7.67** | 8.34 | 2.4 / 5.3 | 29.51 | 14.4 % |
+| bare CFG w = 4 (ref: Table a/g) | 21.98 | 12.64 | 12.13 / 9.85 | 30.06 | 18.3 % |
+| bucket:12 w = 2 (un-fixed) | 8.59 | 8.99 | 2.55 / 6.04 | 29.37 | 13.1 % |
+| composed w = 1.5 (un-fixed) | **7.67** | 8.34 | 2.40 / 5.27 | 29.51 | 14.4 % |
 | (a) bucketu:12 w = 2 | 12.10 | 9.24 | 5.15 / 6.96 | 29.84 | 16.1 % |
 | (a) bucketu:12 w = 1.5 | 10.45 | 8.60 | 4.48 / 5.97 | 29.77 | 16.4 % |
 | (a) composed, ref under bucketu:12, w = 1.5 | 8.60 | 9.32 | 2.38 / 6.21 | 29.77 | 16.1 % |
@@ -385,7 +387,7 @@ extra copy of the weights (+556 MiB) at the same wall-clock; the 3-NFE alignment
   it for guidance. Pixel-art generation: SD-πXL (SDS-based optimisation); no prior work on guidance at ≤ 32 px.
 
 ### 3 Method
-- **Model** (not a contribution): 4-channel RGBA UNet (UNet2DConditionModel, ~72 M params — TBD verify exact count),
+- **Model** (not a contribution): 4-channel RGBA UNet (UNet2DConditionModel, 72.5 M params (v7s: 41.3 M)),
   frozen CLIP text encoder, resolution bucket as class embedding over buckets {12,16,20,24,32,48,64}, ε-prediction, DDPM
   100 steps, EMA. Training: v7 recipe, random init, 80 k steps, BLIP captions, OGA-derived sprites with lower-bucket
   BOX-downsampled copies; 5,928 evaluation sprites excluded (180,533 training rows); EMA snapshots every 5 k steps
@@ -406,7 +408,7 @@ extra copy of the weights (+556 MiB) at the same wall-clock; the 3-NFE alignment
 
 ### 4 Experiments
 - Protocol paragraph (matched FAIR FD-DINOv2, held-out captions, contamination story: why v7h had to be retrained;
-  seed sd 0.2–0.5; decision rule "differences < 4 are inconclusive" from autonomy_state; per-resolution floors).
+  seed sd 0.2–0.5, so differences below ~1 (2 sd) are reported as ties; per-resolution floors).
 - 4.1 Main 16 px results (Table a, a′). 4.2 Zero-training baselines (Table a″). 4.3 Resolution generalisation (Table b).
   4.4 Second model (Table c). 4.5 Reverse controls (Table f). 4.6 Qualitative figure `paper_assets/fig_qual_16px.png`
   (6 rows × 24 sprites, same seed and prompt: bare / autoguidance / bucket:12 / composed …).
@@ -430,7 +432,7 @@ extra copy of the weights (+556 MiB) at the same wall-clock; the 3-NFE alignment
   autoguidance (8.3–8.4 vs 7.8).
 - Applies only to models with a resolution/bucket conditioning; not tested on a public large-scale bucketed model.
 - Single dataset (OGA-derived sprites, noisy BLIP captions), single architecture family, one metric family (DINOv2 FD and
-  its decomposition); no human evaluation yet. Second model shares data and lineage and is contaminated.
+  its decomposition); no human evaluation yet. Second model v7s shares data and recipe (different width/seed, clean split); the contaminated v7_lowres is appendix-only. Label-only reference gain is Inception-weak at 24/32 px (Table h). Text-alignment cost of all reference guidance (Table g/g″).
 - Not a new architecture; the trained-branch versions do not beat the zero-training rule.
 
 ---
