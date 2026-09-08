@@ -1,6 +1,6 @@
 # 4 Experiments
 
-All numbers in this section are copied from `paper_outline.md` (tables (a)–(i)) or, for the 20 px weight sweep, from the dseedR/dmisc follow-up; entries the outline marks TBD are left as [TBD].
+All numbers in this section are copied from `paper_outline.md` (tables (a)–(i); the 20/24 px weight sweeps from the table under Table (a″), diag_wsweep20 / diag_gpu3b); entries the outline marks TBD are left as [TBD].
 
 ## 4.1 Setup
 
@@ -8,7 +8,7 @@ All numbers in this section are copied from `paper_outline.md` (tables (a)–(i)
 
 **Held-out protocol.** A fixed set of 5,928 evaluation sprites is excluded from training (180,533 training rows remain). We generate one sample for each of 3,000 held-out captions (seed 0 unless stated) and compare against 3,000 real sprites passed through the same `to_tensor(R)` preprocessing as training (aspect-preserving, centred on a transparent canvas, hard alpha). The primary metric is *matched* Fréchet distance in DINOv2-small CLS feature space (FD-DINOv2; lower is better) at the native resolution $R$. The metric has a non-zero floor because the reference set is finite and disjoint from the held-out sprites: the held-out real sprites themselves score **3.37 / 3.45 / 12.14 / 12.96 / 13.77** at 12 / 16 / 20 / 24 / 32 px. Where indicated we also report FD after 16-colour quantisation of the samples (+q16), a secondary diagnostic that separates colour-domain from structural effects. Seed-to-seed sd of the protocol is 0.2–0.5 FD at 16 px; headline rows use three seeds (0, 1, 2), and differences of the order of the seed spread are not interpreted.
 
-**Guidance rule.** With strong prediction $e_s$ and weak reference $e_w$, $e = e_w + w\,(e_s - e_w)$. Bare CFG uses the unconditional prediction, $w=4$ (the best CFG weight; §4.3). The *label reference* uses the same weights, $x_t$ and caption but a lower bucket label (`bucket:12` at 16 px), $w=2$. Autoguidance [TODO cite Karras et al. 2024] uses the step-10 k snapshot under the correct label, $w=1.5$. The *composed* reference evaluates the snapshot under the lower label in a single weak forward, $w=1.5$. All guided variants cost two network evaluations (NFE) per step, like CFG.
+**Guidance rule.** With strong prediction $e_s$ and weak reference $e_w$, $e = e_w + w\,(e_s - e_w)$. Bare CFG uses the unconditional prediction, $w=4$ (the training-recipe default; no stronger CFG setting we tested improves on it, §4.3, and a downward sweep over $w<4$ is in progress). The *label reference* uses the same weights, $x_t$ and caption but a lower bucket label (`bucket:12` at 16 px), $w=2$. Autoguidance [TODO cite Karras et al. 2024] uses the step-10 k snapshot under the correct label, $w=1.5$. The *composed* reference evaluates the snapshot under the lower label in a single weak forward, $w=1.5$. All guided variants cost two network evaluations (NFE) per step, like CFG.
 
 **Baselines and controls.** (i) Bare CFG with a weight sweep, CADS and interval-restricted CFG [TODO cite]; (ii) autoguidance with a sweep over snapshot step and weight; (iii) *reverse* controls using a *higher* bucket label, and `bucketmix:12` (half lower bucket, half unconditional), which tests whether a wrong label merely acts as an unconditional-like reference [TODO cite ICG]; (iv) two *trained* degraded-view branches added to the same weights by fine-tuning with an extra label: `probe_cg`, targeting the 2×2 block-average of the real sprite, and `probe_cc`, targeting the sprite with RGB shrunk 0.6× towards its per-image mean, each evaluated against same-weights paired controls.
 
@@ -27,13 +27,13 @@ Table 1 reports the 16 px results over three seeds. The clean baseline is far fr
 | Composed (ours) | snapshot 10 k under `bucket:12` | stores snapshot | 1.5 | 7.67 | 7.32 | 7.61 | **7.53 ± 0.19** | 8.34 / 8.02 / 8.42 |
 | Composed, snapshot only for $t/T\in[0,0.5]$ | as above; final weights elsewhere | stores snapshot | 1.5 | 7.70 | 7.16 | 8.02 | 7.63 ± 0.43 | [TBD] / 8.16 / 8.44 |
 
-After 16-colour quantisation the ordering between autoguidance and the composed reference reverses (7.8 vs 8.3–8.4), so part of the composed gain lives in the colour domain; we return to this in §4.9 and in the Limitations. The FD decomposition for seed 0 (Appendix, Table (a′)) shows that the label reference has the lowest *mean* term (2.55 vs 12.13 for CFG and 3.88 for autoguidance) while the snapshot reference has the best coverage (0.928 vs 0.892); the composition roughly halves both terms (mean 2.40, cov 5.27).
+After 16-colour quantisation the ordering between autoguidance and the composed reference reverses (7.8 vs 8.3–8.4), so part of the composed gain lives in the colour domain; we return to this in §4.9 and in the Limitations. The FD decomposition for seed 0 (Appendix, Table (a′)) shows that the label reference has the lowest *mean* term (2.55 vs 12.13 for CFG and 3.88 for autoguidance) while the snapshot reference has the best coverage (0.928 vs 0.892); the composition keeps the label's mean term (2.40) and most of the snapshot's covariance gain (cov 5.27, between 5.09 and 6.04; coverage 0.909).
 
 ## 4.3 Guidance-weight sweeps and other zero-training baselines
 
-Table 2 collects the weight sweeps at 16 px (seed 0) and a sweep of the label reference at 20 px. (i) No CFG setting improves on $w=4$: stronger CFG, CADS and interval-restricted CFG are all worse than the baseline, so the residual error is not under-guidance. (ii) The label reference has a flat weight curve (10.21 → 8.59 → 11.20 → 13.87 for $w = 1.5 \ldots 3$), whereas the snapshot reference explodes (8.98 → 30.11 over the same range). The flatness persists at 20 px, where every weight in $w \in \{1.25, \ldots, 3\}$ for `bucket:16` beats bare CFG (45.92). (iii) Degraded-*input* references fail outright (box-blurred $x_t$: 223.07; 1-px cyclic shift: 18.95), and channel-decoupled weights show that FD is set almost entirely by the RGB weight.
+Table 2 collects the weight sweeps at 16 px (seed 0) and the sweeps of both single references at 20 and 24 px (seed 0). (i) No stronger CFG setting improves on $w=4$: CFG at $w = 7, 10$, CADS and interval-restricted CFG are all worse than the baseline, so the residual error is not under-guidance (a sweep below $w=4$ is in progress). (ii) The label reference has a flat weight curve (10.21 → 8.59 → 11.20 → 13.87 for $w = 1.5 \ldots 3$), whereas the snapshot reference explodes (8.98 → 30.11 over the same range). The same shape holds at 20 and 24 px: every weight in $w \in \{1.25, \ldots, 3\}$ for the label reference beats bare CFG (45.92 at 20 px, seed 0; 78.96 ± 0.74 at 24 px), with worst-over-sweep / best = 1.25× (20 px) and 1.23× (24 px), whereas the snapshot reference has a sharp optimum and explodes past it (1.86× at 20 px). At 24 px the snapshot optimum moves to $w=2$ (52.52 vs 53.36), so the composed row at $w=1.5$ is not tuned in the snapshot's favour. (iii) Degraded-*input* references fail outright (box-blurred $x_t$: 223.07; 1-px cyclic shift: 18.95), and channel-decoupled weights show that FD is set almost entirely by the RGB weight.
 
-**Table 2.** Weight sweeps and zero-training baselines, v7h, seed 0. 16 px unless stated; 20 px sweep against bare CFG 45.92.
+**Table 2.** Weight sweeps and zero-training baselines, v7h, seed 0. 16 px unless stated; 20 / 24 px sweeps against bare CFG 45.92 / 78.96 ± 0.74 (seed 0 / 3 seeds).
 
 | Reference | $w$ sweep | FD |
 |---|---|---|
@@ -48,38 +48,41 @@ Table 2 collects the weight sweeps at 16 px (seed 0) and a sweep of the label re
 | Composed, other snapshots, $w=1.5$ | 20 k / 5 k (seed 1) | 8.03 / 8.68 |
 | Autoguidance, channel-decoupled $w$ (RGB / alpha) | 2/1 / 2/3 / 3/2 / 1.5/2.5 / 2.5/1.5 | 11.16 / 10.74 / 32.36 / 8.35 / 19.17 |
 | Degraded-input reference: 2×2 box-blurred $x_t$ / 1-px cyclic shift | 2 and 1.5 / — | 223.07 and 99.89 / 18.95 |
-| **Label reference `bucket:16`, 20 px** | 1.25 / 1.5 / 2 / 2.5 / 3 | 40.96 / 37.48 / 32.89 / 35.15 / 38.53 |
+| **Label reference `bucket:16`, 20 px** | 1.25 / 1.5 / 2 / 2.5 / 3 | 40.96 / 37.48 / **32.89** / 35.15 / 38.53 |
+| Autoguidance (snapshot 10 k), 20 px | 1.25 / 1.5 / 2 / 2.5 / 3 | 36.75 / **31.78** / 33.66 / 42.02 / 59.04 |
+| **Label reference `bucket:16`, 24 px** | 1.25 / 1.5 / 2 / 2.5 / 3 | 71.12 / 63.09 / **60.41** / 65.77 / 74.61 |
+| Autoguidance (snapshot 10 k), 24 px | 1.25 / 1.5 / 2 / 2.5 / 3 | 64.85 / 53.36 / **52.52** / [TBD] / [TBD] |
 
 ## 4.4 Generalisation across resolutions
 
-Table 3 repeats the comparison at 12, 20, 24 and 32 px with the same weights and snapshot. The ordering bare > label reference ≈ autoguidance > composed holds at every resolution that has a lower bucket (at 32 px autoguidance, 75.23, edges the label reference, 77.45), and the composed − autoguidance gap is 4–8 seed sd at 16 / 20 / 24 px. Relative gains of the composed reference are −65 / −35 / −39 / −28 % at 16 / 20 / 24 / 32 px (seed 0). The bare model is much further from the floor at 20 / 24 / 32 px (gaps 33.8 / 66.8 / 83.1 vs 18.5 at 16 px), reflecting the 16 px-dominated training data. The choice of lower bucket matters: at 24 px the farther bucket is slightly better (`bucket:12` 57.70 vs `bucket:16` 60.41, seed 0), but at 32 px it is clearly worse (`bucket:16` 91.26 vs `bucket:24` 77.45); §5 ties this to structural alignment. 12 px has no lower bucket, so only autoguidance applies.
+Table 3 repeats the comparison at 12, 20, 24 and 32 px with the same weights and snapshot. The ordering bare > label reference ≈ autoguidance > composed holds at every resolution that has a lower bucket (at 32 px autoguidance, 75.23, edges the label reference, 77.45, seed 0), and the composed − autoguidance gap is 3.9–8.2 times the larger of the two seed sd (4.6 / 3.9 / 8.2 at 16 / 20 / 24 px). Relative gains of the composed reference are −65 / −35 / −39 / −28 % at 16 / 20 / 24 / 32 px (seed 0). The bare model is much further from the floor at 20 / 24 / 32 px (gaps 33.8 / 66.8 / 83.1 vs 18.5 at 16 px), reflecting the 16 px-dominated training data. The choice of lower bucket matters: at 24 px the nearest lower bucket (`bucket:20`, 66.20, seed 0) is the worst of the three, the reported `bucket:16` (59.32 ± 1.37) was chosen on FD, and the farther `bucket:12` is slightly better still (57.70 vs 60.41, seed 0); at 32 px the farther bucket is clearly worse (`bucket:16` 91.26 vs `bucket:24` 77.45, seed 0); §5 ties this to structural alignment. 12 px has no lower bucket, so only autoguidance applies.
 
-**Table 3.** Matched FD-DINOv2 at native resolution, v7h. Mean ± sd over three seeds where available (3 s); otherwise seed 0. "Other lower" = a non-nearest lower bucket, $w=2$.
+**Table 3.** Matched FD-DINOv2 at native resolution, v7h. Mean ± sd over three seeds where available (3 s); otherwise seed 0. "Lower bucket used" = the nearest lower bucket except at 24 px, where bk16 is used and the nearest (bk20) is listed under "Other lower bucket", $w=2$.
 
-| $R$ | Floor | CFG $w=4$ | Nearest lower bucket, $w=2$ | Other lower bucket, $w=2$ | Autoguidance 10 k, $w=1.5$ | Composed, $w=1.5$ |
+| $R$ | Floor | CFG $w=4$ | Lower bucket used, $w=2$ | Other lower bucket, $w=2$ | Autoguidance 10 k, $w=1.5$ | Composed, $w=1.5$ |
 |---|---|---|---|---|---|---|
 | 12 | 3.37 | 13.02 ± 0.28 (3 s) | — (none exists) | — | **8.54 ± 0.73** (3 s) | — |
 | 16 | 3.45 | 21.52 ± 0.47 (3 s) | bk12 8.52 ± 0.29 (3 s) | — | 8.73 ± 0.26 (3 s) | **7.53 ± 0.19** (3 s) |
 | 20 | 12.14 | 47.04 ± 1.11 (3 s) | bk16 32.75 ± 0.60 (3 s) | bk12 35.85 | 31.57 ± 0.29 (3 s) | **28.90 ± 0.69** (3 s) |
-| 24 | 12.96 | 78.96 ± 0.74 (3 s) | bk16 59.32 ± 1.37 (3 s) | bk12 57.70; bk20 66.20 | 54.15 ± 0.72 (3 s) | **48.23 ± 0.43** (3 s; bk16 + 10 k) |
+| 24 | 12.96 | 78.96 ± 0.74 (3 s) | bk16 (not nearest) 59.32 ± 1.37 (3 s) | bk20 (nearest) 66.20; bk12 57.70 | 54.15 ± 0.72 (3 s) | **48.23 ± 0.43** (3 s; bk16 + 10 k) |
 | 32 | 13.77 | 96.85 | bk24 77.45 | bk16 91.26 | 75.23 | **69.27** (bk24 + 10 k) |
 
 ## 4.5 A second, independently trained model
 
-To check that the effect is not specific to one training run, we train v7s with the same recipe, data and evaluation exclusions but a narrower width (41.3 M vs 72.5 M parameters), a different seed and 60 k steps; its own step-10 k EMA serves as snapshot. Table 4 shows the same ordering at 16, 20 and 24 px (−63 % bare → composed at 16 px), and the FD decomposition mirrors v7h: mean term 16.48 → 5.50 (label) / 7.04 (autoguidance) / 3.84 (composed), covariance term 11.51 → 7.31 / 6.91 / 6.70. A third model, v7_lowres, trained on data that included the evaluation sprites, shows the same relative gain (16.66 → 7.40 and 15.29 → 7.08, seeds 0 / 1) but is contaminated and appears only in the appendix.
+To check that the effect is not specific to one training run, we train v7s with the same recipe, data and evaluation exclusions but a narrower width (41.3 M vs 72.5 M parameters), a different seed and 60 k steps; its own step-10 k EMA serves as snapshot. Table 4 shows the same ordering at 16, 20 and 24 px (−62.4 % bare → composed at 16 px for seed 0, −63 % for seed 1), and the FD decomposition mirrors v7h: mean term 16.48 → 5.50 (label) / 7.04 (autoguidance) / 3.84 (composed), covariance term 11.51 → 7.31 / 6.91 / 6.70. A third model, v7_lowres, trained on data that included the evaluation sprites, shows the same relative gain (16.66 → 7.40 and 15.29 → 7.08, seeds 0 / 1) but is contaminated and appears only in the appendix.
 
 **Table 4.** Second model v7s (clean), matched FD-DINOv2. 16 px: seed 0 / seed 1; 20 and 24 px: seed 0. v7h row repeated from Table 1 for reference.
 
 | Model | CFG $w=4$ | Label reference, $w=2$ | Autoguidance 10 k, $w=1.5$ | Composed, $w=1.5$ | Reverse `bucket:20`, $w=2$ | Δ bare → composed |
 |---|---|---|---|---|---|---|
 | v7h @16 (72.5 M) | 21.98 | bk12 8.59 | 8.98 | **7.67** | 17.14 | −65 % |
-| v7s @16 (41.3 M) | 28.00 / 27.75 | bk12 12.80 / 12.74 | 13.95 / 15.17 | **10.54 / 10.28** | 25.31 | −63 % |
+| v7s @16 (41.3 M) | 28.00 / 27.75 | bk12 12.80 / 12.74 | 13.95 / 15.17 | **10.54 / 10.28** | 25.31 | −62 % / −63 % |
 | v7s @20 | 63.32 | bk16 45.81 | 39.13 | **36.31** | — | −43 % |
 | v7s @24 | 99.47 | bk16 78.18 | 66.83 | **60.20** | — | −39 % |
 
 ## 4.6 Reverse controls: the reference must be a *lower* bucket
 
-If a wrong label merely acted as a generic unconditional-like reference, a higher bucket would help as much as a lower one. It does not (Table 5). At 12, 20 (bk32), 24 and 32 px the higher-bucket reference is *worse than no guidance* (+1.5, +13.2, +21.9, +17.1 FD); at 20 px `bucket:24` is indistinguishable from bare (+0.7). At 16 px higher buckets are slightly better than bare in raw FD but worse after quantisation (q16 18.64 / 21.02 / 24.56 vs 12.64), with precision rising to .935 and recall falling to .85–.88, the signature of over-guidance contraction; v7s shows the same (`bucket:20`: q16 24.14, precision .925, recall .848). `bucketmix:12` (9.42) lies between the label reference (8.59) and CFG (21.98), not at CFG.
+If a wrong label merely acted as a generic unconditional-like reference, a higher bucket would help as much as a lower one. It does not (Table 5, seed 0). At 12, 20 (bk32), 24 and 32 px the higher-bucket reference is *worse than no guidance* (+1.5, +13.2, +21.9, +17.1 FD against the seed-0 bare rows; against the 3-seed means 13.02 ± 0.28 / 47.04 ± 1.11 / 78.96 ± 0.74 the reverse rows 14.45 / 59.13 / 101.67 remain above bare by many sd); at 20 px `bucket:24` is indistinguishable from bare (+0.7). At 16 px higher buckets are slightly better than bare in raw FD but worse after quantisation (q16 18.64 / 21.02 / 24.56 vs 12.64), with precision rising to .935 and recall falling to .85–.88, the signature of over-guidance contraction; v7s shows the same (`bucket:20`: q16 24.14, precision .925, recall .848). `bucketmix:12` (9.42) lies between the label reference (8.59) and CFG (21.98; all seed 0), not at CFG.
 
 **Table 5.** Reverse controls (higher bucket as weak reference, $w=2$), v7h, seed 0.
 
