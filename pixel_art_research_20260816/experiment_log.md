@@ -1655,3 +1655,9 @@ GPU2 空(diag_review3 完)。
 - 补 CLIP: @20 cfg1.5/2 29.75/29.92; @24 cfg1.5/3 29.70/30.00; @32 cfg1.5/3 29.15/29.60; @12 cfg1.5/3 29.54/29.76。
 - 新图 paper_assets/fig_pareto_allR.png (4 面板 12/20/24/32; make_pareto_allR.py); draft_experiments §4.9 [TBD] 已填。
 - GPU3/GPU2 均空。补漏实验清单只剩 #11 人评(无 GPU) / #13 公开模型(optional) / 定性图加 best-CFG 行(可做, 无采样: 用已存 v7h_cfg1p5 样本)。
+
+## 09-08 15:40 UTC 合稿完成: paper_assets/draft_full.md (subagent, 限额中断后续写)
+- 主体 10.2k 词(纯文 8.3k, 目标 6.1k, 超 ~35%, 超出部分基本是各分辩率数字密度), 6 表 3 图; 附录 A.1–A.17 已把降级表/段贴入。
+- subagent 核出 13 处不一致, 已在源头修正: v7s@20 复合 vs best-CFG = **−35 %**(非 −37, 后者是对 w2 算的); v7s@20 重调 −11 %(非 −9); "best-CFG CLIP 高于真实值 0.1~0.2" 在 32px 不成立 → 改为 +0.16/+0.08/−0.22; 同 CLIP 下差距 "25–40 %" → "约 30 %"(30/30/29 @20/24/32, 16px bucketu 变体 30 %); 24/32px 无 w2.5 → 网格文字改实; 定性图 9 行×20 列; limitations 里 "best-CFG CLIP 未测" 已过时 → 删; Inception 余量 6.5×; v7s@24 w3 94.72 填入。
+- 剩余标记: [TODO cite ×5], [TBD] 表 1 snaplo 行 q16 / 表 A6 复合行 P-R-D / best-CFG 纯信念统计 / 许可证。机制节 probe 配方与 mean_term 数字只在 experiment_log 有源, 稿中标 [TODO cite log]。
+- 电脑重启后会话级 cron 丢失, 已重建(15 min); GPU2/3 空。
