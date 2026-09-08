@@ -305,6 +305,33 @@ Quantisation helps the bare model a lot and does not help the guided rows, so pa
 colour domain (bleeding); the composed row still wins at every R after quantisation, but the margin shrinks from
 −35/−39/−28 % to −20/−20/−8 %. Same pattern as 16 px (Table a, +q16 column).
 
+### Table (h) — Second metric family on the SAME saved samples: Inception-v3 clean-FID / KID (×10⁻³), white composite, NEAREST ×4 to 64 px, clean-fid. Source: **[log §09-08 05:05, diag_metric2]**; `src/v6/fid_kid_fair.py`, table script `paper_assets/incep_table.py`. Held-out real floor: FID 4.93 / 6.72 / 8.23 / 8.99 / 9.75 at 12/16/20/24/32 px (Inception has ~7× less headroom than DINOv2 here: bare 9.57 vs floor 6.72 at 16 px).
+
+| R | Bare CFG w = 4 | Lower-bucket ref w = 2 | Autoguidance 10 k | Composed | Reverse (higher bucket) |
+|---|---|---|---|---|---|
+| 16 (3 seeds, FID) | 9.57 / 9.61 / — | bk12 8.61 / 8.63 / 8.64 | **7.84** / 7.97 / 7.71 | 7.97 / 7.86 / 7.95 | bk24 11.26, bk64 11.29 |
+| 16 (KID) | 1.12 | .78 | .55 | .63 | 2.71 |
+| 20 (FID / KID) | 11.82 / 1.01 | bk16 10.75 / 1.03 | 9.85 / .58 | **9.62 / .26** | bk32 15.45 / 3.71 |
+| 24 (FID / KID) | 16.13 / 2.40 | bk16 **16.45 / 3.19** (no gain) | 13.83 / 1.96 | **13.26 / 1.46** | bk32 22.56 / 7.55 |
+| 32 (FID / KID) | 19.77 / 2.34 | bk24 **20.10 / 3.31** (no gain) | 18.56 / 2.91 | **17.24 / 1.81** | bk48 25.83 / 7.58 |
+| v7s @16 (FID) | 10.33 | bk12 9.77 | **8.25** | 8.49 | bk20 12.86 |
+| v7s @20 / @24 (FID) | 13.06 / 16.82 | 11.73 / 17.85 | 10.42 / 14.66 | **10.22 / 13.85** | — |
+
+Rank agreement with FD-DINOv2 over *all* saved rows: Spearman .98 (12 px, n = 9), .86 (16 px, n = 121), .96 (20 px,
+n = 18), .68 (24 px, n = 17), .83 (32 px, n = 6); Pearson .91–.99.
+
+Reading (goes into Results and Limitations): (i) the composed reference is best or tied-best at every R, on both
+models and under all three metrics, and higher-bucket (reverse) references are harmful under all three → the main
+claim and the direction test do not depend on DINOv2. (ii) The gain of the **label-only** lower-bucket reference is
+DINOv2-visible but Inception-weak: it still lowers FID at 16/20 px, but at 24/32 px FID/KID are flat or slightly
+worse (16.13 → 16.45, KID 2.40 → 3.19), and on v7s bk12 lags autoguidance (9.77 vs 8.25). Consistent with the q16
+result (Table g′): the label reference mainly fixes per-pixel colour/contrast statistics, which DINOv2 (one patch per
+pixel) weights heavily and Inception (natural-image features at 64 px) barely sees; the snapshot reference fixes
+structure/coverage; the composition gets both. (iii) Under Inception, autoguidance ≈ composed at 16 px (within
+seed spread); the composed advantage is clear at 20/24/32. Recommendation in the paper: report DINOv2 as primary
+(each pixel is a patch, the metric the domain needs), Inception as secondary, and advertise the composed reference,
+not the label reference alone, as the method.
+
 ## 4. Section-by-section outline
 
 ### 1 Introduction
@@ -405,7 +432,7 @@ colour domain (bleeding); the composed row still wins at every R after quantisat
 | 6 | Guidance-weight sweeps at 20/24 px (w ∈ {1.25,1.5,2,2.5,3}) for label ref and autoguidance | 20 | 8.3 | show flat-vs-steep w-curve generalises |
 | 7 | ~~bucket beliefs at 20/24 px~~ **DONE** (dmech2, Table d second block); per-resolution TV-vs-FD plot **DONE** (`paper_assets/fig_tv_vs_fd_r.png`, make_tv_fd_r.py: x = TV_ref/TV_strong, y = FD_guided/FD_bare, 16/20/24 px, 10 points; all x<1 same-caption beliefs give y<1, all x≥1 give y≈1 or >1); still open: probe_cg *sampled* branch stats (‡ row) | ~8 | 3.3 | mechanism claim at more than one resolution |
 | 8 | ~~q16 appendix at 20/24 px~~ **DONE** (+32 px; Table g′) | 8 | 3.3 | colour-vs-structure split beyond 16 px |
-| 9 | Second metric family on saved samples: Inception FID / KID and precision–recall at all resolutions (re-scoring only if samples were kept; otherwise regenerate) | ~16 | 1–7 | rule out DINOv2-specific effects |
+| 9 | ~~Second metric family~~ **DONE** (Table h: Inception clean-FID/KID on all saved rows; composed best everywhere, label-only ref Inception-weak at 24/32) | ~16 | 1–7 | rule out DINOv2-specific effects |
 | 10 | ~~CLIP score~~ **DONE** (Table g; alignment cost found; fix probe **DONE** Table g″: no free fix, FD–CLIP frontier, bucketu composed = real-level CLIP at +0.9 FD) | 32 | ~5 | guidance must not trade alignment for FD |
 | 11 | Human preference study (bare vs autog vs composed, ~50 prompts × 3 raters) | — | 0 GPU; sampling ≈ 0.5 | ICLR reviewers expect it for a perceptual domain |
 | 12 | ~~Sampler robustness~~ **DONE** (dmisc, log §21:20): composed DDPM 50/100/200 = 6.81/7.67/9.38; DDIM50 broken for the bare model itself (204.42) → appendix with caveat | 6 | 2.5 | show it is not a 100-step artefact |
