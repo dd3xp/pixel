@@ -1634,3 +1634,11 @@ GPU2 空(diag_review3 完)。
 - v7s @24 CFG w3 = 94.72 (w1.5/2/2.5 = 99.23/93.78/93.96) → 曲线 U 形, 最优 w=2 (93.78); 表 j′ 全部填齐, 无 TBD。
 - 六稿 subagent 全面改稿完 (377d2cb): 所有对比的基准换成每分辨率最优 CFG; 复合 Δ vs best-CFG = −40/−27/−29/−17 % @16/20/24/32 (v7h), −45/−37/−36 % @16/20/24 (v7s)。
 - GPU3 起 diag_review5 (补稿中 [TBD]): cfg2.5@16; 50 步 cfg1.5; cfg1.5 q16; best-CFG 行 CLIP @12/20/24/32; best-CFG 的 Inception FID/KID @ 全部 R。
+
+## 09-08 11:45 diag_review5 完 (GPU3 独占, 20 min); diag_review6 起
+- 16px CFG w2.5 = 14.56 (CLIP 29.95/17.1%) → 16px 网格 1/1.5/2/2.5/3/4/7/10 齐, 曲线 U 形最优 w1.5 确认; 表 j / Pareto 图已加点。
+- 50 步 best-CFG w1.5 = 12.14 (100 步 12.24, CLIP 29.73): CFG 最优不随步数移动; 复合 50 步 6.63 → vs best-CFG −45%。
+- q16(cfg1.5) = 11.55 (12.24 → 11.55, 仅 −6%; w4 是 21.98 → 12.64): 最优 CFG 已无多少颜色渗漏可去。
+- best-CFG 行 CLIP: @12 w2 29.65/14.2% | @20 w2.5 30.02/18.3% | @24 w2 29.89/19.3% | @32 w2 29.43/20.6%; 复合 @20/24/32 = 29.48/29.33/28.78 → **R>16 时复合仍低 0.5~0.65 CLIP**, 16px 的"双坐标占优"暂只在 16px 成立 → diag_review6 (GPU3, logs/diag_review6.log, DIAG_REVIEW6_DONE): composed∘bucketu:16 w1.5 @20/24 + bucketu:24 @32 + bucketu:16 @12 (无更低桶, 测纯去文本) + CLIP + Inception; 另补 cfg1.5/cfg2/cfg3 各 R 的 CLIP 以画各 R 的 CFG 前沿。
+- best-CFG Inception FID/KID: @16 w1.5 9.31/1.88, w2 8.66/.89, w3 8.86/.67 (Inception 最优 w=2 非 1.5), PAG-mid w2 8.92/1.31; @12 6.45/1.00; @20 10.66/.67; @24 15.34/2.64; @32 19.37/2.77。复合 vs best-CFG Inception FID −8/−10/−14/−11% (DINO −40/−27/−29/−17%), KID 约减半 → Inception 下差距小得多但同号; 论文 Table 9 加 best-CFG 列并如实写。
+- 六稿 [TBD] 已填 (experiments 表 1/9/11 + 50 步 + 前沿段落 caveat; mechanism q16); 剩 TBD: 72.5M 参数核实(无 GPU, 可本地算), bucketu@20/24/32 (review6), 定性图加 best-CFG 行。

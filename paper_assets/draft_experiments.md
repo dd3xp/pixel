@@ -22,7 +22,7 @@ Table 1 reports the 16 px results over three seeds. CFG at the training default 
 |---|---|---|---|---|---|---|---|---|
 | Real held-out (floor) | — | — | — | 3.45 | — | — | **3.45** | — |
 | CFG, training default | unconditional | none | 4 | 21.98 | 21.05 | 21.54 | 21.52 ± 0.47 | 12.64 / 12.68 / 12.55 |
-| CFG, best weight (baseline) | unconditional | none | 1.5 | 12.24 | 13.32 | 11.91 | 12.49 ± 0.72 | [TBD] |
+| CFG, best weight (baseline) | unconditional | none | 1.5 | 12.24 | 13.32 | 11.91 | 12.49 ± 0.72 | 11.55 / — / — |
 | Autoguidance | EMA snapshot 10 k | stores snapshot | 1.5 | 8.98 | 8.73 | 8.47 | 8.73 ± 0.26 | 7.82 / 7.98 / 7.82 |
 | Label reference (ours) | `bucket:12`, same weights | **none** | 2 | 8.59 | 8.20 | 8.76 | 8.52 ± 0.29 | 8.99 / 8.78 / 8.57 |
 | Composed (ours) | snapshot 10 k under `bucket:12` | stores snapshot | 1.5 | 7.67 | 7.32 | 7.61 | **7.53 ± 0.19** | 8.34 / 8.02 / 8.42 |
@@ -38,7 +38,7 @@ Table 2 collects the CFG weight curves at every resolution, the other zero-train
 
 | Reference | $w$ sweep | FD |
 |---|---|---|
-| CFG (unconditional), 16 px | 1 / 1.5 / 2 / 3 / 4 (default) / 7 / 10 | 16.39 / **12.24** / 12.98 / 16.67 / 21.98 / 42.95 / 62.12 |
+| CFG (unconditional), 16 px | 1 / 1.5 / 2 / 2.5 / 3 / 4 (default) / 7 / 10 | 16.39 / **12.24** / 12.98 / 14.56 / 16.67 / 21.98 / 42.95 / 62.12 |
 | CFG $w=1.5$ (best), 16 px, seeds 0 / 1 / 2 | 1.5 | 12.24 / 13.32 / 11.91 = **12.49 ± 0.72** |
 | CFG, 12 px | 1.5 / 2 / 2.5 / 3 / 4 | 10.44 / **9.71** / 10.53 / 11.09 / 13.02 ± 0.28 |
 | CFG, 20 px | 1.5 / 2 / 2.5 / 3 / 4 | 42.61 / 40.57 / **39.53** / 42.99 / 45.92 (47.04 ± 1.11) |
@@ -122,7 +122,7 @@ Table 6 compares the free label reference with two trained degraded-view branche
 
 ## 4.8 Sampler robustness
 
-The composed reference is not an artefact of the 100-step sampler. With 50 DDPM steps (16 px, seed 0) the ordering is unchanged and the margins widen: CFG $w=4$ 20.81, autoguidance 9.11, composed **6.63** (an independent repeat of the same configuration, run on a different GPU, gave 6.81; mean 6.72), against 21.98 / 8.98 / 7.67 at 100 steps [TBD: best-CFG $w=1.5$ at 50 steps, diag_review5]. With 200 steps the composed reference gives 9.38, so fewer steps are slightly *better* for it, consistent with extrapolation error accumulating over steps (the 50-step result awaits a seed check). DDIM-50 is unusable for this model irrespective of guidance (bare 204.42), so DDIM rows appear only in the appendix with that caveat.
+The composed reference is not an artefact of the 100-step sampler. With 50 DDPM steps (16 px, seed 0) the ordering is unchanged and the margins widen: CFG $w=4$ 20.81, autoguidance 9.11, composed **6.63** (an independent repeat of the same configuration, run on a different GPU, gave 6.81; mean 6.72), against 21.98 / 8.98 / 7.67 at 100 steps ; best-CFG $w=1.5$ at 50 steps gives 12.14 (100 steps 12.24), so the CFG optimum does not move with the step count while the composed margin over it grows from −37 % to −45 %. With 200 steps the composed reference gives 9.38, so fewer steps are slightly *better* for it, consistent with extrapolation error accumulating over steps (the 50-step result awaits a seed check). DDIM-50 is unusable for this model irrespective of guidance (bare 204.42), so DDIM rows appear only in the appendix with that caveat.
 
 ## 4.9 Alignment–fidelity frontier
 
@@ -136,11 +136,13 @@ Two zero-training variants move along the frontier towards higher CLIP (Table 8)
 
 | $R$ | Real | CFG $w=4$ (default) | Best CFG | Lower-bucket ref, $w=2$ | Autoguidance, $w=1.5$ | Composed, $w=1.5$ | Higher-bucket ref |
 |---|---|---|---|---|---|---|---|
-| 12 | 29.55 (13.9 %) | 29.76 / 29.74 (15 %) | [TBD] ($w=2$) | — | 29.41 / 29.39 (13 %) | — | bk16 29.32 (11.8 %) |
+| 12 | 29.55 (13.9 %) | 29.76 / 29.74 (15 %) | 29.65 (14.2 %) ($w=2$) | — | 29.41 / 29.39 (13 %) | — | bk16 29.32 (11.8 %) |
 | 16 | 29.80 (16.4 %) | 30.06 / 30.04 / 30.03 (18 %) | 29.74 (15.9 %) ($w=1.5$, seed 0) | bk12 29.37 / 29.38 / 29.37 (13 %) | 29.58 / 29.53 / 29.57 (15 %) | 29.51 / 29.47 / 29.54 (14 %) | bk24 29.58; bk64 29.60 (15 %) |
-| 20 | 29.86 (19.3 %) | 30.16 / 30.09 (20 %) | [TBD] ($w=2.5$) | bk16 29.34 / 29.35 (14 %) | 29.45 / 29.52 (15–16 %) | 29.48 / 29.49 (15 %) | bk32 29.62 (16 %) |
-| 24 | 29.81 (20.2 %) | 30.11 / 30.12 (20 %) | [TBD] ($w=2$) | bk16 29.09 / 29.11 (13 %) | 29.35 / 29.38 (15 %) | 29.33 / 29.34 (15 %) | bk32 29.48 (16 %) |
-| 32 | 29.65 (20.9 %) | 29.72 (21.5 %) | [TBD] ($w=2$) | bk24 28.49 (14 %) | 28.69 (15 %) | 28.78 (15 %) | bk48 28.85 (17.5 %) |
+| 20 | 29.86 (19.3 %) | 30.16 / 30.09 (20 %) | 30.02 (18.3 %) ($w=2.5$) | bk16 29.34 / 29.35 (14 %) | 29.45 / 29.52 (15–16 %) | 29.48 / 29.49 (15 %) | bk32 29.62 (16 %) |
+| 24 | 29.81 (20.2 %) | 30.11 / 30.12 (20 %) | 29.89 (19.3 %) ($w=2$) | bk16 29.09 / 29.11 (13 %) | 29.35 / 29.38 (15 %) | 29.33 / 29.34 (15 %) | bk32 29.48 (16 %) |
+| 32 | 29.65 (20.9 %) | 29.72 (21.5 %) | 29.43 (20.6 %) ($w=2$) | bk24 28.49 (14 %) | 28.69 (15 %) | 28.78 (15 %) | bk48 28.85 (17.5 %) |
+
+At 20 / 24 / 32 px the best-CFG row keeps a 0.5–0.65 CLIP advantage over the composed row (30.02 vs 29.48, 29.89 vs 29.33, 29.43 vs 28.78), so the both-coordinate dominance shown at 16 px by composed$\circ$`bucketu:12` is, so far, a 16 px result; the corresponding `bucketu` variants at 20 / 24 / 32 px are [TBD: diag_review6]. What holds at every resolution is the frontier statement itself: the composed row's FD is 27–40 % below the best CFG point while its CLIP is 0.3–0.9 below the real-data value, a gap of the same size CFG pays between its own $w=4$ and $w=1.5$ operating points.
 
 **Table 11.** The CFG weight curve and the alignment–fidelity frontier, 16 px, v7h, seed 0 (source: outline Table (j); plotted in `fig_pareto_fd_clip.png`). FD with mean / covariance terms, CLIP 100·cos and R@1 on the same saved samples.
 
@@ -167,7 +169,7 @@ Two zero-training variants move along the frontier towards higher CLIP (Table 8)
 | Row | NFE | FD | +q16 | CLIP | R@1 |
 |---|---|---|---|---|---|
 | CFG $w=4$ (training default) | 2 | 21.98 | 12.64 | 30.06 | 18.3 % |
-| CFG $w=1.5$ (best CFG) | 2 | 12.24 | [TBD] | 29.74 | 15.9 % |
+| CFG $w=1.5$ (best CFG) | 2 | 12.24 | 11.55 | 29.74 | 15.9 % |
 | `bucket:12` $w=2$ | 2 | 8.59 | 8.99 | 29.37 | 13.1 % |
 | Composed $w=1.5$ | 2 | **7.67** | 8.34 | 29.51 | 14.4 % |
 | (a) `bucketu:12` $w=2$ / $w=1.5$ | 2 | 12.10 / 10.45 | 9.24 / 8.60 | 29.84 / 29.77 | 16.1 / 16.4 % |
@@ -177,19 +179,19 @@ Two zero-training variants move along the frontier towards higher CLIP (Table 8)
 
 ## 4.10 A second metric family
 
-Because DINOv2 sees one patch per pixel at these resolutions, we also compute Inception-v3 clean-FID and KID [TODO cite clean-fid] on the same saved samples (white composite, NEAREST ×4 to 64 px). Inception has far less headroom here (floors 4.93 / 6.72 / 8.23 / 8.99 / 9.75 at 12–32 px; bare 9.57 vs floor 6.72 at 16 px). The bare rows of Table 9 are CFG at the $w=4$ default; Inception features of the best-CFG samples were not computed [TBD]. Table 9 shows that the two central claims survive the change of feature space: the composed reference is best or tied-best at every resolution and on both models, and higher-bucket references are harmful. Under Inception, autoguidance and composed are within seed spread at 16 px; the composed advantage is clear at 20 / 24 / 32 px. The *label-only* reference, however, is DINOv2-visible but Inception-weak: it lowers FID at 16 / 20 px but is flat or slightly worse at 24 / 32 px (16.13 → 16.45, KID 2.40 → 3.19) and lags autoguidance on v7s (9.77 vs 8.25), in line with the q16 result (Appendix, Table (g′)): the label reference mainly corrects per-pixel colour and contrast statistics, which DINOv2 weights heavily and 64 px Inception barely sees. Rank agreement between the metric families over all saved rows is Spearman .98 / .86 / .96 / .68 / .83 at 12 / 16 / 20 / 24 / 32 px (Pearson .91–.99).
+Because DINOv2 sees one patch per pixel at these resolutions, we also compute Inception-v3 clean-FID and KID [TODO cite clean-fid] on the same saved samples (white composite, NEAREST ×4 to 64 px). Inception has far less headroom here (floors 4.93 / 6.72 / 8.23 / 8.99 / 9.75 at 12–32 px; bare 9.57 vs floor 6.72 at 16 px). The bare rows of Table 9 are CFG at the $w=4$ default; the best-CFG column re-scores the FD-DINOv2-optimal CFG weight of Table 3 under Inception. The margin of the composed reference over best CFG is smaller under Inception than under DINOv2 — FID −8 / −10 / −14 / −11 % at 16 / 20 / 24 / 32 px (8.66 → 7.97, 10.66 → 9.62, 15.34 → 13.26, 19.37 → 17.24) against −40 / −27 / −29 / −17 % — but KID roughly halves at every resolution (0.89 → 0.63, 0.67 → 0.26, 2.64 → 1.46, 2.77 → 1.81), and the Inception-optimal CFG weight at 16 px is $w = 2$ (8.66; $w = 1 / 1.5 / 2.5 / 3$: 10.65 / 9.31 / — / 8.86), not the DINOv2-optimal 1.5, so the Inception column compares against CFG's own best weight under that metric. PAG (mid, $w=2$) scores 8.92 / 1.31 under Inception, again indistinguishable from same-weight CFG. Table 9 shows that the two central claims survive the change of feature space: the composed reference is best or tied-best at every resolution and on both models, and higher-bucket references are harmful. Under Inception, autoguidance and composed are within seed spread at 16 px; the composed advantage is clear at 20 / 24 / 32 px. The *label-only* reference, however, is DINOv2-visible but Inception-weak: it lowers FID at 16 / 20 px but is flat or slightly worse at 24 / 32 px (16.13 → 16.45, KID 2.40 → 3.19) and lags autoguidance on v7s (9.77 vs 8.25), in line with the q16 result (Appendix, Table (g′)): the label reference mainly corrects per-pixel colour and contrast statistics, which DINOv2 weights heavily and 64 px Inception barely sees. Rank agreement between the metric families over all saved rows is Spearman .98 / .86 / .96 / .68 / .83 at 12 / 16 / 20 / 24 / 32 px (Pearson .91–.99).
 
 **Table 9.** Inception-v3 clean-FID (KID ×10⁻³ where given), same samples as Tables 1, 3, 4. 16 px FID: seeds 0 / 1 / 2.
 
-| $R$ | Bare CFG ($w=4$ default) | Lower-bucket ref, $w=2$ | Autoguidance 10 k | Composed | Reverse (higher bucket) |
-|---|---|---|---|---|---|
-| 16, FID (3 seeds) | 9.57 / 9.61 / — | bk12 8.61 / 8.63 / 8.64 | **7.84** / 7.97 / 7.71 | 7.97 / 7.86 / 7.95 | bk24 11.26; bk64 11.29 |
-| 16, KID | 1.12 | .78 | .55 | .63 | 2.71 |
-| 20, FID / KID | 11.82 / 1.01 | bk16 10.75 / 1.03 | 9.85 / .58 | **9.62 / .26** | bk32 15.45 / 3.71 |
-| 24, FID / KID | 16.13 / 2.40 | bk16 16.45 / 3.19 (no gain) | 13.83 / 1.96 | **13.26 / 1.46** | bk32 22.56 / 7.55 |
-| 32, FID / KID | 19.77 / 2.34 | bk24 20.10 / 3.31 (no gain) | 18.56 / 2.91 | **17.24 / 1.81** | bk48 25.83 / 7.58 |
-| v7s @16, FID | 10.33 | bk12 9.77 | **8.25** | 8.49 | bk20 12.86 |
-| v7s @20 / @24, FID | 13.06 / 16.82 | 11.73 / 17.85 | 10.42 / 14.66 | **10.22 / 13.85** | — |
+| $R$ | Bare CFG ($w=4$ default) | Best CFG (DINOv2-optimal $w$) | Lower-bucket ref, $w=2$ | Autoguidance 10 k | Composed | Reverse (higher bucket) |
+|---|---|---|---|---|---|---|
+| 16, FID (3 seeds) | 9.57 / 9.61 / — | 9.31 ($w=1.5$); 8.66 ($w=2$) | bk12 8.61 / 8.63 / 8.64 | **7.84** / 7.97 / 7.71 | 7.97 / 7.86 / 7.95 | bk24 11.26; bk64 11.29 |
+| 16, KID | 1.12 | 1.88 ($w=1.5$); .89 ($w=2$) | .78 | .55 | .63 | 2.71 |
+| 20, FID / KID | 11.82 / 1.01 | 10.66 / .67 ($w=2.5$) | bk16 10.75 / 1.03 | 9.85 / .58 | **9.62 / .26** | bk32 15.45 / 3.71 |
+| 24, FID / KID | 16.13 / 2.40 | 15.34 / 2.64 ($w=2$) | bk16 16.45 / 3.19 (no gain) | 13.83 / 1.96 | **13.26 / 1.46** | bk32 22.56 / 7.55 |
+| 32, FID / KID | 19.77 / 2.34 | 19.37 / 2.77 ($w=2$) | bk24 20.10 / 3.31 (no gain) | 18.56 / 2.91 | **17.24 / 1.81** | bk48 25.83 / 7.58 |
+| v7s @16, FID | 10.33 | — | bk12 9.77 | **8.25** | 8.49 | bk20 12.86 |
+| v7s @20 / @24, FID | 13.06 / 16.82 | — | 11.73 / 17.85 | 10.42 / 14.66 | **10.22 / 13.85** | — |
 
 ## 4.11 Cost
 
