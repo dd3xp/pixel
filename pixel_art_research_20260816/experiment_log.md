@@ -1782,3 +1782,19 @@ GPU2 空(diag_review3 完)。
 - 对照: 之前 v6f 离散失败用的是 DawnBringer32 的**全语料 32 色词表**, 而每张精灵中位就有 34 色(参照集), 地板必然远高于 3.45 → **那次失败是混淆实验, 不构成"离散扩散已被证伪"的证据**, 与 arch_scout 的判断一致。
 - **注意别过度解读**: 表示无损只说明"这个词表能表达数据", 不说明模型学得会。arch_scout 自估 A1 通过 7.53 的概率约 30%, 该估计不变。
 - 结论: A1 保留在队列第 1 位(两个在跑的探针完成后即开)。**两个在跑的探针都不是真正的新架构**: probe_vpred 是零新颖性的目标函数诊断, probe_src 是条件输入改动(与 SDXL micro-conditioning 撞车), 真正的架构候选是 A1 与 A3。
+
+## 09-10 用户追问"没有外部对比怎么知道是不是 SOTA" → 开始补外部基线
+- **诚实结论**: 在此之前**无法声称 SOTA**。所有对比都在自家模型上(自家 CFG 曲线 + 重实现的 autoguidance/PAG/APG/CFG++/FDG/CADS), 外部系统**零个**。
+- 用户提供 OpenAI 兼容 API(base http://113.45.39.247:3001/v1, key 存环境变量 PIXEL_API_KEY, **不入库**)。查得可用图像模型: **gpt-image-2**(约 52 s/张)、**nano-banana-2**(约 39 s/张); doubao-seedream-5-0-pro 返回 400。
+- 服务器本地已有 **SDXL-base-1.0 完整权重**(72G, HF 缓存)与 **SD-piXL 仓库**(/mnt/data/kw/RoundSquisheen/pixel/SD-piXL, 含 main.py 与 config)。
+### 对比设计(保证同一立足点)
+所有外部输出都过**本项目自己的 `to_tensor(R)`**(同一 BOX 降采样、同一硬 alpha 阈值、同一居中画布), 再用同一个 `fd_fair --size 16` 对同一参照集打分; 背景用"边界连通的近背景色泛洪 + 按内容裁剪"抠成 alpha。**用同一批 heldout prompts 的前 200 条**, 并且**我们自己的模型也在这 200 条上重算 FD**, 以抵消小样本 FD 的偏置。
+### 已启动
+| 基线 | 位置 | 规模 | 状态 |
+|---|---|---|---|
+| gpt-image-2 + 降采样 | 本机 API, 10 线程 | 200 | 在跑 |
+| SDXL-base-1.0 + 降采样 | node03 GPU3 | 200 | 在跑 |
+| nano-banana-2 + 降采样 | 待 gpt 跑完 | 200 | 排队 |
+| SD-πXL (Binninger 2024) | node03, 每张 10k 步优化 | 30~50 | 排队(每张数分钟, 只能小样本; 成本本身也是论文论据) |
+- 新脚本: `baseline/api_gen.py`(API 生成, 断点续跑, key 走环境变量)、`src/v6/sdxl_downscale.py`(本地 SDXL)。
+- 冒烟已见征兆(SDXL 8 张): 降采样结果**色数 52~168, 而真实参照中位 34**; 部分图抠不干净(整幅不透明)。数值待正式打分。

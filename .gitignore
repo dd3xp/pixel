@@ -11,3 +11,5 @@ logs/
 baseline/sdpixl_db32_*/
 baseline/locks/
 data/
+runs/api_*/
+runs/*.log
