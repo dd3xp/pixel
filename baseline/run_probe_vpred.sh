@@ -16,7 +16,7 @@ OUT=${OUT:-workdir/probe_vpred}
 EX=runs_out/holdout_exclude.txt
 mkdir -p runs_out logs
 echo "[$(date +%m%d-%H:%M)] STAGE train probe_vpred steps=$STEPS (v7h recipe, v-prediction)"
-$P src/v6/train_vpred.py --steps $STEPS --out $OUT --exclude $EX --snap_every 5000 || { echo PROBE_VPRED_TRAIN_FAIL; exit 1; }
+$P src/v6/train_vpred.py --steps $STEPS --out $OUT --exclude $EX --snap_every 20000 || { echo PROBE_VPRED_TRAIN_FAIL; exit 1; }
 echo "[$(date +%m%d-%H:%M)] STAGE matched eval @16 (CFG sweep, since the optimal weight may move with the objective)"
 for w in 1.5 2 3 4; do
   t=vpred_cfg$(echo $w | tr . p)

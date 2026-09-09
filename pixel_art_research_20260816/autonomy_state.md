@@ -17,6 +17,7 @@
 - **在跑(两块卡都满)**:
   - GPU2 `probe_src` → logs/probe_src.log, 80k 步, 末行 PROBE_SRC_DONE。(目标桶,源桶) 双标签条件。**与 ga_vllm 共卡, 会慢**。
   - GPU3 `probe_vpred` → logs/probe_vpred.log, 80k 步, 末行 PROBE_VPRED_DONE。eps→v-prediction 诊断; 训完自动扫 CFG。
+- **磁盘警戒(2026-09-09 教训)**: `/mnt/data` 14T **常年 100%**, 是别人(jzs/hjy/mwy/wxy/lty)占的, 我们全项目仅 ~30G。**每 tick 先 `df -h /mnt/data`**; 剩余 <5G 先清自己的死重(已证伪探针目录 / 未被引用的 model_step*.pt / 已完成 run 的 ckpt.pt), **绝不删别人的文件**。09-09 两探针就是盘满写坏 checkpoint 挂的, 已从 step 10000 续训, 快照频率降为 20000。
 - **TRAIN 期只做一件事**: 查两条日志与 .FAILING, 回一行进度。**不许改论文, 不许起核稿 subagent**。
 - **下一动作**: ① 训完 probe_src → 写 `baseline/eval_src.sh` 扫源标签(src ∈ 7 桶 × CFG 1.5/2/3)出 FD@16, 与 v7h best-CFG 12.49 / 复合 7.53 对比; ② 训完 probe_vpred → 已自动出 CFG 扫描, 直接判据处置; ③ 若 probe_src 有效, 立刻测"源条件 + 跨分辩率引导"是否叠加(引导若被吸收 = 更强的论文故事: 采样技巧只是缺失条件变量的代用品)。
 - **背景事实(已复核, cycle 9 的立论基础)**: FD@16 参照集里只有 **7.1%** 是原生 ≤16px, 93% 是 17~64px 降采样 → 语料是无标注的降采样混合, 桶嵌入只给输出尺寸 → 均值回归。详见 experiment_log 09-09 09:00。

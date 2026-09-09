@@ -1768,3 +1768,10 @@ GPU2 空(diag_review3 完)。
 2. **probe_vpred** (GPU3, workdir/probe_vpred, logs/probe_vpred.log, 80k 步, 末行 PROBE_VPRED_DONE): `src/v6/train_vpred.py` —— 唯一改动 eps → **v-prediction**(loss 对 `get_velocity`)。本项目自 v6 起从未变过目标函数, 而后续任何架构都继承它, 故先做这个廉价诊断。**无 novelty, 只作诊断**。`sample_e.py` 新增 `--pred {epsilon,v_prediction,sample}`, 采样必须与训练一致; 训练完自动扫 CFG 1.5/2/3/4(最优权重可能随目标函数移动)。
 - 判据: <7.5 深挖 / 7.5~12 记录(若与引导正交则测叠加) / >12 杀。
 - 注意: GPU2 与用户自己的 ga_vllm 共卡, probe_src 可能比 probe_vpred 慢数倍; 两者都 80k 步, 别因为进度不一致误判。
+
+## 09-09 13:30 本地 两个探针因磁盘写满挂掉 → 清理 + 续训
+- **根因**: `/mnt/data` 14T **100% 满(仅剩 635M)**。probe_src 在存 model_step015000.pt 时 `torch.save` 报 `unexpected pos 225545088 vs 225544976`(写了 226MB/290MB 就截断), supervise.sh 重试 7s 内再挂 → 放弃, 置 .FAILING; probe_vpred 日志在 14800 步中途截断, 同因。
+- **不是我们占的**: jzs 3.0T / hjy 2.4T / mwy 1.9T / wxy 1.8T / lty 1.4T; RoundSquisheen 全项目仅 43G。**别人的文件一律不动**。
+- **只清自己的死重(~15G)**: 已证伪探针目录 probe_cg / probe_cc / v8_imgcond / v9_ipattn(7.3G); v7h 与 v7s 中**未被任何脚本或日志引用**的 20 个 model_step*.pt(5.8G, 保留被引用的 5k/10k/20k/40k 与 model_latest); 已完成 run 的 ckpt.pt(v7h 1.16G + v7s 0.66G); probe_src 那个写坏的 15k 快照。→ 可用空间 635M → **17G**, workdir 30G → 16G。**论文所报每个数字的可复现性未受影响**(主模型权重与被引用快照全部保留)。
+- **续训**: 两个 ckpt.pt 经 torch.load 验证完好(均在 step 10000), 已从 10000 步续跑; **快照频率 5000 → 20000**(80k 步下每个探针从 16 个快照/4.6G 降到 4 个/1.2G), 早期快照 5k/10k 已存, 不影响后续做复合引导测试。
+- **cron 更新**: 用户电脑重启, 会话 cron 重建; 新增一条硬规则 —— **每个 tick 先查 `df -h /mnt/data`, 剩余 <5G 就先清自己的死重**。

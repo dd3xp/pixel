@@ -18,6 +18,6 @@ OUT=${OUT:-workdir/probe_src}
 EX=runs_out/holdout_exclude.txt
 mkdir -p runs_out logs
 echo "[$(date +%m%d-%H:%M)] STAGE train probe_src steps=$STEPS (paired with v7h: same data, exclusions, width, lr, EMA)"
-$P src/v6/train_srcbucket.py --steps $STEPS --out $OUT --exclude $EX --snap_every 5000 || { echo PROBE_SRC_TRAIN_FAIL; exit 1; }
+$P src/v6/train_srcbucket.py --steps $STEPS --out $OUT --exclude $EX --snap_every 20000 || { echo PROBE_SRC_TRAIN_FAIL; exit 1; }
 echo "[$(date +%m%d-%H:%M)] STAGE done training -> eval is baseline/eval_src.sh (source-label sweep)"
 echo PROBE_SRC_DONE
