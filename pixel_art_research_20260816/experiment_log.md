@@ -1862,3 +1862,34 @@ GPU2 空(diag_review3 完)。
 1. **probe_mdm (A1)**: 第一个真正的新架构。冒烟修了两个 bug —— 64px 桶 4096 像素超出位置嵌入上限(CUDA 上表现为 CUBLAS 错误), 且会产生 16384 个 token 全注意力扛不住 → 限制 12~32px 桶(正是论文范围), 51.8M 参数, 16 万样本, 已在 GPU2 开训。
 2. **重标注试点** 600 张, gemini-3-flash 网格批量: 去重率 23.5%→100%, 词数中位 8→13, 每张 250 token。
 3. **SD-πXL** n=6 继续(每张 8.2 GPU-小时)。
+
+## 09-11 tick: 训练监控 + 解码器准备 + 重标注试点评估
+### 服务器状态
+- 磁盘 14G 余(>5G 阈值); GPU0-5 100% 占用(他人 vLLM + 我们的任务), GPU6-7 35G 分配但 0% 利用率(可能是闲置分配)。
+- probe_mdm: 14400/40000 (~36%), loss 稳定 4.1-4.3, 无 FAILING, 预计再 ~8h。
+- sdpixl: 5/6 完成, 仍在跑。
+
+### 解码采样器(关键路径, 训练完就能立刻评测)
+写好 `src/v6/sample_mdm.py`:
+- 算法: MaskGIT 式置信度排序解掩码, cosine schedule(n_mask(i) = ceil(L * cos(pi/2 * (i+1)/T)))
+- 离散 CFG: log_p_cfg = (1+w) log p_c - w log p_u(两次前向)
+- 支持温度、Gumbel 采样、分块推理
+- 输出格式与 sample_e.py 一致(runs_out/<name>/s16/<idx>_<k>.png), 可直接接 fd_fair.py
+- `baseline/eval_mdm.sh`: matched 协议(3000 prompts, n=1); `baseline/eval_mdm_sweep.sh`: CFG 1/1.5/2/3/4 扫描(derisk prompts)
+- 服务器 import 验证通过。
+
+### 重标注试点评估(runs/recaptions.jsonl)
+| 指标 | BLIP (旧) | gemini-3-flash (新) |
+|---|---|---|
+| 总量 | — | 430 张 |
+| 去重率 | 23.5% | **99.1%** |
+| "a pixel art sprite" | 15.4% | **0%** |
+| 词数中位 | 8 | **12** |
+| 词数 P10-P90 | — | 11-13 |
+| 重复条数 | — | 6 (4× "unclear abstract shape" + 2× archer) |
+结论: 质量远优于 BLIP, 全量可做(43k 张 × 250 tok ≈ 1085 万 token), 但**不急** — 修 caption 会改善指令遵循但可能使 FD 变差(当前 FD 优势部分来自模型忽略文本), 且当前头号目标是 A1 架构评测。
+
+### 下一步
+1. 等 probe_mdm 训完(~8h) → CFG sweep → matched eval → DECIDE
+2. sdpixl 出完后做定性图/逐图统计
+3. 若 A1 ≤12, 测离散 + 跨分辨率引导叠加

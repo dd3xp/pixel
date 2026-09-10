@@ -12,13 +12,16 @@
 - 新架构探针 EVAL 后: **<7.5 深挖**; 7.5~12 记录但不深挖(除非与引导正交 → 测叠加); **>12 杀**。
 - 同一大方向连杀 2 个 → 大方向标废, 换方向。
 
-## 当前状态 (2026-09-10 18:00)
+## 当前状态 (2026-09-11 tick)
 - **phase**: TRAIN (cycle 9, 第三个探针 = 第一个真正的新架构)
 - **在跑**:
-  - **GPU2 `probe_mdm` (A1 掩码离散扩散)** → logs/probe_mdm.log, 40k 步约 4h, 末行 PROBE_MDM_DONE。16x16 RGBA = 1024 个 token, 每个 256 路分类; 每通道 8 位词表**无损**(语料实测全 8 位 RGBA), 量化地板 = 真实地板 3.45; 一个像素的 RGBA 四个 token 相邻并共享像素位置嵌入(PixelCNN++ 教训, 缓解逐通道独立性); 目标值用高斯平滑给相邻色值部分信用(v6f 缺的就是这个梯度信号)。51.8M 参数, **仅 12~32px 桶**(48/64 桶 9k~16k token, 全注意力扛不住)。**训完必须先写解码采样器**(置信度排序解掩码 + token 编辑)才能评测。
-  - **GPU3 `sdpixl`** → n=6, 每张 8.2 GPU-小时, 约 2 天。只做定性图/成本表/逐图统计, 不算 FD。
-  - **本机重标注试点** → runs/recaptions.jsonl, 600 张, gemini-3-flash 网格批量。
-- **下一动作**: ① probe_mdm 训完 → 写解码器 → 评测; ② 重标注试点评估(与旧 caption 对比, 抽查错误率) → 决定是否全量; ③ 若 A1 出数 ≤12, 立刻测"离散 + 跨分辨率引导"叠加。
+  - **GPU2 `probe_mdm` (A1 掩码离散扩散)** → logs/probe_mdm.log, 14400/40000 (~36%), loss ~4.1-4.3, 预计再 ~8h 完。51.8M 参数, 仅 12~32px 桶。
+  - **GPU3 `sdpixl`** → 5/6 完成, 仍在跑第 5 张(0-indexed #4)。
+  - 磁盘 14G 余量(>5G 阈值, 暂不需清理)。
+- **已完成(本 tick)**:
+  - **解码采样器已写好**: `src/v6/sample_mdm.py`(置信度排序解掩码 cosine schedule + 离散 CFG) + `baseline/eval_mdm.sh`(matched 协议) + `baseline/eval_mdm_sweep.sh`(CFG 扫描)。已推到服务器, import 验证通过。
+  - **重标注试点评估完成**: 430 张(非 600), 去重 99.1%(BLIP 23.5%), 0 条泛泛描述(BLIP 15.4%), 中位 12 词(BLIP 8), 仅 6 条重复(4× "unclear abstract shape" + 2× 弓箭手)。**质量远优于 BLIP, 全量可做但不急 — 不会改善 FD**(见下方数据问题预判)。
+- **下一动作**: ① probe_mdm 训完 → `bash baseline/eval_mdm_sweep.sh <gpu>` 找最优 CFG → `CFG=... bash baseline/eval_mdm.sh <gpu>` matched 评测; ② 若 A1 出数 ≤12, 立刻测"离散 + 跨分辨率引导"叠加; ③ sdpixl 6 张出完后做定性图 + 逐图统计。
 
 ## 数据问题(2026-09-10 实测, 已确认是瓶颈)
 训练 caption 来自 BLIP, **15.4% 就是 "a pixel art sprite", 去重率仅 23.5%**, 前十条空洞/幻觉 caption 覆盖约四分之一数据(含 "the logo for the new york school of medicine" 出现 373 次)。后果: **模型从未学会读文本**, 给具体描述(如"带白点的红蘑菇")基本不遵循, 而 gpt-image-2 在同样 prompt 上几乎全对。
