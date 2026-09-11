@@ -1937,3 +1937,14 @@ GPU2 空(diag_review3 完)。
 - **产物**: `runs/recaptions_all.jsonl`(原始), `runs/recaptions_map.json`(path→text), 服务器上 `data/*_recap.csv`(三个源共 49,652 行, **95% 被替换**, 未覆盖的保留旧 caption)。
 - **下一步**: ① probe_mdm2 训完后, 用新 caption 重训 **v7h 基线**, 这是公平比较的前提(现有 12.49 / 7.53 全部基于旧 caption); ② 用新 caption 重训 A1(若 A1b 已证明零值主导可解); ③ 重跑信息量 prompt 的三方对比, 检验"模型会不会读文本"这条独立结论是否翻转。
 - **注意**: 这不改变 A1 已证伪的结论 —— 那是零值主导的架构问题, 与 caption 无关(给真实剪影当锚点反而更差)。
+
+## 09-12 00:25 本地 训练过慢的诊断与处置
+- 用户问"推进是不是很慢"。实测速率(服务器 16:21 UTC):
+  | 任务 | 起点 | 速率 | 预计剩余 |
+  |---|---|---|---|
+  | v7r(新 caption 基线, GPU3) | 13:05, 现 6600/80000 | **34 步/分** | **~36 h** |
+  | probe_mdm2(GPU2) | 08:51, 现 22000/40000 | 49 步/分 | ~6 h |
+- **原因是 GPU 争用**。GPU3 上同时有: texture 项目的 SD-πXL ×2(PID 3260046、3362032, 配置在 `RoundSquisheen/texture/experiments/...`, **不是我们的, 未碰**)、我们的 SD-πXL、v7r。GPU2 上 mdm2 与用户自己的 ga_vllm 训练器及一个 vLLM 服务共卡。
+- **处置**: 停掉我们自己的 SD-πXL(队列 runner + 正在跑的第 8 张, 精确 PID 3263196)。它已产出 8 张, 足够原定用途(定性图 / 成本表 / 逐图统计, 本就不算 FD); 第 8 张才 40%(4032/10001 步)且因争用预计还要 6 小时, 不值得等。texture 的两个进程确认 2/2 存活。GPU3 显存 70.3G → 49.3G。
+- **自我纠错**: 第一次用 `pgrep -f` 找进程时, 模式串出现在 ssh 自身的命令行里, 导致 kill 波及执行它的 shell、循环重复。**texture 项目未受影响**(我只对 `--config config.yaml` 与 `run_sdpixl_parallel.sh` 两个模式下手, texture 用的是 `-c <texture 路径>`)。之后改用 `ps | grep "[m]ain.py"` 的自排除写法, 并按单个 PID 杀。
+- **不可控部分**: texture 项目的 SD-πXL 仍在 GPU3 上, v7r 的速率只能部分恢复。若仍远低于预期, 考虑把 v7r 挪到争用更少的卡(需先确认哪张卡真正空闲)。
