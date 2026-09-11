@@ -38,7 +38,8 @@ def to_rgba(ids, R):
 
 
 @torch.no_grad()
-def decode(model, cond, R, lab, steps, device, temp=1.0, edit_rounds=0, edit_frac=0.15, seed=0, greedy=False):
+def decode(model, cond, R, lab, steps, device, temp=1.0, edit_rounds=0, edit_frac=0.15, seed=0, greedy=False,
+           ctx_ids=None, ctx_mask=None):
     B = cond.shape[0]
     L = R * R * CH
     pix_idx = torch.arange(L, device=device) // CH
@@ -48,6 +49,10 @@ def decode(model, cond, R, lab, steps, device, temp=1.0, edit_rounds=0, edit_fra
     ids = torch.full((B, L), MASK, device=device, dtype=torch.long)
     unknown = torch.ones(B, L, dtype=torch.bool, device=device)
     conf = torch.zeros(B, L, device=device)
+    if ctx_ids is not None:  # oracle context: these positions start known and are never re-opened
+        ids = torch.where(ctx_mask, ctx_ids, ids)
+        unknown = unknown & ~ctx_mask
+        conf = torch.where(ctx_mask, torch.ones_like(conf), conf)
 
     for s in range(steps):
         frac = (s + 1) / steps
@@ -83,6 +88,8 @@ def decode(model, cond, R, lab, steps, device, temp=1.0, edit_rounds=0, edit_fra
         worst = conf.argsort(dim=-1)[:, :k]
         m = torch.zeros_like(unknown)
         m.scatter_(1, worst, True)
+        if ctx_mask is not None:
+            m = m & ~ctx_mask
         ids = torch.where(m, torch.full_like(ids, MASK), ids)
         t = torch.full((B,), edit_frac, device=device)
         logits = model(ids, pix_idx, ch_idx, t, cond, lab) / max(temp, 1e-4)
@@ -114,6 +121,11 @@ def main():
     ap.add_argument("--dim", type=int, default=512)
     ap.add_argument("--depth", type=int, default=12)
     ap.add_argument("--max_side", type=int, default=32)
+    ap.add_argument("--context_alpha", default=None,
+                    help="ORACLE DIAGNOSTIC: directory of real sprites whose ALPHA channel is given to the model as "
+                         "context, so it only has to decode RGB. Tests whether probe_mdm's collapse is a missing "
+                         "anchor (it is a good inpainter: 80%% exact tokens at 90%% masking) rather than the "
+                         "representation. Not a generator -- it consumes ground truth.")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     dev = "cuda"
@@ -131,11 +143,23 @@ def main():
     model.load_state_dict(torch.load(a.ckpt, map_location=dev))
     lab_i = BUCKETS.index(R)
 
+    ctx_files = sorted(Path(a.context_alpha).glob("*.png")) if a.context_alpha else None
+
     for i in range(0, len(prompts), a.chunk):
         chunk = prompts[i:i + a.chunk]
         cond = embed(list(chunk), tokz, txt, dev)
         lab = torch.full((len(chunk),), lab_i, device=dev, dtype=torch.long)
-        ids = decode(model, cond, R, lab, a.steps, dev, a.temp, a.edit_rounds, a.edit_frac, a.seed + i, a.greedy)
+        ctx_ids = ctx_mask = None
+        if ctx_files:
+            arrs = []
+            for k in range(len(chunk)):
+                im = Image.open(ctx_files[(i + k) % len(ctx_files)]).convert("RGBA").resize((R, R), Image.NEAREST)
+                arrs.append(np.asarray(im).reshape(-1))
+            ctx_ids = torch.from_numpy(np.stack(arrs)).long().to(dev)
+            ch = torch.arange(R * R * CH, device=dev) % CH
+            ctx_mask = (ch == 3)[None].expand(len(chunk), -1).contiguous()   # alpha channel only
+        ids = decode(model, cond, R, lab, a.steps, dev, a.temp, a.edit_rounds, a.edit_frac, a.seed + i, a.greedy,
+                     ctx_ids, ctx_mask)
         for k in range(len(chunk)):
             to_rgba(ids[k], R).save(out / f"{i + k:02d}_0.png" if i + k < 100 else out / f"{i + k:05d}.png")
         print(f"[{min(i + a.chunk, len(prompts))}/{len(prompts)}]", flush=True)
