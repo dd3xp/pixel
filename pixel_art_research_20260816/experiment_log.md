@@ -1994,3 +1994,11 @@ GPU2 空(diag_review3 完)。
 - T2(`sample_e.py --emb_extrap w,low`): 类嵌入外推 E[16]+(w−1)(E[16]−E[12]), --cfg 1 单次前向, 匹配 FD@16; 对照 无引导 16.39、best-CFG 12.49。
 - v7r_snap10k: 同 v7r 配方训 10k 步(train_v7 为常数学习率, 等价于 v7r 第 10k 步), 供新 caption 上复合引导使用。
 - 脚本: baseline/run_crsc_t1t2.sh(tmux crsc_t1t2), baseline/run_v7r_snap10k.sh(supervise)。
+
+## 2026-09-12 SDXL 通用性试点已起(node09 GPU4/5)
+- 用户放宽 node09: 轻任务可用空闲高编号卡, 最多 4 张, 不和 midi(0~3 号)抢。现占 4、5(SDXL)与 6、7(SD-πXL)。
+- 数据: sayakpaul/coco-30-val-2014(COCO-30k 标准 FID 集), 经 hf-mirror 下到 data/coco30k; 分片 0 = 3000 条, 抽出 captions_shard0.txt 与中心裁剪 512px 真实图 real512/。
+- `src/sdxl_gen/sdxl_sizeguide.py`: SDXL base 1.0 fp16(VAE fp32), Euler 30 步, 自写去噪循环, 同一批 x_t 上并行查询 c/u/w/uw 四种分支(w = 同 caption、original_size=LOW)。冒烟: 2 张 1024px 正常(公交车、猫), 3 NFE bs2 峰值 21G, 约 7 s/张。
+- 10 种设置 × 1000 条, 两个队列; 关键三组(cfg5 / negos512 / cfglabel512 λ1)排最前。
+- `src/sdxl_gen/metrics.py`: FD-DINOv2(ViT-L/14 CLS, 224 bicubic)对真实 1000~2999 号, 地板 = 真实 0~999 号; CLIP ViT-L/14 分。
+- 设计上的预判: SDXL 需要 CFG≈5 才对齐文本(像素模型最优 CFG 仅 1.5), 所以不带 CFG 的 label 模式预计掉对齐; 公平形式是 cfglabel(CFG 之上加尺寸项), 直接对手是 negos(同思路但弱分支丢掉 caption), 与我们在像素模型上 `bucketu` 比 `bucket` 差 1.9~3.5 FD 的发现一一对应。
