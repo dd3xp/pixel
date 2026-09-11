@@ -1955,3 +1955,9 @@ GPU2 空(diag_review3 完)。
 - **早期迹象(n=8, 统计上不算数, 仅作方向提示)**: 三种参考的 w* 全在 **0.94~1.10**, 都接近 1; 且 **L(1.5)/L(1) > 1 全部成立**(外推反而增大均方误差)。
 - **若正式结果同样如此, 含义是**: 引导改善 FD 但不降低均方误差 → 它不是"后验误差修正", 而是轨迹漂移修正或分布锐化。那么在前向加噪数据上训练的 CRSC 学不到引导, **决定权落到 T1(模型自身采样轨迹上的 w*)**。
 - **下一步**: mdm2 训完腾出 GPU2 后, 跑正式 T0(n=3000, 10 个时间步, 16/20/24px); 同时写好 T1 备用。
+
+## 2026-09-12 CRSC T0 正式检查已链在 mdm2 之后(GPU2)
+- 实测速率: v7r 与 probe_mdm2 均约 2900 步/小时(比较 step020000 与日志时间戳); v7r 24200/80000, 剩约 19h; mdm2 39000/40000, 训完自动接 alpha-first 评测(run_probe_mdm2.sh 内置)。
+- `baseline/run_crsc_t0.sh`, tmux `crsc_t0`: 等 logs/probe_mdm2.log 出现 PROBE_MDM2_DONE 后, 在 GPU2 上依次跑 T0 16/12、20/16、24/16(n=3000, 10 个时间步, 留出集 + 训练集), 结果 runs_out/crsc_t0_s<R>_l<low>.json, 日志 logs/crsc_t0.log。失败写 logs/crsc_t0.FAILING。
+- **发现: v7r 没有 10k 早期快照**(run_v7r.sh 用 --snap_every 20000), 复合引导在新 caption 上复测需要另训一个同配方 10k 短跑当弱模型(约 3.5h), 并报 20k 快照作对照。
+- 磁盘: RoundSquisheen 共 36G(pixel 27G: workdir 15G、runs_out 9.8G; texture 8.7G)。账号共用 HF 缓存 170G, 其中 SDXL 72G 里约 55G 是没有代码加载的重复格式(单文件、Flax、OpenVINO、ONNX)。**用户决定不删**, 以后不再提。
