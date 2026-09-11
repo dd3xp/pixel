@@ -15,6 +15,12 @@
 ## 目标分辨率(用户 2026-09-12 纠正)
 **要求是 12/16/20/24 px, 不是 12~32。** 32 px 是我中途自行加入的, 属偏离需求。论文范围与头条数字以 12~24 为准, 32 至多放附录。新架构探针 `--max_side` 设 **24**(离散类 24px=2304 token, 32px=4096 token)。在跑的 A1b 训练含 32 桶但只评 16/20/24, 不重启。
 
+## 外部基线范围(用户 2026-09-12 决定)
+- **商业 API 一律不跑**(Retro Diffusion / PixelLab 等)。**只跑学术论文里有公开代码的方法。**
+- **需要 GPU 的外部基线, 等当前训练(probe_mdm2、v7r)结束再跑**, 不与训练抢卡。
+- 不占 GPU 的可以现在跑: PixelOE 后处理(纯 CPU)。
+- 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
+
 ## 当前状态 (2026-09-11 10:20)
 - **phase**: TRAIN (probe_mdm2 = 离散族最后一个探针)
 - **重标注已完成**: 41,103 条可用, 去重率 23.5%→**98.6%**, 词数中位 8→12, 最高频 caption 出现次数 7669→6。服务器 `data/*_recap.csv` 已就绪(95% 覆盖)。约 1870 万 token。
