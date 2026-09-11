@@ -21,12 +21,12 @@
 - 不占 GPU 的可以现在跑: PixelOE 后处理(纯 CPU)。
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
-## 当前状态 (2026-09-11 10:20)
-- **phase**: TRAIN (probe_mdm2 = 离散族最后一个探针)
-- **重标注已完成**: 41,103 条可用, 去重率 23.5%→**98.6%**, 词数中位 8→12, 最高频 caption 出现次数 7669→6。服务器 `data/*_recap.csv` 已就绪(95% 覆盖)。约 1870 万 token。
-- **在跑**: GPU2 probe_mdm2(11400/40000, visible-only RGB 监督 + 先剪影后上色解码); GPU3 sdpixl(已完成 8)。
-- **下一动作**: ① probe_mdm2 训完 → EVAL, >12 则**整个离散大方向标废**(A1 已证伪, 这是第二个); ② 卡一空就用新 caption **重训 v7h 基线**(现有 12.49 / 7.53 全基于旧 caption, 不重训则新旧不可比); ③ 重跑信息量 prompt 三方对比, 看"模型读不懂文本"是否翻转。
-- **注意**: 重标注不为 A1 开脱 —— A1 的失败是零值主导(给真实剪影反而更差 466 vs 418), 与 caption 无关。
+## 当前状态 (2026-09-12)
+- **phase**: TRAIN
+- **在跑**: GPU2 probe_mdm2(28400/40000, 离散族最后一个探针); GPU3 v7r(13200/80000, 新 caption 基线, 约 30h, GPU 争用是瓶颈)。
+- **外部基线准备中(新 prompt, 不占 GPU 的部分)**: gpt-image-2 与 nano-banana-2 各 200 张已生成; PixelOE 专业像素化版 gpt 200/200 完成, nano 在跑。**打分(DINOv2)按用户要求等训练结束再做**, 反正要等 v7r 出来才有比较对象。
+- **下一动作**: ① mdm2 训完(约 4h) → EVAL, >12 则离散族整体标废; ② v7r 训完 → CFG 扫描 + 引导规则重测 + 所有外部基线在新 prompt 上打分; ③ 训练结束后跑需 GPU 的学术基线(SDXL + Pixel Art XL LoRA 等, 见 external_baselines_survey.md)。
+- **待用户决定**: 是否起调研, 把跨分辨率引导做成网络内的新模块(用户问"在 v7h 上加模块能不能算新架构" —— 能, 且这是最有希望的方向)。
 
 ## 数据问题(2026-09-10 实测, 已确认是瓶颈)
 训练 caption 来自 BLIP, **15.4% 就是 "a pixel art sprite", 去重率仅 23.5%**, 前十条空洞/幻觉 caption 覆盖约四分之一数据(含 "the logo for the new york school of medicine" 出现 373 次)。后果: **模型从未学会读文本**, 给具体描述(如"带白点的红蘑菇")基本不遵循, 而 gpt-image-2 在同样 prompt 上几乎全对。
