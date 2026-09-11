@@ -1961,3 +1961,19 @@ GPU2 空(diag_review3 完)。
 - `baseline/run_crsc_t0.sh`, tmux `crsc_t0`: 等 logs/probe_mdm2.log 出现 PROBE_MDM2_DONE 后, 在 GPU2 上依次跑 T0 16/12、20/16、24/16(n=3000, 10 个时间步, 留出集 + 训练集), 结果 runs_out/crsc_t0_s<R>_l<low>.json, 日志 logs/crsc_t0.log。失败写 logs/crsc_t0.FAILING。
 - **发现: v7r 没有 10k 早期快照**(run_v7r.sh 用 --snap_every 20000), 复合引导在新 caption 上复测需要另训一个同配方 10k 短跑当弱模型(约 3.5h), 并报 20k 快照作对照。
 - 磁盘: RoundSquisheen 共 36G(pixel 27G: workdir 15G、runs_out 9.8G; texture 8.7G)。账号共用 HF 缓存 170G, 其中 SDXL 72G 里约 55G 是没有代码加载的重复格式(单文件、Flax、OpenVINO、ONNX)。**用户决定不删**, 以后不再提。
+
+## 2026-09-12 A1b (probe_mdm2) EVAL → 杀; 离散逐像素 token 族关闭
+- 训练: train_mdm.py --visible_only, 40k 步, bs_scale 0.15, GPU2, 约 13.5h。
+- 评测: sample_mdm.py --steps 32 --edit_rounds 2 --alpha_first, 16px, 3000 条 heldout(旧 caption, 与 v7h 基线同协议), fd_fair。
+- **FD-DINOv2@16 = 298.12**(A1 为 418.41; 自家基线 v7h best-CFG 12.49; 当前最强 7.53; 地板 3.45)。
+- 外部基线位置: gpt-image-2 降采样 131.63、SDXL 降采样 225.11(均为 200 条, 小样本 FD 偏高), A1b 在 3000 条上已是 298, 故**未超过自家基线, 也未超过两个外部基线**。
+- 样本统计(前 500 张, 不透明像素; 相邻差为三通道之和, 与论文 TV 口径不同, 仅作相对比较):
+
+| | 不透明比例 | 色数中位 | 相邻差 |
+|---|---|---|---|
+| 真实 held-out | .385 | 35 | 95.1 |
+| A1b | .268 | 30 | 53.5 |
+| A1 | .186 | 29 | 19.3 |
+
+- 结论: 只监督可见 RGB + 先定轮廓确实缓解了零值主导(轮廓变大、对比度翻近 3 倍), 但离可用差一个数量级。同一方向连杀两次 → 按规则整族关闭。greedy 一组仍在收尾, 只作记录, 不改判定。
+- 下一步: GPU2 自动接 CRSC T0(16/12、20/16、24/16)。
