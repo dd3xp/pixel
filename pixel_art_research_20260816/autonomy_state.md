@@ -22,7 +22,7 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
-- **phase**: EVAL(CRSC T0)。**A1b 已判: FD@16 298.12, 未超过自家基线(12.49), 也未超过外部基线(gpt-image-2 降采样 131.63、SDXL 降采样 225.11; 二者是 200 条 FD, 小样本偏高, 故 A1b 实际差距更大) → 离散逐像素 token 这一族(A1 418.41、A1b 298.12)连杀两次, 整族关闭。** GPU2 greedy 一组收尾后 tmux crsc_t0 自动跑 T0; GPU3 v7r 26800/80000; node09 上 ljq 每次任务都用满 8 卡(torchelastic 8 rank), 间歇性空闲, 未经用户确认不碰; 用户决定不删 SDXL 缓存; 磁盘 6.5G, 无 FAILING)
+- **phase**: EVAL(CRSC T0)。**A1b 已判: FD@16 298.12, 未超过自家基线(12.49), 也未超过外部基线(gpt-image-2 降采样 131.63、SDXL 降采样 225.11; 二者是 200 条 FD, 小样本偏高, 故 A1b 实际差距更大) → 离散逐像素 token 这一族(A1 418.41、A1b 298.12)连杀两次, 整族关闭。** (greedy 525.21, 更差。) **CRSC T0 已出: STOP**(16/20/24 三个分辨率、三种参考, w* 全在 0.83~1.07, 留出集 <1 训练集 ≈1; 外推到 1.5 使误差增大 2%~31%) → 引导在前向加噪数据上不是误差修正。GPU2 现跑: tmux crsc_t1t2(T1 自滚轨迹 w*, 早期点 k=5 已见 0.64~0.78, 趋向 STOP; 然后 T2 嵌入外推 w1.5/2 出 FD) + supervise v7r_snap10k(复合引导的新 caption 弱模型, 约 3.5h)。**T1 若也 <1.1 → CRSC 不作为头条, 按设计文档改做 1b**。GPU3 v7r 27600/80000; node09 上 ljq 每次任务都用满 8 卡(torchelastic 8 rank), 间歇性空闲, 未经用户确认不碰; 用户决定不删 SDXL 缓存; 磁盘 6.5G, 无 FAILING)
 - **用户决定(2026-09-12): SDXL 通用性实验与 CRSC 两个都做。** SDXL 实验 = 用 `original_size` 小尺寸条件当弱预测, 同 x_t 同 caption, 对照 CFG / `negative_original_size` 惯用法 / PAG; 等 v7r 训完再占 GPU。另补**引导类外部基线**(只需采样, 在 v7r 上跑): SEG、ICG/TSG、Han 等 CVPR 2026 退化条件引导(最接近, 必须跑)。
 - **下一个新架构已选定: CRSC**(反事实分辨率自条件, 见 arch_crossres_module.md)。唯一未找到先例的方案。
   - 结构: 第一次前向用**低分辨率桶标签**; 第二次用目标标签, 并把第一次的预测干净图作为 4 个额外输入通道 + 解码器特征经两个**零初始化**适配器注入。一开始与 v7h 完全等价。

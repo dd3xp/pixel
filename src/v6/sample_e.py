@@ -268,6 +268,10 @@ def main():
     p.add_argument("--cads_psi", type=float, default=1.0)
     p.add_argument("--gi", type=float, nargs=2, default=[0.0, 1.0],
                    help="guidance interval as t/T range [lo hi]; CFG off (w=1) outside it")
+    p.add_argument("--emb_extrap", default=None,
+                   help="CRSC gate T2, 'w,low': before sampling, replace the class-embedding row of each --sizes "
+                        "bucket R by E[R] + (w-1)(E[R] - E[low]), i.e. extrapolate away from the lower-resolution "
+                        "label inside the embedding. With --cfg 1 this is a 1-NFE sampler")
     p.add_argument("--chunk", type=int, default=1000, help="max samples per forward batch")
     p.add_argument("--out", required=True)
     args = p.parse_args()
@@ -316,6 +320,15 @@ def main():
         model = build_model(device, n_class_of(sd), width_of(sd))
         model.load_state_dict(sd)
     model.eval()
+    if args.emb_extrap:
+        we, low = args.emb_extrap.split(",")
+        we, lo = float(we), BUCKETS.index(int(low))
+        with torch.no_grad():
+            E = model.class_embedding.weight
+            base = E.clone()
+            for s in args.sizes:
+                E[BUCKETS.index(s)] = base[BUCKETS.index(s)] + (we - 1) * (base[BUCKETS.index(s)] - base[lo])
+        print(f"class-embedding extrapolation w={we} away from bucket {low} for sizes {args.sizes}", flush=True)
     if args.steps is None:
         args.steps = 100
     guide = None
