@@ -13,3 +13,6 @@ baseline/locks/
 data/
 runs/api_*/
 runs/*.log
+runs/recap_all/
+runs/recaptions*.jsonl
+runs/recaptions_map.json
