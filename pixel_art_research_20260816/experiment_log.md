@@ -2010,3 +2010,8 @@ GPU2 空(diag_review3 完)。
 - **1b**: `src/v6/train_gft_res.py`(GFT, Chen et al. ICML 2025 的参数化, 无条件项换成低分辨率快照参考, 快照只在训练时用); β 经 diffusers `time_cond_proj_dim`(LCM 的引导权重输入口)零初始化注入, 起点与 v7h 完全一致; `sample_e.py` 自动识别此类模型, `--cfg 1 --gft_beta 1/w` 为 1 次前向。冒烟: 训练 60 步 + 采样 3 张通过。
 - 显存: GPU2 上 v7r_snap10k 28.8G + 他人 31G, GFT 需约 33G, 放不下 → supervise(NEED_MB=36000)等短跑训完自动开训 10k 步, 之后评 w=1.5/2。脚本 baseline/run_probe_gft.sh。
 - SDXL 试点进度: cfg5 88/1000、cfglabel512_l1 60/1000(约 25 张/10 分钟/卡), 单组约 6~7 小时, 比冒烟估算慢(bs4 + 1024px)。
+
+## 2026-09-12 00:03 UTC node09 被清场; T1 20/16 也 STOP
+- node09: ljq 在 00:03 起 8 卡任务(每卡 56.9G, /tmp/torchelastic_pmchuxl9), 同一分钟我们的 tmux 服务与全部进程消失(最后输出 00:02:49)。损失: SDXL 试点 cfg5 228/1000、cfglabel512_l1 160/1000(图已存, 逐张可续跑); SD-πXL 4 张各 ~5%(无检查点, 全丢)。midi 23:40 已跑完, 未受影响。**不自动重启**, 等用户决定。
+- T1 20/16: STOP, k≥5 的 max w* = label 0.825 / snapshot 0.997 / composed 0.978。24/16 在跑。
+- node03 正常: v7r 30000/80000; v7r_snap10k 2000/10000; probe_gft 等显存。
