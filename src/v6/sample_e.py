@@ -19,14 +19,29 @@ from transformers import CLIPTextModel, CLIPTokenizer
 BUCKETS = [16, 24, 32, 48, 64]  # overridden by --buckets
 
 
-def build_model(device, n_class=None, width=128):
+def build_model(device, n_class=None, width=128, cond_dim=None):
     return UNet2DConditionModel(
         sample_size=64, in_channels=4, out_channels=4, layers_per_block=2,
         block_out_channels=(width, 2 * width, 4 * width), cross_attention_dim=512,
         down_block_types=("CrossAttnDownBlock2D", "CrossAttnDownBlock2D", "DownBlock2D"),
         up_block_types=("UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D"),
-        num_class_embeds=n_class or len(BUCKETS),
+        num_class_embeds=n_class or len(BUCKETS), time_cond_proj_dim=cond_dim,
     ).to(device)
+
+
+class BetaWrap(torch.nn.Module):
+    """GFT-form model (train_gft_res.py): feeds a fixed beta = 1/w through timestep_cond, so the plain
+    conditional pass (--cfg 1) is the guided rule in one forward."""
+
+    def __init__(self, net, beta):
+        super().__init__()
+        self.net, self.beta = net, beta
+
+    def forward(self, x, t, encoder_hidden_states=None, class_labels=None):
+        from train_gft_res import beta_embedding
+        b = torch.full((x.shape[0],), self.beta, device=x.device)
+        return self.net(x, t, encoder_hidden_states=encoder_hidden_states, class_labels=class_labels,
+                        timestep_cond=beta_embedding(b))
 
 
 def n_class_of(sd):  # 7 (v7) or 14 (train_coarse.py: fine + coarse labels)
@@ -272,6 +287,8 @@ def main():
                    help="CRSC gate T2, 'w,low': before sampling, replace the class-embedding row of each --sizes "
                         "bucket R by E[R] + (w-1)(E[R] - E[low]), i.e. extrapolate away from the lower-resolution "
                         "label inside the embedding. With --cfg 1 this is a 1-NFE sampler")
+    p.add_argument("--gft_beta", type=float, default=1.0,
+                   help="GFT-form models only: beta = 1/w fed to the network; use with --cfg 1 for 1 NFE")
     p.add_argument("--chunk", type=int, default=1000, help="max samples per forward batch")
     p.add_argument("--out", required=True)
     args = p.parse_args()
@@ -316,6 +333,13 @@ def main():
         if args.steps is None:
             args.steps = sd["es"].get("sample_steps", 16)
         print(f"es model use_xi={model.use_xi} steps={args.steps}", flush=True)
+    elif "time_embedding.cond_proj.weight" in sd:  # GFT-form internaliser (train_gft_res.py)
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        net = build_model(device, n_class_of(sd), width_of(sd), sd["time_embedding.cond_proj.weight"].shape[1])
+        net.load_state_dict(sd)
+        model = BetaWrap(net.eval(), args.gft_beta)
+        print(f"GFT-form model, beta = {args.gft_beta} (w = {1 / args.gft_beta:.2f})", flush=True)
     else:
         model = build_model(device, n_class_of(sd), width_of(sd))
         model.load_state_dict(sd)

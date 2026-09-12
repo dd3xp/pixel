@@ -2002,3 +2002,11 @@ GPU2 空(diag_review3 完)。
 - 10 种设置 × 1000 条, 两个队列; 关键三组(cfg5 / negos512 / cfglabel512 λ1)排最前。
 - `src/sdxl_gen/metrics.py`: FD-DINOv2(ViT-L/14 CLS, 224 bicubic)对真实 1000~2999 号, 地板 = 真实 0~999 号; CLIP ViT-L/14 分。
 - 设计上的预判: SDXL 需要 CFG≈5 才对齐文本(像素模型最优 CFG 仅 1.5), 所以不带 CFG 的 label 模式预计掉对齐; 公平形式是 cfglabel(CFG 之上加尺寸项), 直接对手是 negos(同思路但弱分支丢掉 caption), 与我们在像素模型上 `bucketu` 比 `bucket` 差 1.9~3.5 FD 的发现一一对应。
+
+## 2026-09-12 CRSC T1(16/12) → STOP, CRSC 不作为头条; 1b(GFT 形式内化)已排队
+- T1(`crsc_t1.py`, 2000 条留出, 目标位置 25/45/65/85/95, k=1/5/20, 裸条件与 label 引导两种滚动): k≥5 的点上 max w* = label 0.895、snapshot 1.069、composed 0.989, 无一点 ≥1.3; k=5 时 w* 普遍 0.64~0.78。
+- 连同 T0: 无论前向加噪数据还是模型自己的采样轨迹, "远离低分辨率参考外推"都不减小对已知 x0 的误差。**用普通去噪损失训练的模块学不到这种引导, CRSC(及一切 MSE 训练的内化模块)按设计文档规则放弃作头条。** 机理侧结论: 该引导改善的是分布层面的指标(FD), 不是逐样本回归误差, 与 CFG 的已知性质一致。
+- 20/16、24/16 的 T1 与 T2(嵌入外推 1-NFE FD)在 GPU2 继续跑, 只作确认与记录。
+- **1b**: `src/v6/train_gft_res.py`(GFT, Chen et al. ICML 2025 的参数化, 无条件项换成低分辨率快照参考, 快照只在训练时用); β 经 diffusers `time_cond_proj_dim`(LCM 的引导权重输入口)零初始化注入, 起点与 v7h 完全一致; `sample_e.py` 自动识别此类模型, `--cfg 1 --gft_beta 1/w` 为 1 次前向。冒烟: 训练 60 步 + 采样 3 张通过。
+- 显存: GPU2 上 v7r_snap10k 28.8G + 他人 31G, GFT 需约 33G, 放不下 → supervise(NEED_MB=36000)等短跑训完自动开训 10k 步, 之后评 w=1.5/2。脚本 baseline/run_probe_gft.sh。
+- SDXL 试点进度: cfg5 88/1000、cfglabel512_l1 60/1000(约 25 张/10 分钟/卡), 单组约 6~7 小时, 比冒烟估算慢(bs4 + 1024px)。
