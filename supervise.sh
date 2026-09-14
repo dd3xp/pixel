@@ -61,8 +61,29 @@ wait_for_memory() {
   done
 }
 
+need_disk_gb=${NEED_DISK_GB:-3}
+wait_for_disk() {
+  # /mnt/data is a 14T disk shared with every other user and routinely sits at 100%.
+  # On 09-12 it hit 0 bytes free, v7r died writing a sample PNG, and the five fast
+  # restarts all died on the same ENOSPC within seconds, so the supervisor gave up
+  # and both GPUs sat idle for two days. Wait for room instead.
+  local waited=0
+  while true; do
+    local free
+    free=$(df -BG --output=avail /mnt/data 2>/dev/null | tail -1 | tr -dc 0-9)
+    [ -z "$free" ] && return 0
+    [ "$free" -ge "$need_disk_gb" ] && return 0
+    if [ $((waited % 1800)) = 0 ]; then
+      echo "[$(date +%m%d-%H:%M)] waiting for disk: ${free}G free on /mnt/data, need ${need_disk_gb}G" >> "$SUP"
+    fi
+    sleep 60
+    waited=$((waited + 60))
+  done
+}
+
 fast_fails=0
 while true; do
+  wait_for_disk
   wait_for_memory
   echo "[$(date +%m%d-%H:%M)] starting $NAME" >> "$SUP"
   t0=$(date +%s)
@@ -77,6 +98,12 @@ while true; do
     date +%Y-%m-%dT%H:%M > "$ROOT/logs/${NAME}.done"
     echo "[$(date +%m%d-%H:%M)] $NAME done, supervisor exiting" >> "$SUP"
     break
+  fi
+  if tail -n 40 "$LOG" | grep -q "No space left on device"; then
+    echo "[$(date +%m%d-%H:%M)] $NAME hit a full disk; not counted as a failure, waiting for space" >> "$SUP"
+    fast_fails=0
+    sleep 300
+    continue
   fi
   if [ "$ran" -lt 120 ]; then
     fast_fails=$((fast_fails + 1))

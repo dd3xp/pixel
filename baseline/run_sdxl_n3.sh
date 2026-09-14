@@ -57,7 +57,7 @@ for c in "${CFGS[@]}"; do
   grep -q "\"$tag\"" $SC 2>/dev/null && continue
   echo "[$(date +%m%d-%H:%M)] $tag :: $args"
   CUDA_VISIBLE_DEVICES=$GPU $P src/sdxl_gen/sdxl_sizeguide.py --prompts data/coco30k/captions_shard0.txt \
-      --out runs_out/sdxl_pilot/$tag --end 1000 --bs 4 $args || { echo "SDXL_GEN_FAIL $tag"; continue; }
+      --out runs_out/sdxl_pilot/$tag --end 1000 --bs 4 --fmt jpg $args || { echo "SDXL_GEN_FAIL $tag"; continue; }
   CUDA_VISIBLE_DEVICES=$GPU $P src/sdxl_gen/metrics.py --gen runs_out/sdxl_pilot/$tag --tag $tag --out $SC \
       || echo "SDXL_SCORE_FAIL $tag"
 done

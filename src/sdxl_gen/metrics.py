@@ -69,7 +69,7 @@ def main():
     a = ap.parse_args()
     dev = "cuda"
     caps = [l.rstrip("\n") for l in open(a.captions, encoding="utf-8")]
-    gf = sorted(Path(a.gen).glob("*.png"))
+    gf = sorted([f for f in Path(a.gen).iterdir() if f.suffix in (".png", ".jpg")])
     if a.real_as_gen:
         gf = gf[:1000]
     idx = [int(f.stem) for f in gf]

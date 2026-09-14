@@ -22,6 +22,13 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+### ▶ 09-14 02:29 UTC 恢复(下面 09-12 的表中 GPU 分配已过时)
+- **事故**: 09-12 03:47 共享盘写满(0 字节) → v7r 在 ~40k 步写样本图时崩, 守护进程 5 次快速失败后放弃; sdxl_n3 下模型也因 ENOSPC 失败 → **两块卡空转约 46 小时**; 期间 GPU3 被他人 vLLM(72G)占走。
+- **修复**: 删 node03 上 470 个已核对(文件数+字节数)有本地副本的样本目录, 盘 3.5G → 13G; supervise.sh 加磁盘等待(<3G 等)且 ENOSPC 退出不计失败; SDXL 生成图改存 jpg q95。
+- **1b 结果(seed 0)**: probe_gft 1-NFE **w1.5 = 7.63**, w2 = 9.56(复合引导 7.53 @2NFE+快照; best-CFG 12.49 @2NFE)→ 已过 ≤8.5 留行线, **≤7.8 过关待三种子确认**。
+- **现在的队列**: GPU7 = v7r 从 40k 续训(剩约 14h)→ run_v7r.sh 自带 16px CFG 扫描 → v7r_evals(同一卡, 等 V7R_DONE)→ SD-πXL; GPU2 = gpu2_chain: 1b w1.5 seed1/seed2 + w1.25 seed0 → run_sdxl_n3(COCO 已解压, 下打分模型, 10 组)。日志: logs/v7r.log, v7r_evals.log, gpu2_chain.log(含 sdxl 输出)。
+- **1b 下一步(三种子 ≤7.8 时)**: 在 v7r 上用同配方重训(新 caption), 作为论文里的"内化"一行; 并测 12/20/24px。
+
 ### ▶ 排队总表(09-12 02:12 UTC 排好, 用户睡觉且 token 紧: 每 tick 只查进度一行, 有结果才处置)
 全部在 node03(node09 不再用于计算; 本机钥匙已用 config 密码推回 kw, 仅取文件)。都在 supervise(setsid, 被杀自动重启, 断点续跑)下:
 | GPU | 顺序 | 日志 / 完成标记 |

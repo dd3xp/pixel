@@ -85,12 +85,14 @@ def main():
     ap.add_argument("--end", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--save_px", type=int, default=512)
+    ap.add_argument("--fmt", default="png", choices=["png", "jpg"],
+                    help="jpg (q95) is ~7x smaller; node03's shared disk ran out on 09-12")
     a = ap.parse_args()
     dev = "cuda"
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     prompts = [l.rstrip("\n") for l in open(a.prompts, encoding="utf-8")]
-    todo = [i for i in range(a.start, min(a.end, len(prompts))) if not (out / f"{i:05d}.png").exists()]
+    todo = [i for i in range(a.start, min(a.end, len(prompts))) if not (out / f"{i:05d}.{a.fmt}").exists()]
     print(f"{a.mode} w={a.w} lam={a.lam} low={a.low}: {len(todo)} to generate -> {out}", flush=True)
     if not todo:
         print("SDXL_SIZEGUIDE_DONE", out, flush=True); return
@@ -107,7 +109,8 @@ def main():
         imgs = generate(pipe, sched, [prompts[i] for i in idx], a, [a.seed * 100000 + i for i in idx], dev)
         for i, im in zip(idx, imgs):
             arr = (im.permute(1, 2, 0).cpu().numpy() * 255).round().astype("uint8")
-            Image.fromarray(arr).resize((a.save_px, a.save_px), Image.BICUBIC).save(out / f"{i:05d}.png")
+            im = Image.fromarray(arr).resize((a.save_px, a.save_px), Image.BICUBIC)
+            im.save(out / f"{i:05d}.{a.fmt}", **({"quality": 95} if a.fmt == "jpg" else {}))
         if (k // a.bs) % 25 == 0:
             print(f"[{k + len(idx)}/{len(todo)}]", flush=True)
     print("SDXL_SIZEGUIDE_DONE", out, flush=True)

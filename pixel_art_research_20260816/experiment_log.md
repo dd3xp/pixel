@@ -2020,3 +2020,9 @@ GPU2 空(diag_review3 完)。
 - T1 24/16: k≥5 的 max w* = label 0.819 / snapshot 0.888 / composed 0.876。16/20/24 三个分辨率全部 STOP。
 - **T2**(v7h 类嵌入外推 E[16]+(w−1)(E[16]−E[12]), --cfg 1, 1 NFE, 匹配 FD@16, 3000 条): **w1.5 = 39.03, w2 = 414.27**, 都劣于无引导(cond only)16.39 → 按设计关闭。说明低分辨率标签的作用不能在嵌入空间线性外推: 它要在**输出空间**作为另一次前向的参考才有效。
 - 汇总: CRSC 的三个免训练检查全否, 只剩设计文档规定的 1b(GFT 形式)在排队(GPU2 等 v7r_snap10k 让出显存)。
+
+## 2026-09-14 共享盘写满致两卡空转 46h; 恢复; 1b seed0 = 7.63(1 NFE)
+- 09-12 03:47 UTC /mnt/data 写满 → v7r(40k 检查点已存)写样本 PNG 时 ENOSPC 崩; supervise 5 次快速失败后放弃。sdxl_n3 下 dinov2/clip 同样 ENOSPC。GPU2/3 空转至 09-14 02:18。其间 GPU3 被他人 vLLM EngineCore 占 72G。
+- 恢复: 470 个样本目录(本地 runs_out/server_node03/ 已按文件数与字节数逐目录核对一致)从服务器删除, 盘 3.5G → 13G; supervise.sh 新增 wait_for_disk(默认 3G)与"ENOSPC 退出不计快速失败"; SDXL 输出改 jpg q95。
+- **1b(GFT 形式内化, v7h 上 10k 步微调, 参考 = 10k 快照@低桶, 仅训练用)**: 1-NFE 匹配 FD@16 **w1.5 = 7.63**, w2 = 9.56。对照: 复合引导 7.53(2 NFE + 存快照)、label 引导 8.52(2 NFE)、best-CFG 12.49(2 NFE)。**以一半推理成本、不存快照达到复合引导水平**; 三种子确认(≤7.8)在跑。新颖性仍按设计文档定性为"GFT 换成分辨率参考"。
+- 重排: GPU7 v7r 续训(40k→80k)→ 16px CFG 扫描 → v7r_evals; GPU2 1b 补种子 → SDXL 试点。
