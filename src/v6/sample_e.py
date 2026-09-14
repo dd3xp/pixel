@@ -76,12 +76,16 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
 
 @torch.no_grad()
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
-           cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None, gi_snap=None, fdg=None, cfg_text=None):
+           cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None, gi_snap=None, fdg=None, cfg_text=None,
+           cond_deg=None):
     scheduler.set_timesteps(steps)
     apg_state = None
     n = cond.shape[0]
     lab = torch.full((n,), BUCKETS.index(size), device=device, dtype=torch.long)
     g = torch.Generator(device=device).manual_seed(seed)
+    # separate stream for the random references of external baselines (ICG / TSG), so that switching the guidance
+    # method never changes the initial noise or anything else drawn from g
+    g2 = torch.Generator(device=device).manual_seed(seed + 7919)
     x = torch.randn(n, 4, size, size, device=device, generator=g)
     last = scheduler.timesteps[-1]
     sc = None
@@ -144,6 +148,21 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
                 e_u = (x - sa * (m + f * (x0_c - m))) / sb
             elif kind == "pag":  # Perturbed-Attention Guidance (Ahn et al. 2024): identity self-attention in <arg> layers
                 e_u = pag_forward(ref, arg or "mid", x, t, cond, lab)
+            # ---- external guidance baselines (spec: pixel_art_research_20260816/guidance_baselines_spec.md) ----
+            elif kind == "cdg":  # CDG (Han et al., CVPR 2026, Eq. 5/11, R_deg = 1): content tokens -> "", padding kept
+                e_u = ref(x, t, encoder_hidden_states=cond_deg, class_labels=lab).sample
+            elif kind == "icg":  # ICG (Sadat et al., ICLR 2025): Gaussian condition, redrawn every step
+                yh = torch.randn(cond.shape, device=device, generator=g2) * cond.std()
+                e_u = ref(x, t, encoder_hidden_states=yh, class_labels=lab).sample
+            elif kind == "icglabel":  # ICG with a uniformly random resolution bucket (random-label control for ours)
+                lab_r = torch.randint(0, len(BUCKETS), lab.shape, device=device, generator=g2)
+                e_u = ref(x, t, encoder_hidden_states=cond, class_labels=lab_r).sample
+            elif kind == "tsg":  # TSG (Sadat et al., Eq. 8): time embedding + s (t/1000)^alpha std(temb) n, t >= t_min
+                s_, a_, tmin = (float(v) for v in arg.split(","))
+                e_u = tsg_forward(ref, x, t, cond, lab, s_, a_, g2) if float(t) >= tmin else e_c
+            elif kind == "seg":  # SEG (Hong, NeurIPS 2024): Gaussian-blurred self-attention queries, arg = layers:sigma
+                layers, _, sig = arg.rpartition(":")
+                e_u = seg_forward(ref, layers or "mid", float(sig), x, t, cond, lab)
             else:
                 raise ValueError(guide_mode)
         elif guide is not None:
@@ -205,6 +224,85 @@ def pag_forward(net, layers, x, t, cond, lab):
         return net(x, t, encoder_hidden_states=cond, class_labels=lab).sample
     finally:
         net.set_attn_processor(dict(net._pag_orig))
+
+
+def tsg_forward(net, x, t, cond, lab, s, alpha, g):
+    """TSG (Sadat et al., ICLR 2025, Eq. 8 + App. G power schedule) on every layer: perturb the time embedding
+    (before the class embedding is added) by s * (t/1000)^alpha * std(temb) * n, n ~ N(0, I) drawn from g."""
+    def hook(_mod, _inp, out):
+        n = torch.randn(out.shape, device=out.device, generator=g, dtype=out.dtype)
+        return out + s * (float(t) / 1000.0) ** alpha * out.std() * n
+    h = net.time_embedding.register_forward_hook(hook)
+    try:
+        return net(x, t, encoder_hidden_states=cond, class_labels=lab).sample
+    finally:
+        h.remove()
+
+
+def gaussian_blur_2d(img, kernel_size, sigma):
+    """As in the official SEG code (SusungHong/SEG-SDXL, pipeline_seg.py): separable Gaussian, reflect padding."""
+    half = (kernel_size - 1) * 0.5
+    xs = torch.linspace(-half, half, steps=kernel_size, device=img.device, dtype=img.dtype)
+    pdf = torch.exp(-0.5 * (xs / sigma).pow(2))
+    k1 = pdf / pdf.sum()
+    k2 = (k1[:, None] @ k1[None, :]).expand(img.shape[-3], 1, kernel_size, kernel_size)
+    img = F.pad(img, [kernel_size // 2] * 4, mode="reflect")
+    return F.conv2d(img, k2, groups=img.shape[-3])
+
+
+class _SEGAttnProcessor:
+    """SEG (Hong, NeurIPS 2024, Eq. 6 via Prop. 3.1): self-attention with the QUERIES Gaussian-blurred over their square
+    spatial layout; K, V untouched. sigma > 9999 -> the queries are replaced by their spatial mean (sigma = inf)."""
+
+    def __init__(self, sigma):
+        self.sigma = sigma
+
+    def __call__(self, attn, hidden_states, encoder_hidden_states=None, attention_mask=None, temb=None, *a, **k):
+        residual = hidden_states
+        nd = hidden_states.ndim
+        if nd == 4:
+            b, c, h, w_ = hidden_states.shape
+            hidden_states = hidden_states.view(b, c, h * w_).transpose(1, 2)
+        B, N, _ = hidden_states.shape
+        q, key, val = attn.to_q(hidden_states), attn.to_k(hidden_states), attn.to_v(hidden_states)
+        H = math.isqrt(N)
+        C = q.shape[-1]
+        qs = q.transpose(1, 2).reshape(B, C, H, H)
+        if self.sigma > 9999:
+            qs = qs.mean(dim=(-2, -1), keepdim=True).expand_as(qs)
+        else:
+            ks = math.ceil(6 * self.sigma) + 1 - math.ceil(6 * self.sigma) % 2
+            ks = min(ks, H - (H % 2 - 1))
+            qs = gaussian_blur_2d(qs, ks, self.sigma)
+        q = qs.reshape(B, C, N).transpose(1, 2)
+        heads = attn.heads
+        d = C // heads
+        q, key, val = (z.view(B, -1, heads, d).transpose(1, 2) for z in (q, key, val))
+        out = F.scaled_dot_product_attention(q, key, val).transpose(1, 2).reshape(B, N, heads * d)
+        out = attn.to_out[1](attn.to_out[0](out))
+        if nd == 4:
+            out = out.transpose(-1, -2).reshape(b, c, h, w_)
+        if getattr(attn, "residual_connection", False):
+            out = out + residual
+        return out / getattr(attn, "rescale_output_factor", 1.0)
+
+
+def seg_forward(net, layers, sigma, x, t, cond, lab):
+    """One forward of `net` with SEG processors on attn1 of the chosen blocks (same layer names as pag_forward)."""
+    key = (layers, sigma)
+    if getattr(net, "_seg_key", None) != key:
+        orig = getattr(net, "_seg_orig", None) or net.attn_processors
+        pref = {"mid": "mid_block.", "d0": "down_blocks.0.", "d1": "down_blocks.1.", "u1": "up_blocks.1.", "u2": "up_blocks.2."}
+        sel = [pref[s] for s in layers.split(",")] if layers != "all" else list(pref.values())
+        bad = {k_: (_SEGAttnProcessor(sigma) if k_.endswith("attn1.processor") and any(k_.startswith(p) for p in sel) else v)
+               for k_, v in orig.items()}
+        assert any(isinstance(v, _SEGAttnProcessor) for v in bad.values()), layers
+        net._seg_orig, net._seg_bad, net._seg_key = dict(orig), bad, key
+    net.set_attn_processor(dict(net._seg_bad))
+    try:
+        return net(x, t, encoder_hidden_states=cond, class_labels=lab).sample
+    finally:
+        net.set_attn_processor(dict(net._seg_orig))
 
 
 def apg_step(scheduler, x, t, e_c, e_u, w, apg, state):
@@ -369,12 +467,23 @@ def main():
 
     cond = embed(prompts, tokenizer, enc, device).repeat_interleave(args.n, 0)
     uncond = embed([""] * len(prompts) * args.n, tokenizer, enc, device)
+    cond_deg = None
+    if args.guide_mode and args.guide_mode.startswith("cdg"):
+        # CDG c_deg (R_deg = 1, Han et al. Eq. 11): positions covered by the attention mask (BOS, words, first EOS =
+        # "content") take the "" embedding, the remaining EOS padding keeps the caption's (context-aggregating) state
+        m = tokenizer(prompts, padding="max_length", max_length=77, truncation=True,
+                      return_tensors="pt").attention_mask.to(device).bool().repeat_interleave(args.n, 0)
+        cond_deg = torch.where(m[..., None], uncond, cond)
+        full = (m.sum(1) >= 77).float().mean().item()
+        print(f"CDG: mean content tokens {m.sum(1).float().mean():.1f}/77; {full:.1%} of prompts have no padding "
+              f"(for those CDG == CFG)", flush=True)
     for size in args.sizes:
         # chunked so 3000-prompt matched evals fit next to other jobs (one 3000 batch needs ~70GB);
         # chunk i uses seed+i, so results are seed-reproducible per chunk size
         imgs = torch.cat([sample(model, scheduler, cond[i:i + args.chunk], uncond[i:i + args.chunk], size, device,
                                  args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi),
-                                 guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg, gi_snap=args.gi_snap, fdg=args.fdg, cfg_text=args.cfg_text)
+                                 guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg, gi_snap=args.gi_snap, fdg=args.fdg, cfg_text=args.cfg_text,
+                                 cond_deg=None if cond_deg is None else cond_deg[i:i + args.chunk])
                           for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
         for i, im in enumerate(rgba):
