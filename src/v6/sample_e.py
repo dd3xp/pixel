@@ -154,6 +154,10 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             elif kind == "icg":  # ICG (Sadat et al., ICLR 2025): Gaussian condition, redrawn every step
                 yh = torch.randn(cond.shape, device=device, generator=g2) * cond.std()
                 e_u = ref(x, t, encoder_hidden_states=yh, class_labels=lab).sample
+            elif kind == "icglow":  # ICG's Gaussian condition AND our lower bucket in the same weak forward (composed)
+                yh = torch.randn(cond.shape, device=device, generator=g2) * cond.std()
+                lab_bad = torch.full_like(lab, BUCKETS.index(int(arg)))
+                e_u = ref(x, t, encoder_hidden_states=yh, class_labels=lab_bad).sample
             elif kind == "icglabel":  # ICG with a uniformly random resolution bucket (random-label control for ours)
                 lab_r = torch.randint(0, len(BUCKETS), lab.shape, device=device, generator=g2)
                 e_u = ref(x, t, encoder_hidden_states=cond, class_labels=lab_r).sample
