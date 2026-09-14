@@ -2059,3 +2059,15 @@ GPU2 空(diag_review3 完)。
 - 同种子配对全部优于 composed(−1.43 / −0.91 / −1.48)。新 caption 下 1b 相对 composed 的优势(−1.27)比旧 caption(−0.30)更大, 且远超种子波动。
 - 20px seed0: 1b 24.16 vs composed 25.61 / label 27.56 / autog 26.56 / best-CFG 34.21(三种子)→ −29%。24px 在跑。
 - 解读(待验证): 训练时把"快照@低桶"参考折进目标, 网络在全部噪声水平上学到的是引导后的分布, 而不是每步在采样时临时外推; 1 NFE 也避免了两路预测不一致带来的漂移。
+
+## 2026-09-15 SDXL 试点结论趋于否定; CDG 扫描完成
+- SDXL(COCO-30k 分片 0 前 1000 条, 1024px, Euler 30, FD-DINOv2 ViT-L/14 对真实 1000~2999 号, 地板 507.05 / CLIP 25.91):
+  | 设置 | FD | CLIP |
+  |---|---|---|
+  | cfg5 | 644.18 | 26.59 |
+  | cfg3 | 662.22 | 26.15 |
+  | cfglabel512_l1(ours, CFG5 + 1×(e_c − e_{c, orig512})) | 644.13 | 26.62 |
+  | cfglabel256_l1(ours, orig256) | 658.98 | 26.46 |
+  | negos512(diffusers negative_original_size 惯用法) | 650.98 | 26.46 |
+  → orig512 无增益, orig256 有害(+14.8 FD)。**SDXL 的尺寸微条件不像我们的分辨率桶那样给出"结构对齐、只少对比度"的弱预测, 通用性按目前证据不成立。** 唯一对得上的是方向性: 弱分支保留 caption(ours)优于丢掉 caption(negos), 与像素模型的 bucket vs bucketu 一致。余下 label512_w3 / cfg7 / negos256 / label512_w2 跑完后定稿; 论文里如实写为"不迁移到 SDXL 的 original_size", 并讨论原因(SDXL 的 orig 条件编码的是训练图的上采样模糊, 不是目标网格)。
+- CDG(Han et al. CVPR 2026)@16px v7r seed0: w1.5 = 10.36, w2 = 10.76, w3 = 11.02 → 最优 10.36, 比 best-CFG(11.10)好 7%, 远不如 ours(label 8.81 / composed 8.22 / 1b 6.79, 同种子)。
