@@ -22,6 +22,12 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+- [09-15 20:28 UTC] **用户: 16px 是主场, 不许改论文主线、不做分析类 → 必须在 16px 明确赢 ICG(现 1b 7.23 ± 0.45 vs ICG 7.46 ± 0.37 只是平手, 目标 ≲6.8)。** 已排 GPU2 supervise improve16: A) 1b 推理权重 w1.35/1.75, 1b+ICG 叠加(β1/1.5+ICG1.25/1.5, β1/1.25+ICG1.5); B) 1b 续训到 20k + 三种子(10k 权重已另存 model_step010000_kept.pt)。另待 GFT 对照(null/icg 参考)决定参考选择。完成标记 IMPROVE16_A_DONE / IMPROVE16_DONE。
+- [09-15 19:55 UTC] **ICG @20px w1.5 = 28.30 —— 劣于 ours 全部三种(1b 24.06 / composed 25.64 / label 27.73), 仅优于 best-CFG 34.21**。ICG 的优势只在 16px。24px 与 w2 在跑(GPU2, 首次在 GPU7 OOM 后重排)。GFT 对照 8000/10000。
+- [09-15 18:13 UTC] **1b 关键对照已排(GPU2, supervise gft_ctrl, 等 SDXL cfg7 跑完让出显存)**: 同配方 GFT, 参考换成 null(空 caption = 原版 GFT = 内化 CFG)与 icg(内化 ICG), 各 10k 步 + 16px w1.5 三种子, 完成标记 `GFT_CTRL_DONE`。**判读: 若 null 版 ≈ 7.2, 1b 的增益来自 GFT 训练形式而非我们的参考 → 如实降格; 若明显更差, 我们的参考是关键。** icglow + 快照 = 11.65(有害), icglow w2 = 11.68。SDXL 剩 cfg7, 其余两组跳过。
+- [09-15 17:40 UTC] **icglow(ICG 条件 + 低桶)w1.5 = 7.16, w1.25 = 7.22 ≈ ICG 单独 7.14(同 seed0)→ 叠加低桶无增益**; 等 +快照两组。SEG mid σ∞ w3 = 12.80(劣于 CFG)。v7h 上 ICG 最优 8.88 < ours composed 7.53(旧 caption 下 ours 胜)。
+- [09-15 16:55 UTC] **ICG w1.5 三种子 7.14 / 7.37 / 7.87 = 7.46 ± 0.37**(v7r 16px): 比 composed 8.50 ± 0.25 好约 1.0, 与 1b 7.23 ± 0.45 在误差内。icg_more 已排(v7r w1.25, v7h w1.5/w1.25)。
+- [09-15 16:40 UTC] ICG w2 = 10.04(对 w 很敏感), ICG w1.5 seed1 = 7.37 → 两种子均值约 7.25; 需补 w1.25。
 - [09-15 16:40 UTC] **⚠ ICG(随机高斯条件, Sadat ICLR 2025)@16px v7r seed0: FD 7.14, CLIP 27.72 / R@1 23.4% —— FD 与对齐同时优于我们的 label(8.81 / 27.05 / 18.7%)和 composed(8.22 / 27.32 / 20.3%), 仅 1b(6.79 / 27.50 / 22.0%)FD 更低。头号威胁。** 已排 ICG 种子 1/2(GPU2, icg_seeds); 等 ICG-label(随机桶)判断'低'是否关键; 需在 v7h 补 ICG; 可试 1b 用 ICG 参考。CLIP 表: runs_out/clip16_v7r.json。
 - [09-15 16:10 UTC] **SDXL: cfglabel256_l1 = 658.98 / 26.46, 比 cfg5(644.18)差 → orig512 无增益、orig256 有害, SDXL 通用性趋于否定**(余 4 组跑完定稿, 按否定结果如实写)。CDG 最优 w1.5 = 10.36(w2 10.76, w3 11.02)。
 - [09-14 15:40 UTC] **CDG(Han et al. CVPR 2026)w1.5 @16px seed0 = 10.36** —— 优于 best-CFG(11.10)但远不如 ours(label 8.81 / composed 8.22 / 1b 6.79, 同 seed0)。1b 20px 三种子 24.16 / 23.67 / 24.34 = 24.06(best-CFG 34.21, −30%)。
