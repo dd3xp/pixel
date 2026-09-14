@@ -22,6 +22,14 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+### ▶ 09-14 06:30 UTC 最新队列(用户去睡, cron 5fe7f937 每 15 分钟; 以此为准)
+| GPU | 守护进程(按启动顺序) | 完成标记 / 结果 |
+|---|---|---|
+| 7 | v7r(续训 62k→80k, 约 3h, 然后 16px CFG 扫描)→ 同卡等显存: v7r_evals(约 50 组)、gft_cfg(1b+CFG 三组)、gft_v7r(1b 在 v7r 上重训 10k + 16px 三种子 + 20/24px) | `V7R_DONE` / `V7R_EVALS_DONE` / `GFT_CFG_DONE` / `GFT_V7R_DONE`; 分数都在 runs_out/fair_fd{16,20,24,12}.json |
+| 2 | gpu2_chain → run_sdxl_n3(正在断点重试下 clip-L; 然后 10 组 × 1000 张, 每组即打分) | `SDXL_N3_DONE`; runs_out/sdxl_pilot/scores.json |
+**tick 要做的**: ① 一行进度 + 查 logs/*.FAILING(有就诊断修, 如上次的 HF_HUB_OFFLINE 继承 bug); ② `GFT_CFG_DONE` → 读 probe_gft_w1p5_cfg1p25/cfg1p5、w1p25_cfg1p5, 与 7.53 比(同 2 NFE); ③ `GFT_V7R_DONE` + v7r_evals 的 composed 行都有 → 比 v7r_gft_w1p5(三种子) vs v7r_stk12_w1p5(三种子), 以及 20/24px; ④ scores.json 有 cfg5 / cfglabel512_l1 / negos512 → 写 SDXL 结论; ⑤ `V7R_EVALS_DONE` → 汇总新 caption 表; ⑥ 磁盘 <5G → 已打分图拷回本地再删。
+- 已知坑: 共享盘会被他人写满(supervise 已会等待); HF 下载偶发断流(supervise 自动重试); GPU3 已被他人 vLLM 占用, 不要再用。
+
 ### ▶ 09-14 02:29 UTC 恢复(下面 09-12 的表中 GPU 分配已过时)
 - **事故**: 09-12 03:47 共享盘写满(0 字节) → v7r 在 ~40k 步写样本图时崩, 守护进程 5 次快速失败后放弃; sdxl_n3 下模型也因 ENOSPC 失败 → **两块卡空转约 46 小时**; 期间 GPU3 被他人 vLLM(72G)占走。
 - **修复**: 删 node03 上 470 个已核对(文件数+字节数)有本地副本的样本目录, 盘 3.5G → 13G; supervise.sh 加磁盘等待(<3G 等)且 ENOSPC 退出不计失败; SDXL 生成图改存 jpg q95。

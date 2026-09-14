@@ -9,6 +9,8 @@
 cd /mnt/data/kw/RoundSquisheen/pixel/pixel
 P=/mnt/data/kw/anaconda3/envs/SD-piXL/bin/python
 export PYTHONNOUSERSITE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True HF_ENDPOINT=https://hf-mirror.com
+# callers (run_gpu2_chain.sh) export HF_HUB_OFFLINE=1; the downloads below need the network. Went wrong on 09-14.
+export HF_HUB_OFFLINE=0
 GPU=${CUDA_VISIBLE_DEVICES:-2}
 until grep -q "PROBE_GFT_DONE\|PROBE_GFT_TRAIN_FAIL" logs/probe_gft.log 2>/dev/null; do sleep 300; done
 echo "[$(date +%m%d-%H:%M)] probe_gft finished; SDXL pilot on GPU $GPU"
