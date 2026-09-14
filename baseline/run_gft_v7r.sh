@@ -17,7 +17,8 @@ if [ ! -f $OUT/.trained ]; then
      --snap workdir/v7r_snap10k/model_latest.pt --csv_suffix _recap || { echo GFT_V7R_TRAIN_FAIL; exit 1; }
   touch $OUT/.trained
 fi
-for spec in "v7r_gft_w1p5 16 0" "v7r_gft_w1p5_seed1 16 1" "v7r_gft_w1p5_seed2 16 2" "v7r_r20_gft_w1p5 20 0" "v7r_r24_gft_w1p5 24 0"; do
+for spec in "v7r_gft_w1p5 16 0" "v7r_gft_w1p5_seed1 16 1" "v7r_gft_w1p5_seed2 16 2" "v7r_r20_gft_w1p5 20 0" "v7r_r24_gft_w1p5 24 0" \
+            "v7r_r20_gft_w1p5_seed1 20 1" "v7r_r20_gft_w1p5_seed2 20 2" "v7r_r24_gft_w1p5_seed1 24 1" "v7r_r24_gft_w1p5_seed2 24 2"; do
   set -- $spec
   [ -f runs_out/$1_matched_eval/.done ] && continue
   echo "[$(date +%m%d-%H:%M)] eval $1 @$2px seed $3"
