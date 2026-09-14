@@ -22,6 +22,8 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+- [09-15 20:55 UTC] **关键对照: 原版 GFT(空 caption 参考, 同配方)16px = 9.63 vs 1b 6.79 → 1b 的增益来自我们的低分辨率参考, 不是 GFT 形式。** 1b+ICG1.25 = 6.75 ≈ 1b; 1b w1.75 = 8.12; ICG 24px w2 = 46.21(1b 43.35)。
+- [09-15 20:40 UTC] 1b 推理 w1.35 = 8.00(劣于 w1.5 的 6.79)→ w1.5 附近已是最优, w1.75 在跑。**ICG @24px w1.5 = 48.82**(1b 43.35, label 50.38, composed 49.1)→ 24px ICG 与我们的免训练版持平, 输 1b。GFT 对照 9800/10000。
 - [09-15 20:28 UTC] **用户: 16px 是主场, 不许改论文主线、不做分析类 → 必须在 16px 明确赢 ICG(现 1b 7.23 ± 0.45 vs ICG 7.46 ± 0.37 只是平手, 目标 ≲6.8)。** 已排 GPU2 supervise improve16: A) 1b 推理权重 w1.35/1.75, 1b+ICG 叠加(β1/1.5+ICG1.25/1.5, β1/1.25+ICG1.5); B) 1b 续训到 20k + 三种子(10k 权重已另存 model_step010000_kept.pt)。另待 GFT 对照(null/icg 参考)决定参考选择。完成标记 IMPROVE16_A_DONE / IMPROVE16_DONE。
 - [09-15 19:55 UTC] **ICG @20px w1.5 = 28.30 —— 劣于 ours 全部三种(1b 24.06 / composed 25.64 / label 27.73), 仅优于 best-CFG 34.21**。ICG 的优势只在 16px。24px 与 w2 在跑(GPU2, 首次在 GPU7 OOM 后重排)。GFT 对照 8000/10000。
 - [09-15 18:13 UTC] **1b 关键对照已排(GPU2, supervise gft_ctrl, 等 SDXL cfg7 跑完让出显存)**: 同配方 GFT, 参考换成 null(空 caption = 原版 GFT = 内化 CFG)与 icg(内化 ICG), 各 10k 步 + 16px w1.5 三种子, 完成标记 `GFT_CTRL_DONE`。**判读: 若 null 版 ≈ 7.2, 1b 的增益来自 GFT 训练形式而非我们的参考 → 如实降格; 若明显更差, 我们的参考是关键。** icglow + 快照 = 11.65(有害), icglow w2 = 11.68。SDXL 剩 cfg7, 其余两组跳过。
