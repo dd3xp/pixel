@@ -22,6 +22,7 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+- [09-15 16:40 UTC] **⚠ ICG(随机高斯条件, Sadat ICLR 2025)@16px v7r seed0: FD 7.14, CLIP 27.72 / R@1 23.4% —— FD 与对齐同时优于我们的 label(8.81 / 27.05 / 18.7%)和 composed(8.22 / 27.32 / 20.3%), 仅 1b(6.79 / 27.50 / 22.0%)FD 更低。头号威胁。** 已排 ICG 种子 1/2(GPU2, icg_seeds); 等 ICG-label(随机桶)判断'低'是否关键; 需在 v7h 补 ICG; 可试 1b 用 ICG 参考。CLIP 表: runs_out/clip16_v7r.json。
 - [09-15 16:10 UTC] **SDXL: cfglabel256_l1 = 658.98 / 26.46, 比 cfg5(644.18)差 → orig512 无增益、orig256 有害, SDXL 通用性趋于否定**(余 4 组跑完定稿, 按否定结果如实写)。CDG 最优 w1.5 = 10.36(w2 10.76, w3 11.02)。
 - [09-14 15:40 UTC] **CDG(Han et al. CVPR 2026)w1.5 @16px seed0 = 10.36** —— 优于 best-CFG(11.10)但远不如 ours(label 8.81 / composed 8.22 / 1b 6.79, 同 seed0)。1b 20px 三种子 24.16 / 23.67 / 24.34 = 24.06(best-CFG 34.21, −30%)。
 - [09-14 15:18 UTC] **引导类外部基线已实现并开跑**(sample_e.py: cdg / icg / icglabel / tsg / seg, 按原文; 规格 guidance_baselines_spec.md): supervise guide_base 在 GPU7, 17 组 @16px v7r seed0(CDG w1.5/2/3, ICG, ICG-label, TSG 4 组, SEG 4 组, PAG 2 组), 完成标记 `GUIDE_BASE_DONE`。CDG 检查: recap prompt 平均 16.3/77 个内容 token, 0% 无 padding。1b-v7r 24px seed0 = 43.16; 20/24px 种子 1/2 在补。

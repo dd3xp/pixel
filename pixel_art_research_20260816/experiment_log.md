@@ -2071,3 +2071,19 @@ GPU2 空(diag_review3 完)。
   | negos512(diffusers negative_original_size 惯用法) | 650.98 | 26.46 |
   → orig512 无增益, orig256 有害(+14.8 FD)。**SDXL 的尺寸微条件不像我们的分辨率桶那样给出"结构对齐、只少对比度"的弱预测, 通用性按目前证据不成立。** 唯一对得上的是方向性: 弱分支保留 caption(ours)优于丢掉 caption(negos), 与像素模型的 bucket vs bucketu 一致。余下 label512_w3 / cfg7 / negos256 / label512_w2 跑完后定稿; 论文里如实写为"不迁移到 SDXL 的 original_size", 并讨论原因(SDXL 的 orig 条件编码的是训练图的上采样模糊, 不是目标网格)。
 - CDG(Han et al. CVPR 2026)@16px v7r seed0: w1.5 = 10.36, w2 = 10.76, w3 = 11.02 → 最优 10.36, 比 best-CFG(11.10)好 7%, 远不如 ours(label 8.81 / composed 8.22 / 1b 6.79, 同种子)。
+
+## 2026-09-15 ⚠ ICG(随机高斯条件)在 v7r 上强于我们的免训练引导
+| @16px v7r seed0, recap prompt | FD | CLIP 100cos | R@1/100 |
+|---|---|---|---|
+| real | 3.45(地板) | 27.66 | 22.6% |
+| best-CFG w1.5 | 11.10 | 27.68 | 23.1% |
+| CFG w4 | 20.18 | 27.96 | 24.7% |
+| label bk12 w2(ours) | 8.81 | 27.05 | 18.7% |
+| composed(ours) | 8.22 | 27.32 | 20.3% |
+| **1b(ours, 1 NFE)** | **6.79** | 27.50 | 22.0% |
+| CDG w1.5(Han et al.) | 10.36 | 27.43 | 21.7% |
+| **ICG w1.5(Sadat et al., ICLR 2025; e_ref = e(x, t, N(0, std(c)²), lab), 每步重抽)** | **7.14** | **27.72** | **23.4%** |
+- **ICG 在 FD 与对齐上同时优于 label / composed**, 仅 1b 的 FD 更低(且 1b 对齐略低于 ICG)。这直接威胁论文核心论点"低分辨率标签是特别合适的弱参考": 一个完全随机、离分布的文本条件也能给出很强的弱参考。
+- 新 caption 后 CLIP 有了区分度(旧 BLIP caption 下几乎不可比): ours 的 label 引导掉对齐最多(R@1 18.7% vs real 22.6%)。
+- 待核实: ICG 种子 1/2(GPU2 已排); ICG-label(随机桶)结果 → 若随机桶也和低桶一样好, "低"这个结构就不是关键。另需在 v7h(旧 caption)上补 ICG, 看是否同样压过 7.53。
+- 可能的出路(待验证): (i) 1b 的训练参考换成 ICG 或 ICG+低桶, 看内化后能否再降; (ii) 论文主张改为"弱参考的选择"系统研究, ours 为其中一类; (iii) 若 ICG 在各分辨率普遍更好, 需如实降格 label 引导。
