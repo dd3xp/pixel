@@ -22,6 +22,10 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+- [09-14 14:25 UTC] **1b-v7r 16px 三种子 6.79 / 7.68 / 7.22 = 7.23 ± 0.45(1 NFE), composed 8.50 ± 0.25, best-CFG 11.28 → −36%; 20px 24.16(best-CFG 34.21, −29%)。当前最强 = 1b。**
+- [09-14 14:10 UTC] **1b 在 v7r(新 caption)上复现且更强: 1-NFE @16px seed0 = 6.79, seed1 = 7.68**(同 caption 的 composed 8.22 / 8.59, best-CFG 11.10 / 10.85)。seed2 在跑。20px composed seed1 25.88。
+- [09-14 13:55 UTC] SDXL 三组关键结果: cfg5 644.18 / 26.59; **cfglabel512_l1 644.13 / 26.62(≈CFG)**; **negos512(diffusers 惯用法)650.98 / 26.46(比 CFG 差)**。→ 与像素模型"弱分支保留 caption 优于丢掉 caption"方向一致(ours 比 negos 好 6.9 FD、CLIP +0.16), 但在 SDXL 上 ours 相对 CFG 无增益。等 cfglabel256 / label512_w3。v7r 20px seed0: label 27.56, composed 25.61, autog 26.56(best-CFG 34.21)。
+- [09-14 11:55 UTC] **SDXL 早期信号偏否定**: cfglabel512_l1(CFG5 + 1×(e_c − e_{orig=512}))FD 644.13 / CLIP 26.62 vs cfg5 644.18 / 26.59 —— **几乎无差别**。orig=512 可能不够"低", 等 negos512、cfglabel256、label512_w3 再下结论; 若 256 也无效, SDXL 通用性按否定结果如实报告。v7r 20px: cfg1.5 34.84, cfg2 34.25。
 - [09-14 11:25 UTC] **v7r 16px 三种子全套**: best-CFG 11.28 ± 0.54; label 8.86 ± 0.06(−21%); autog 9.78 ± 0.50(−13%); composed 8.50 ± 0.25(−25%)。**新 caption 下的新判据: 基线 11.28, 最强零训练 8.50**(旧 12.49 / 7.53 仅限 v7h 旧 caption)。
 - [09-14 10:25 UTC] v7r @16px seed0: **label(bk12 w2)= 8.81, composed(10k 快照+bk12 w1.5)= 8.22**(best-CFG seed0 11.10 → −21% / −26%; v7h 上是 −30% / −37%), 增益在新 caption 上变小但仍在。
 - [09-14 10:10 UTC] **v7r 新 best-CFG 基线 @16px(w1.5, 三种子)= 11.10 / 10.85 / 11.89 = 11.28 ± 0.54**(旧 v7h 12.49 ± 0.72)。v7r_evals 进入 label/composed/autog; gft_v7r 1000/10000。
