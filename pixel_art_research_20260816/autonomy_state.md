@@ -22,6 +22,9 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+- [09-14 11:25 UTC] **v7r 16px 三种子全套**: best-CFG 11.28 ± 0.54; label 8.86 ± 0.06(−21%); autog 9.78 ± 0.50(−13%); composed 8.50 ± 0.25(−25%)。**新 caption 下的新判据: 基线 11.28, 最强零训练 8.50**(旧 12.49 / 7.53 仅限 v7h 旧 caption)。
+- [09-14 10:25 UTC] v7r @16px seed0: **label(bk12 w2)= 8.81, composed(10k 快照+bk12 w1.5)= 8.22**(best-CFG seed0 11.10 → −21% / −26%; v7h 上是 −30% / −37%), 增益在新 caption 上变小但仍在。
+- [09-14 10:10 UTC] **v7r 新 best-CFG 基线 @16px(w1.5, 三种子)= 11.10 / 10.85 / 11.89 = 11.28 ± 0.54**(旧 v7h 12.49 ± 0.72)。v7r_evals 进入 label/composed/autog; gft_v7r 1000/10000。
 - [09-14 09:25 UTC] **v7r best-CFG 候选 w1.5 @16px = 11.10**(新 caption; v7h 同设置 seed0 为 12.24)。**1b + CFG1.25 = 8.07**, 劣于 1b 单独 7.63(同 seed0)→ 叠 CFG 有害, 等 cfg1.5 与 w1.25+cfg1.5 两组确认。gft_v7r 已开训(09:16)。
 - [09-14 09:10 UTC] **v7r 80k 训完**(09:08), 16px CFG 扫描 1.5 起步, 用的是 recap prompt(已确认)。SDXL: real_floor FD 507.05 / CLIP 25.91; **cfg5 FD 644.18 / CLIP 26.59**; cfglabel512_l1 生成 116/1000。
 ### ▶ 09-14 06:30 UTC 最新队列(用户去睡, cron 5fe7f937 每 15 分钟; 以此为准)
