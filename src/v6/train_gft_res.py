@@ -63,7 +63,10 @@ def main():
     p.add_argument("--out", default="workdir/probe_gft")
     p.add_argument("--init", default="workdir/v7h/model_latest.pt")
     p.add_argument("--snap", default="workdir/v7h/model_step010000.pt")
-    p.add_argument("--ref", default="snapshot", choices=["snapshot", "online"])
+    p.add_argument("--ref", default="snapshot", choices=["snapshot", "online", "null", "icg"],
+                   help="snapshot/online: lower-bucket reference (ours). Controls at the TARGET bucket, online network, "
+                        "beta=1: null = empty caption (this is plain GFT, i.e. internalised CFG); icg = Gaussian "
+                        "random condition with the caption embedding's std (internalised ICG)")
     p.add_argument("--beta_lo", type=float, default=0.4)
     p.add_argument("--p_plain", type=float, default=0.25)
     p.add_argument("--ema", type=float, default=0.999)
@@ -102,6 +105,7 @@ def main():
     print(f"init {args.init}; reference = {args.ref}"
           + (f" ({args.snap})" if ref_net is not None else ""), flush=True)
 
+    null_emb = embed([""], tok, txt, dev)          # (1, 77, 512), the caption-dropout embedding
     sched = DDPMScheduler(num_train_timesteps=1000, beta_schedule="squaredcos_cap_v2")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr)
     ema = copy.deepcopy(model).eval().requires_grad_(False)
@@ -126,7 +130,8 @@ def main():
         xt = sched.add_noise(x, noise, t)
         low = lower_of[b]
         beta = torch.empty(B, device=dev).uniform_(args.beta_lo, 1.0)
-        beta = torch.where((torch.rand(B, device=dev) < args.p_plain) | (low < 0), torch.ones_like(beta), beta)
+        no_ref = (low < 0) if args.ref in ("snapshot", "online") else torch.zeros_like(low, dtype=torch.bool)
+        beta = torch.where((torch.rand(B, device=dev) < args.p_plain) | no_ref, torch.ones_like(beta), beta)
         s = model(xt, t, encoder_hidden_states=cond, class_labels=b, timestep_cond=beta_embedding(beta)).sample
         need = beta < 1.0
         r = torch.zeros_like(s)
@@ -134,7 +139,13 @@ def main():
             with torch.no_grad():
                 net = ref_net if ref_net is not None else model
                 one = torch.ones(int(need.sum()), device=dev)
-                r[need] = net(xt[need], t[need], encoder_hidden_states=cond[need], class_labels=low[need],
+                if args.ref in ("snapshot", "online"):
+                    rc, rl = cond[need], low[need]
+                elif args.ref == "null":
+                    rc, rl = null_emb.expand(int(need.sum()), -1, -1), b[need]
+                else:  # icg
+                    rc, rl = torch.randn_like(cond[need]) * cond[need].std(), b[need]
+                r[need] = net(xt[need], t[need], encoder_hidden_states=rc, class_labels=rl,
                               timestep_cond=beta_embedding(one)).sample
         bb = beta.view(-1, 1, 1, 1)
         loss = F.mse_loss(bb * s + (1 - bb) * r, noise)
