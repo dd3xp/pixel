@@ -2108,3 +2108,4 @@ GPU2 空(diag_review3 完)。
 | icglow(ICG+低桶) / +快照 / ICG+快照 | 7.16, 7.22(w1.25), 11.68(w2) / 11.65 / 12.95 | 7.16 ≈ ICG |
 | ours: label / composed / **1b(1 NFE)** | 8.86 / 8.50 / **7.23**(三种子) | — |
 - 结论: 在新 caption 模型上, 免训练外部基线里只有 ICG 强(7.46); CDG 小幅优于 CFG; TSG/SEG/PAG 都劣于调好的 CFG(在 12~24px 这类极小网格上注意力扰动类方法普遍失效)。ours 的免训练 label/composed 排第二梯队, 1b 与 ICG 并列最好且只用 1 NFE。GFT 对照(null/icg)在 GPU2 训练中。
+- SDXL 试点收官: CFG 曲线 w3 662.22 / 26.15, w5 644.18 / 26.59, w7 648.44 / 26.82 → ours(orig512, 644.13 / 26.62)与 CFG 最优点重合, orig256 劣于 CFG, 不带 CFG 的纯 ours 崩(969.68)。**定论: 不迁移到 SDXL 的 original_size。** 1000×7 组图已拷回本地 runs_out/server_node03/runs_out/sdxl_pilot 并逐目录核对后从服务器删除(分数文件 scores.json 保留), 盘 5.9G → 6.4G。
