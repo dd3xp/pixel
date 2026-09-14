@@ -22,6 +22,8 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+- [09-14 09:25 UTC] **v7r best-CFG 候选 w1.5 @16px = 11.10**(新 caption; v7h 同设置 seed0 为 12.24)。**1b + CFG1.25 = 8.07**, 劣于 1b 单独 7.63(同 seed0)→ 叠 CFG 有害, 等 cfg1.5 与 w1.25+cfg1.5 两组确认。gft_v7r 已开训(09:16)。
+- [09-14 09:10 UTC] **v7r 80k 训完**(09:08), 16px CFG 扫描 1.5 起步, 用的是 recap prompt(已确认)。SDXL: real_floor FD 507.05 / CLIP 25.91; **cfg5 FD 644.18 / CLIP 26.59**; cfglabel512_l1 生成 116/1000。
 ### ▶ 09-14 06:30 UTC 最新队列(用户去睡, cron 5fe7f937 每 15 分钟; 以此为准)
 | GPU | 守护进程(按启动顺序) | 完成标记 / 结果 |
 |---|---|---|
