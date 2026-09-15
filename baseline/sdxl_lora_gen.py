@@ -17,6 +17,7 @@ sys.path.insert(0, "baseline")
 from api_gen import SUFFIX  # noqa: E402
 
 
+@torch.no_grad()      # the manual VAE decode below otherwise builds a graph and .numpy() fails (09-15)
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--prompts", default="runs_out/heldout3000_prompts_recap.txt")
