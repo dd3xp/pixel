@@ -22,6 +22,13 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+- [09-16 10:20 UTC] **用户: "继续盯着自行推进自行补"。待补清单(按优先级, tick 依次推进)**:
+  1. 12px: r12_more(bucket:8 w3/3.5, GPU2)→ gft_v7r8(1b 在 v7r8 上, 12px 三种子 + 16px 回归, 标记 GFT_V7R8_DONE)。
+  2. 像素画学术基线: ext_lora(SDXL + Pixel Art XL LoRA, 200 条, 等 GPU7 16G, 标记 EXT_LORA_DONE; 完成后拉 big 到本地做 PixelOE 版); Make Your Own Sprites(Wu 2022, 权重在 Google Drive, 需本地下载再上传); SD-πXL(sdpixl_n3, 约 9h/张, 已完成 1 张)。
+  3. 最终配置的 CLIP 对齐(16px 1b+ICG, 20/24px 1b, 12px 结果), 用本地样本副本算。
+  4. (可选, 用户未拍板)第二领域(降采样 ImageNet 多分辨率)验证通用性。
+  5. 最后: 论文重写。
+- [09-16 10:10 UTC] 12px v7r8: CFG 8.40 / 8.42 / 8.53; bucket:8 w1.5 9.77 / w2 8.15 / **w2.5 7.50**; 16px 回归 v7r8 CFG1.5 = 10.58。
 - [09-16 07:00 UTC] **外部像素画基线 n=200(新 prompt)已打分**: 16px ours 1b+ICG 27.81 / 1b 29.60 / CFG 30.00 / ICG 31.72 vs gpt-image-2 缩小 82.23、nano 87.35(PixelOE 版 146/151); 20px 1b 107.03 vs 外部 283~330; 24px 1b 129.15 vs 外部 358~429; 地板 26.53 / 94.67 / 98.80。文件 runs_out/ext200/fd_ext200_s{16,20,24}.json。
 - [09-16 05:46 UTC] **12px 补救已排**: `src/v6/train_v7r8.py`(v7r 的类嵌入 7→8 行, 新 8px 行复制 12px 行; ≥10px 精灵加 8px 缩小副本, 8px 档 4.4 万条)已冒烟(数据+加载通过)。supervise v7r8 在 GPU2 等 gft_curve/stackb 结束后微调 20k 步, 再评 12px CFG 1.5/2/2.5 与 bucket:8 w1.5/2/2.5, 及 16px 回归检查(v7r8_cfg1p5、v7r8_bk12_w2), 标记 V7R8_DONE。之后视结果在 v7r8 上训 1b(12px 的低桶 = 8)。**1b+ICG 重训复现三种子 6.31 ± 0.33。** 12px v7r: best-CFG 8.82, autog 8.36。
 - [09-16 05:25 UTC] **1b + ICG 跨训练复现: 重训模型 b 上 w1.25 + ICG1.5 seed0 = 6.24(原模型 6.17)** —— 叠加版对训练随机性很稳, 1b 单独则两次训练差 0.6(6.79 vs 7.36)。重训曲线 5k 7.66 / 7.5k 7.39 / 10k 7.36。online 参考版训练中。
