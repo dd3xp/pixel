@@ -22,6 +22,7 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+- [09-16 00:25 UTC] **当前队列**: GPU2 = improve16(1b 续训 13600/20000 → 20k 三种子)+ stack2024(1b+ICG @20/24px, 标记 STACK2024_DONE); GPU7 = sdpixl_n3(SD-πXL 30 张, 逐张等 24G, 约 9h/张, 标记 SDPIXL_N3_DONE; 上次 30 张全因 OOM 失败)。v7r_evals 已完成(V7R_EVALS_DONE, 含 12px)。评测样本已移本地, 服务器只留 .done 标记。
 - [09-16 00:20 UTC] **归因完成**: GFT-ICG(内化 ICG, 1 NFE)7.96 ± 0.22 < 1b 7.23; 原版 GFT 模型 β=1+ICG 7.02、w1.25+ICG 6.63 vs 1b β=1+ICG 6.63、**w1.25+ICG 6.25 ± 0.09(3s, 16px 最优, 比 ICG 7.46 低 16%)**; 多训练效应仅 0.12。**16px 头条候选 = 1b + ICG(2 NFE)6.25; 1 NFE 头条 = 1b 7.23。** 下一步: 1b 20k(improve16 B)、1b+ICG 在 20/24px。
 - [09-15 20:55 UTC] **关键对照: 原版 GFT(空 caption 参考, 同配方)16px = 9.63 vs 1b 6.79 → 1b 的增益来自我们的低分辨率参考, 不是 GFT 形式。** 1b+ICG1.25 = 6.75 ≈ 1b; 1b w1.75 = 8.12; ICG 24px w2 = 46.21(1b 43.35)。
 - [09-15 20:40 UTC] 1b 推理 w1.35 = 8.00(劣于 w1.5 的 6.79)→ w1.5 附近已是最优, w1.75 在跑。**ICG @24px w1.5 = 48.82**(1b 43.35, label 50.38, composed 49.1)→ 24px ICG 与我们的免训练版持平, 输 1b。GFT 对照 9800/10000。
