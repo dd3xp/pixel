@@ -2219,3 +2219,4 @@ GPU2 空(diag_review3 完)。
 - 16px CDG w1.5: 10.36 / 11.55 / 11.27 = **11.06 ± 0.62**(best-CFG 11.28 ± 0.54 → CDG 与 CFG 基本持平)。
 - 24px composed 三种子已齐(v7r_evals 已跑 seed2)。
 - 除 SD-πXL(已完成 1 张, 第 2 张在跑)外, 截稿前计划的实验全部完成。
+- 16:25 GPU2 空闲 → 加第二个 SD-πXL 进程(supervise sdpixl_g2, 同脚本 FIRST=15 LAST=29; GPU7 的进程从 0 往后), 截稿前产量约翻倍。
