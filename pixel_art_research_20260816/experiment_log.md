@@ -2196,3 +2196,4 @@ GPU2 空(diag_review3 完)。
 - v7r8 = v7r + 8px 档, 20k 步微调。12px(seed0): CFG w1.5 8.40 / w2 8.42 / w2.5 8.53; **label bucket:8 w1.5 9.77 / w2 8.15 / w2.5 7.50**(best-CFG 8.40 → −11%, 且随 w 继续下降, 补 w3/3.5)。原 v7r 12px best-CFG 8.82、autog 8.36。
 - 16px 回归: v7r8 CFG1.5 = 10.58(v7r 11.10, 同 seed0)→ 加 8px 档未伤 16px。
 - 1b-v7r8(12px 低桶 = 8)在 V7R8_DONE 后自动开训。
+- **Make Your Own Sprites(Wu et al. SIGGRAPH Asia 2022, 学习式像素化, 官方权重)** 接在 gpt-image-2 / nano-banana-2 的 1024px 图后(同 cutout、同掩码多数投票透明度, 直接缩到 T×4 输入以得到恰好 T 格): n=200 FD 16px 155.20 / 186.95, 20px 336.66 / 386.73, 24px 431.21 / 441.40 → 比直接缩小与 PixelOE 都差(它训练的格子尺寸远大于 12~24px 这种极端比例)。ours 16px 27.81 / 20px 107.03 / 24px 129.15。脚本 baseline/mys_sprites.py, 仓库与权重在服务器 ../Pixelization。
