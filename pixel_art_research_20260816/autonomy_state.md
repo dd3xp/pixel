@@ -22,6 +22,11 @@
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
 ## 当前状态 (2026-09-12)
+- [09-16 05:46 UTC] **12px 补救已排**: `src/v6/train_v7r8.py`(v7r 的类嵌入 7→8 行, 新 8px 行复制 12px 行; ≥10px 精灵加 8px 缩小副本, 8px 档 4.4 万条)已冒烟(数据+加载通过)。supervise v7r8 在 GPU2 等 gft_curve/stackb 结束后微调 20k 步, 再评 12px CFG 1.5/2/2.5 与 bucket:8 w1.5/2/2.5, 及 16px 回归检查(v7r8_cfg1p5、v7r8_bk12_w2), 标记 V7R8_DONE。之后视结果在 v7r8 上训 1b(12px 的低桶 = 8)。**1b+ICG 重训复现三种子 6.31 ± 0.33。** 12px v7r: best-CFG 8.82, autog 8.36。
+- [09-16 05:25 UTC] **1b + ICG 跨训练复现: 重训模型 b 上 w1.25 + ICG1.5 seed0 = 6.24(原模型 6.17)** —— 叠加版对训练随机性很稳, 1b 单独则两次训练差 0.6(6.79 vs 7.36)。重训曲线 5k 7.66 / 7.5k 7.39 / 10k 7.36。online 参考版训练中。
+- [09-16 03:27 UTC] 1b 20k 三种子 7.65 / 7.56 / 7.19 = 7.47(10k 为 7.23)→ 论文用 10k。20px 弱 ICG1.25: 25.64 / 25.82, 仍劣于 1b 单独 24.06 → **最终配置: 16px = 1b + ICG(6.25), 20/24px = 1b 单独**。gft_curve(训练长度 5k/7.5k/10k + online 参考)训练中 1400/10000; SD-πXL 第 0 张在跑。
+- [09-16 01:25 UTC] 20px 叠 ICG 三组 27.39 / 29.80 / 28.42 全劣于 1b 单独 24.06; **24px 1b w1.25 + ICG1.5 = 41.50 优于 1b 单独 43.35(2s)与 ICG 46.21** → 叠加在 16/24px 有益, 20px 有害, 需多种子确认。
+- [09-16 00:40 UTC] 20px: 1b w1.25 + ICG1.5 = 27.39 —— **劣于 1b 单独 24.06**(ICG 单独 28.30)→ 叠 ICG 的增益只在 16px; 20/24px 用 1b 单独。等其余 5 组。
 - [09-16 00:25 UTC] **当前队列**: GPU2 = improve16(1b 续训 13600/20000 → 20k 三种子)+ stack2024(1b+ICG @20/24px, 标记 STACK2024_DONE); GPU7 = sdpixl_n3(SD-πXL 30 张, 逐张等 24G, 约 9h/张, 标记 SDPIXL_N3_DONE; 上次 30 张全因 OOM 失败)。v7r_evals 已完成(V7R_EVALS_DONE, 含 12px)。评测样本已移本地, 服务器只留 .done 标记。
 - [09-16 00:20 UTC] **归因完成**: GFT-ICG(内化 ICG, 1 NFE)7.96 ± 0.22 < 1b 7.23; 原版 GFT 模型 β=1+ICG 7.02、w1.25+ICG 6.63 vs 1b β=1+ICG 6.63、**w1.25+ICG 6.25 ± 0.09(3s, 16px 最优, 比 ICG 7.46 低 16%)**; 多训练效应仅 0.12。**16px 头条候选 = 1b + ICG(2 NFE)6.25; 1 NFE 头条 = 1b 7.23。** 下一步: 1b 20k(improve16 B)、1b+ICG 在 20/24px。
 - [09-15 20:55 UTC] **关键对照: 原版 GFT(空 caption 参考, 同配方)16px = 9.63 vs 1b 6.79 → 1b 的增益来自我们的低分辨率参考, 不是 GFT 形式。** 1b+ICG1.25 = 6.75 ≈ 1b; 1b w1.75 = 8.12; ICG 24px w2 = 46.21(1b 43.35)。
