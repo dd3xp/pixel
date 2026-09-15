@@ -2203,3 +2203,4 @@ GPU2 空(diag_review3 完)。
 - 16px 回归: v7r8 上的 1b = 7.00(v7r 上 1b 7.20~7.23)、v7r8 CFG1.5 10.58、bucket:12 w2 8.80 → 加 8px 档无副作用。
 - **24px 1b 三种子: 43.16 / 43.54 / 43.49 = 43.40 ± 0.21**(best-CFG 65.87, −34%)。
 - SDXL+LoRA 基线: 反复失败的原因是脚本 bug(VAE 手动解码未在 no_grad 下), 已修, 守护进程自动重试。
+- **SDXL + Pixel Art XL LoRA(nerijs/pixel-art-xl, 最常用的开源像素画模型; 同 200 条 recap prompt、同后缀、1024px、Euler 30 步、CFG 7)**: 直接缩小 n=200 FD 16px 166.64 / 20px 466.11 / 24px 588.07; PixelOE 版 213.75 / 406.12 / 493.58。比 gpt-image-2 / nano-banana-2 还差, 离 ours(27.81 / 107.03 / 129.15)更远。像素画外部基线里只剩 SD-πXL(在跑)。
