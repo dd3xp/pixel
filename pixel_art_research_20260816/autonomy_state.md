@@ -27,6 +27,7 @@
 - **反跑偏规则 1 在此阶段放宽**: 写论文现在是主任务(tick 仍先查队列与磁盘)。
 
 ## 当前状态 (2026-09-12)
+- [09-16 15:55 UTC] **实验阶段完成**(除 SD-πXL 后台逐张): 12px 1b 7.55 ± 0.19 vs CFG 8.41 ± 0.19; 16px 1b+ICG 6.25 / 1b 7.23 / ICG 7.46 / CDG 11.06 / CFG 11.28; 20px 1b 24.06 vs CFG 34.21; 24px 1b 43.40 vs CFG 65.87; 外部像素画基线 n=200 全部远差于 ours(SDXL+LoRA 167~588, MYS 155~441, gpt/nano 82~429); CLIP: 16px 最终配置与 real 持平, 20/24px 1b 略降。**用户 09-15 说'先不管文章, 盯实验' → 等用户指示再开写(截稿 9/25, 摘要注册 9/18 需用户操作)。**
 - [09-16 10:20 UTC] **用户: "继续盯着自行推进自行补"。待补清单(按优先级, tick 依次推进)**:
   1. 12px: r12_more(bucket:8 w3/3.5, GPU2)→ gft_v7r8(1b 在 v7r8 上, 12px 三种子 + 16px 回归, 标记 GFT_V7R8_DONE)。
   2. 像素画学术基线: ext_lora(SDXL + Pixel Art XL LoRA, 200 条, 等 GPU7 16G, 标记 EXT_LORA_DONE; 完成后拉 big 到本地做 PixelOE 版); Make Your Own Sprites(Wu 2022, 权重在 Google Drive, 需本地下载再上传); SD-πXL(sdpixl_n3, 约 9h/张, 已完成 1 张)。
