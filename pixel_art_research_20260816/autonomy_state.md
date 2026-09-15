@@ -21,6 +21,11 @@
 - 不占 GPU 的可以现在跑: PixelOE 后处理(纯 CPU)。
 - 候选(见 external_baselines_survey.md): SDXL + Pixel Art XL LoRA(学术常用开源, 需 GPU, 排在训练后)、Make Your Own Sprites(Wu 等, SIGGRAPH Asia 2022, 需 GPU)、SD-πXL(已有 8 张)、Pixray(需 GPU)。PixDiff-PIG 无代码, 只能引用讨论。
 
+## ⏰ ICLR 2027 截稿(用户 09-15 确认投 ICLR; 已核实 iclr.cc/Conferences/2027/CallForPapers)
+- **摘要注册 Sep 18, 2026 23:59 AoE**(用户本人在 OpenReview 注册; 只需标题+摘要, 标题截稿前可改) —— 我需在 09-16 前起草标题与摘要。
+- **全文 Sep 25, 2026 23:59 AoE**。计划: 实验收尾到 09-21(12px 1b、SDXL+LoRA、CLIP、SD-πXL 能跑多少算多少), 09-19~24 写全文, 09-21 后不加新实验。第二领域(ImageNet)来不及 → 不做, 写入局限。
+- **反跑偏规则 1 在此阶段放宽**: 写论文现在是主任务(tick 仍先查队列与磁盘)。
+
 ## 当前状态 (2026-09-12)
 - [09-16 10:20 UTC] **用户: "继续盯着自行推进自行补"。待补清单(按优先级, tick 依次推进)**:
   1. 12px: r12_more(bucket:8 w3/3.5, GPU2)→ gft_v7r8(1b 在 v7r8 上, 12px 三种子 + 16px 回归, 标记 GFT_V7R8_DONE)。
