@@ -74,6 +74,9 @@ def main():
     p.add_argument("--csv_suffix", default="")
     p.add_argument("--exclude", default="runs_out/holdout_exclude.txt")
     p.add_argument("--ckpt_every", type=int, default=2500)
+    p.add_argument("--keep_steps", default="",
+                   help="comma list of steps at which the EMA is also saved as model_step{N:06d}.pt (training-length curve; "
+                        "20k was worse than 10k at 16 px)")
     args = p.parse_args()
     dev = "cuda"
     for k in train_v7.BATCH:
@@ -159,6 +162,8 @@ def main():
         if step % 200 == 0:
             print(f"[{step}/{args.steps}] loss={loss.item():.4f} bucket={BUCKETS[int(b[0])]} "
                   f"mean_beta={beta.mean().item():.2f}", flush=True)
+        if args.keep_steps and step in {int(s) for s in args.keep_steps.split(",")}:
+            torch.save(ema.state_dict(), out / f"model_step{step:06d}.pt")
         if step % args.ckpt_every == 0 or step == args.steps:
             torch.save(ema.state_dict(), out / "model_latest.pt")
             torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "ema": ema.state_dict(),
