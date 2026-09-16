@@ -1,0 +1,274 @@
+% Appendix of the ICLR 2027 draft (input from main.tex after the bibliography).
+
+\section{Implementation and protocol details}
+\label{app:details}
+
+\begin{table}[h]
+\caption{Training and sampling configuration. v7h and v7r differ only in the caption files.}
+\label{tab:hparams}
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Denoiser & diffusers \texttt{UNet2DConditionModel}, 4 input/output channels (RGBA), widths 128/256/512, \\
+ & 2 layers per block; down: CrossAttn, CrossAttn, plain; up: plain, CrossAttn, CrossAttn; 72.5M parameters \\
+Text & frozen CLIP ViT-B/32 text encoder, 77 tokens, last hidden states (512-d) as cross-attention context \\
+Resolution & class embedding over $\mathcal{B} = \{12,16,20,24,32,48,64\}$ added to the timestep embedding; never dropped \\
+Diffusion & $\epsilon$-prediction, $T = 1000$, cosine (\texttt{squaredcos\_cap\_v2}) schedule \\
+Base training & from scratch, 80k steps, AdamW, constant lr $5\cdot10^{-5}$, EMA 0.999, caption dropout 10\% \\
+Batches & one bucket per batch, bucket drawn proportionally to its row count; batch 320 / 256 / 224 / 192 / 128 / 64 / 40 \\
+ & for 12 / 16 / 20 / 24 / 32 / 48 / 64\,px \\
+Snapshot & 10k-step EMA of an independent 10k-step run with the same recipe (v7r); step-10k EMA of the run itself (v7h) \\
+Internalization & init v7r, 10k steps, same optimizer/lr/EMA/batches; $\beta\sim\mathcal U(0.4,1)$, $\beta{=}1$ w.p.\ 0.25 and for 12\,px rows; \\
+ & reference rung 12 (for 16\,px rows) and 16 (for 20 and 24\,px rows); $\beta$ via 256-d sinusoidal embedding of $1000\beta$ \\
+ & and a zero-initialized linear map into the timestep features (32,768 parameters) \\
+Sampling & 100-step ancestral DDPM, EMA weights, one sample per prompt \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\paragraph{Canvas preprocessing.} A sprite larger than the target side $R$ is reduced with a premultiplied-alpha box
+filter, preserving aspect ratio; a sprite at most $R/2$ is enlarged by an integer nearest-neighbour factor. It is then
+centred on a transparent $R\times R$ canvas, and alpha is thresholded at 128 (pixels below become fully transparent,
+with RGB cleared). Generated samples are stored with the same hard alpha. The same function produces the FD reference
+set, the held-out floor set and the ``downscale'' external baselines.
+
+\paragraph{FD.} Real sprites are split once with a fixed shuffle into a 3,000-sprite reference set and a disjoint
+held-out pool. The first 3,000 held-out sprites supply the floor set and, through their recaptions, the 3,000 evaluation
+prompts. Each image is composited on white and resized to $R\times R$ (box filter; generated images are already $R\times R$).
+It is then nearest-neighbour upsampled to $224\times224$, normalized with ImageNet statistics, and embedded by the CLS
+token of \texttt{facebook/dinov2-small}. FD is the Fréchet distance between Gaussian fits of the two feature sets
+(3,000 vs.\ 3,000; 200 vs.\ 3,000 for the external protocol). Samples are generated in chunks of 1,000 prompts, and chunk
+$i$ uses seed $s + i$.
+
+\paragraph{CLIP.} The same saved samples are composited on mid-grey, nearest-neighbour upsampled to 224\,px and scored
+with CLIP ViT-B/32 against the caption they were sampled from. We report $100\cos$ and R@1, the fraction of samples
+whose own caption ranks first among itself and 99 random held-out captions (chance 1\%).
+
+\section{Recaptioning}
+\label{app:recap}
+
+\begin{table}[h]
+\caption{Caption statistics before and after recaptioning (43,342 unique training and evaluation images).}
+\label{tab:recap}
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+ & BLIP (v7h) & gemini-3-flash (v7r) \\
+\midrule
+Distinct captions & 23.5\% & 98.6\% \\
+Words per caption (median / mean) & 8 / 7.6 & 12 / 12.1 \\
+Occurrences of the most frequent caption & 7,669 (``a pixel art sprite'') & 6 (``human'') \\
+Share of data covered by the ten most frequent captions & $\approx$25\% & $<$0.1\% \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Images were sent as numbered grids on a checkerboard (20 per request, 12 for retries). For each cell, the instruction
+asked for a caption of 6--15 words that names the object first and then its distinguishing colours, materials and
+parts, describes only what is visible, and avoids uninformative words (``pixel art'', ``sprite'', ``8-bit'', ``icon'').
+Of the 43,342 unique images, 41,560 received a caption and 41,103 (94.8\%) were usable. The remainder were declared an
+``unclear abstract shape'' by the captioner and keep their BLIP caption. Across the three caption files (49,652 rows),
+95\% of rows were replaced. The total cost was about 18.7M tokens. The held-out evaluation prompts are the recaptions of
+the held-out sprites, so the evaluation prompts follow the training caption distribution.
+
+\section{Guidance baselines: exact settings}
+\label{app:guidance}
+
+All baselines replace CFG in Eq.~\eqref{eq:guide}, on the same model, sampler, prompts and initial noise. Random draws
+for ICG and TSG come from a separate generator, so that switching methods does not change the sampler noise.
+\begin{itemize}[leftmargin=1.2em,itemsep=1pt]
+  \item \textbf{CDG} \citep{CDG2026}, $R_{\deg} = 1$: every position covered by the tokenizer's attention mask (BOS, words,
+  first EOS) takes the embedding of the empty caption at that position, while the remaining padding positions keep the
+  caption's states; the bucket is unchanged. On our recaptions, on average 16.3 of 77 positions are content, and no prompt
+  fills all 77 (for such a prompt CDG would equal CFG).
+  \item \textbf{ICG} \citep{Sadat2024icg}: $\hat c = \mathrm{std}(c)\cdot n$ with $n \sim \mathcal N(0, I)$ of the
+  caption embedding's shape, redrawn at every step; the target bucket is kept. \textbf{ICG-label}: the caption is kept and
+  the bucket is drawn uniformly from $\mathcal B$ at every step.
+  \item \textbf{TSG} \citep{Sadat2024icg}: the time embedding (before the bucket embedding is added) is perturbed by
+  $s\,(t/1000)^{\alpha}\,\mathrm{std}(\cdot)\,n$ in all layers. ``SD'' setting: $s = 3$, $\alpha = 0.25$, applied for
+  $t \ge 400$; ``DiT'' setting: $s = 2$, $\alpha = 1$, all $t$, $w = 2.5$.
+  \item \textbf{SEG} \citep{Hong2024}: self-attention queries are Gaussian-blurred over their square layout (kernel size
+  $\lceil 6\sigma\rceil + 1$, truncated to the map, reflect padding; $\sigma = \infty$ replaces the queries by their
+  spatial mean), in the mid block (``mid''), in the down/up blocks at $R/2$ (``d1+u1'') or everywhere (``all''); $w = 3$.
+  The ``all, $\sigma = 1$'' setting gives 122.52.
+  \item \textbf{PAG} \citep{Ahn2024}: the self-attention map of the mid block is replaced by the identity.
+  \item \textbf{Autoguidance} \citep{Karras2024}: the 10k snapshot under the target bucket and the same caption.
+\end{itemize}
+
+\section{Extrapolation-weight measurements}
+\label{app:wstar}
+
+\begin{table}[h]
+\caption{MSE-optimal extrapolation weight $w^\star$ on forward-noised data (v7h; 10 timesteps from $t = 10$ to 990; 3,000
+sprites; ranges over timesteps) and the relative denoising loss of the guided prediction at $w = 1.5$.}
+\label{tab:t0}
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+Resolution / rung & Data & label $w^\star$ & snapshot $w^\star$ & composed $w^\star$ & $L(1.5)/L(1)$ \\
+\midrule
+16 / 12 & held-out & 0.88--1.04 & 0.83--1.07 & 0.85--1.07 & 1.02--1.88 \\
+16 / 12 & training & 0.94--1.00 & 1.00--1.07 & 0.99--1.07 & 1.02--1.90 \\
+20 / 16 & held-out & 0.92--1.02 & 0.88--1.05 & 0.89--1.06 & 1.01--1.81 \\
+24 / 16 & held-out & 0.91--1.02 & 0.85--1.05 & 0.88--1.04 & 1.03--1.95 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+The ``label'' reference is the final model under the lower bucket, ``snapshot'' is the 10k snapshot under the target
+bucket (autoguidance), and ``composed'' is the snapshot under the lower bucket. All three are evaluated on the same
+$x_t$ and caption. On self-rolled states (2,000 held-out sprites), a sprite is noised to $k$ steps before a target
+position in the 100-step schedule (positions 25, 45, 65, 85, 95), and the deployed sampler (bare, or label-guided with
+$w = 2$) runs $k$ steps. $w^\star$ is then measured in $x_0$-space against the known sprite. Over all $k \ge 5$ points, the
+maximum $w^\star$ is 0.895 / 1.069 / 0.989 (label / snapshot / composed) at 16\,px, 0.825 / 0.997 / 0.978 at 20\,px and
+0.819 / 0.888 / 0.876 at 24\,px. No point reaches 1.3.
+
+\section{Results on the BLIP-caption model v7h}
+\label{app:v7h}
+
+\begin{table}[h]
+\caption{16\,px results on v7h (BLIP captions, BLIP evaluation prompts) next to v7r. Three seeds where $\pm$ is given,
+otherwise seed 0.}
+\label{tab:v7h}
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method & \nfe & v7h (BLIP) & v7r (recaptioned) \\
+\midrule
+CFG $w = 4$ (default) & 2 & 21.52 \pmsd{0.47} & 20.18 \\
+Best CFG ($w = 1.5$) & 2 & 12.49 \pmsd{0.72} & 11.28 \pmsd{0.54} \\
+Autoguidance, 10k snapshot & 2 & 8.73 \pmsd{0.26} & 9.78 \pmsd{0.50} \\
+Lower-bucket label reference & 2 & 8.52 \pmsd{0.29} & 8.86 \pmsd{0.06} \\
+Composed reference & 2 & 7.53 \pmsd{0.19} & 8.50 \pmsd{0.25} \\
+ICG, $w = 1.25$ / $1.5$ & 2 & 8.88 / 11.29 & 7.68 / 7.46 \pmsd{0.37} \\
+Internalized, $w = 1.5$ & 1 & 7.23 \pmsd{0.34} (7.63 / 7.02 / 7.05) & 7.23 \pmsd{0.45} \\
+Internalized, $w = 1.25$ / $2$ & 1 & 8.77 / 9.56 & -- \\
+Internalized ($w = 1.5$) + CFG 1.25 / 1.5; ($w = 1.25$) + CFG 1.5 & 2 & 8.07 / 8.16 / 8.34 & -- \\
+Higher-bucket reference, buckets 20 / 24 / 64, $w = 2$ & 2 & 17.14 / 17.27 / 19.34 & -- \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+On v7h the internalized model beats the composed rule at every seed (7.63 / 7.02 / 7.05 vs.\ 7.67 / 7.32 / 7.61). Higher
+buckets are harmful at every resolution: at 12\,px, bucket 16 gives 14.45 vs.\ best CFG 9.71; at 20\,px, buckets 24 / 32
+give 46.62 / 59.13 vs.\ 39.53; at 24\,px, bucket 32 gives 101.67 vs.\ 67.34 (seed 0).
+
+\paragraph{What the lower-resolution belief looks like (v7h, 16\,px).} Sampling each reference on its own (median unique
+colours over opaque pixels, fraction of exactly equal adjacent pixel pairs, mean adjacent $|\Delta\mathrm{RGB}|$) gives
+78 / .015 / 21.6 for the 12\,px belief, against 73 / .030 / 32.0 for the strong model (CFG $w = 4$) and 34 / .202 / 30.2 for
+real sprites. The 24\,px and 64\,px beliefs have contrast 31.9 and 40.9. The 12\,px belief is thus not a simpler image
+with fewer colours; it is a lower-contrast rendering of the same layout. A contrast reduction that is \emph{not}
+structured like the belief does not work: shrinking the strong prediction's own $\hat x_0$ contrast towards its mean
+and using that as the reference gives 74.8--444.4.
+
+\section{Cost}
+\label{app:cost}
+
+\begin{table}[h]
+\caption{Wall-clock time for 1,000 samples at 16\,px (A100-80GB, exclusive; 100 DDPM steps; batch 500; including
+model loading), measured on v7h. The internalized model has the same architecture plus 32,768 parameters and runs
+at 1 \nfe{}; it was not timed separately.}
+\label{tab:cost}
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Configuration & \nfe & s / 1,000 samples & peak memory (MiB) \\
+\midrule
+One pass per step (no guidance; internalized model) & 1 & 42.5 & 4951 \\
+CFG & 2 & 73.8 & 4951 \\
+Lower-bucket label reference & 2 & 72.7 & 4951 \\
+Autoguidance / composed reference (snapshot in memory) & 2 & 73.3 / 74.0 & 5507 \\
+SD-$\pi$XL \citep{Binninger2024}, one 16\,px sprite (shared node) & -- & 29,500 per sprite & -- \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\section{SDXL size-conditioning pilot}
+\label{app:sdxl}
+
+\begin{table}[h]
+\caption{SDXL base 1.0 on the first 1,000 captions of COCO-30k shard 0 (1024\,px, Euler 30 steps, identical initial
+noise). FD with DINOv2 ViT-L/14 CLS (224\,px, bicubic) against real images 1,000--2,999; floor (real images 0--999)
+507.05; CLIP ViT-L/14 $100\cos$ (real 25.91). ``orig'' denotes the \texttt{original\_size} condition of the weak branch.}
+\label{tab:sdxl}
+\centering
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Setting & FD & CLIP \\
+\midrule
+CFG $w = 3$ / $5$ / $7$ & 662.22 / 644.18 / 648.44 & 26.15 / 26.59 / 26.82 \\
+CFG 5 + $1\times(e_c - e_{c,\text{orig}=512})$ & 644.13 & 26.62 \\
+CFG 5 + $1\times(e_c - e_{c,\text{orig}=256})$ & 658.98 & 26.46 \\
+CFG with \texttt{negative\_original\_size} 512 (common practice) & 650.98 & 26.46 \\
+Size reference only, orig 512, $w = 3$ (no CFG) & 969.68 & 21.26 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\section{External systems: pipeline and qualitative comparison}
+\label{app:externalfig}
+
+The gpt-image-2 and nano-banana-2 renders were requested at 1024\,px through the vendors' image-generation APIs with the
+prompt ``\emph{<recaption>}, pixel art sprite of a single object, plain flat white background, centred, no text''. The
+sprite is cut out by flood-filling, from the image border, all pixels within 18 (per channel, 8-bit) of the median border
+colour, and then cropped to its content. \emph{Downscale} applies our canvas preprocessing (Appendix~\ref{app:details}).
+\emph{PixelOE} pads the cut-out to a square on white, pixelizes the RGB in contrast mode with colour matching directly to
+$R\times R$, and takes alpha by majority vote of the cut-out mask in each cell. \emph{Make Your Own Sprites} resizes the
+same square to $4R\times4R$ (bicubic), applies the official network with 4\,px cells, and reduces the output by 4 with
+nearest-neighbour sampling, with alpha as for PixelOE. We bypass the official script's minimum input size of 128\,px,
+because it would change the cell count for 12--24\,px targets. The SDXL + Pixel Art XL LoRA row uses SDXL base 1.0 with
+the fused LoRA (scale 1), Euler with 30 steps, CFG 7 and the same prompt and conversions (\todo{results pending}).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_external16.pdf}
+\caption{``Generate large, then shrink'' vs.\ ours at 16\,px (same captions as Figure~\ref{fig:qual}; $n = 200$ FD in
+parentheses). The 1024\,px renders (shown as downsampled thumbnails) often follow the caption closely. After conversion
+they keep soft shading, anti-aliased edges and many colours, which are absent from the data. The ``downscale'' sprites
+shown here are re-derived from the saved renders with the same deterministic pipeline that produced the scored ones.}
+\label{fig:external}
+\end{figure}
+
+\section{Captions of the qualitative figures}
+\label{app:prompts}
+
+Held-out prompt indices 1, 4, 5, 9, 10, 31, 42, 44, 55, 58 (left to right in Figures~\ref{fig:qual} and
+\ref{fig:external}):
+\begin{enumerate}[leftmargin=1.6em,itemsep=0pt]
+  \item Ear of corn with yellow kernels sitting in green leafy husks
+  \item Magic wand with a brown wooden handle and a red orb with white highlights
+  \item Goblin, green skin and yellow eyes, holding a large brown wooden club
+  \item Green bipedal creature with a wide mouth and a visible pink tongue
+  \item Magnifying glass with a golden handle, white frame, and glowing green lens
+  \item Slime monster, vibrant magenta blob, two tiny dark green rectangular eyes
+  \item Glass potion bottle, brown cork, filled with bubbling dark purple liquid, thick outline
+  \item Cowboy wearing a wide-brimmed brown hat, brown vest, and a yellow star
+  \item Large fire, white-yellow core, intense orange glow, dark red jagged outlines
+  \item Baked pie, round golden-brown crust with a dark brown filling inside a dish
+\end{enumerate}
+
+\section{Pending results}
+\label{app:pending}
+\todo{Remove this section before submission.} Items still running when this draft was written: the internalized model
+on v7r8 at 12\,px (three seeds) and its 16\,px regression check; the label reference on v7r8 at $w = 3 / 3.5$ and seeds
+1--2; the third seed of the internalized model at 24\,px; CLIP scores for the internalized + ICG configuration, plain
+GFT, the 20/24/12\,px final configurations and the external systems; SDXL + Pixel Art XL LoRA (and its PixelOE variant)
+on the $n = 200$ protocol; SD-$\pi$XL sprites on the recaptioned prompts (qualitative only).

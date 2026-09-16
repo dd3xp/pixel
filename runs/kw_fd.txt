@@ -1,0 +1,194 @@
+12 probe_cc_r12_autog10k_w1p5 8.16
+12 probe_cc_r12_cfg4 11.78
+12 probe_cc_r12_coarse_w1p25 9.66
+12 probe_cc_r12_coarse_w1p5 10.07
+12 v7h_r12_autog10k_w1p5 9.18
+12 v7h_r12_autog10k_w1p5_seed1 8.70
+12 v7h_r12_bk16_w2 14.45
+12 v7h_r12_cfg4 12.91
+12 v7h_r12_cfg4_seed1 12.81
+16 probe_cc_autog10k_w1p5 8.77
+16 probe_cc_bk12_w2 9.43
+16 probe_cc_cfg4 20.63
+16 probe_cc_coarseonly 41.37
+16 probe_cc_coarse_s5k_w1p5 15.83
+16 probe_cc_coarse_w1p5 14.71
+16 probe_cc_coarse_w2 19.98
+16 probe_cc_coarse_w3 44.90
+16 probe_cg_autog10k_w1p5 9.10
+16 probe_cg_bk12_w2 10.12
+16 probe_cg_cfg4 19.17
+16 probe_cg_coarse_s5k_w1p5 16.64
+16 probe_cg_coarse_w1p5 21.53
+16 probe_cg_coarse_w2 35.22
+16 probe_cg_coarse_w3 59.38
+16 probe_es_pilot_ctrl 35.47
+16 probe_es_pilot_ctrl_st100 15.03
+16 probe_es_pilot_es 67.13
+16 probe_es_pilot_es_st100 28.47
+16 probe_es_pilot_es_st40 43.80
+16 probe_es_pilot_hyb300 20.69
+16 probe_tv 28.02
+16 probe_tv_autog2 231.90
+16 probe_tv_cfg10 32.02
+16 probe_tv_cfg7 23.85
+16 v7_bk12_w2 7.40
+16 v7h 21.98
+16 v7h_autog10k_cfg 133.35
+16 v7h_autog10k_r1p5a2p5 8.35
+16 v7h_autog10k_r2a1 11.16
+16 v7h_autog10k_r2a3 10.74
+16 v7h_autog10k_r2p5a1p5 19.17
+16 v7h_autog10k_r3a2 32.36
+16 v7h_autog10k_w1p5 8.98
+16 v7h_autog10k_w1p5_seed1 8.73
+16 v7h_autog10k_w1p5_seed2 8.47
+16 v7h_autog10k_w2 11.33
+16 v7h_autog10k_w2_apgrgb 14.74
+16 v7h_autog10k_w2p5 19.19
+16 v7h_autog10k_w2_s200 11.35
+16 v7h_autog10k_w3 30.11
+16 v7h_autog20k_w2 12.14
+16 v7h_autog40k_w2 11.62
+16 v7h_autog5k_w2 14.89
+16 v7h_bk12only 36.43
+16 v7h_bk12_w2_apgrgb 9.84
+16 v7h_bk24only 34.50
+16 v7h_bk64only 327.64
+16 v7h_bku12s10k_w1p25 9.46
+16 v7h_bku12s10k_w1p5 8.60
+16 v7h_bku12_w1p5 10.45
+16 v7h_bku12_w2 12.10
+16 v7h_cads4 44.58
+16 v7h_cads7 71.17
+16 v7h_cads7s25 88.61
+16 v7h_cfg10 62.12
+16 v7h_cfg7 42.95
+16 v7h_ddim50 204.42
+16 v7h_gbk12mix_w2 9.42
+16 v7h_gbk12s10k_w1p25 8.98
+16 v7h_gbk12s10k_w1p5 7.67
+16 v7h_gbk12s10k_w1p5_ct1p5 9.19
+16 v7h_gbk12s10k_w1p5_ct2 11.10
+16 v7h_gbk12s10k_w1p5_seed1 7.32
+16 v7h_gbk12s10k_w1p5_seed2 7.61
+16 v7h_gbk12s10k_w2 10.83
+16 v7h_gbk12s20k_w1p5 8.03
+16 v7h_gbk12s5k_w1p5 8.68
+16 v7h_gbk12_w1p5 10.21
+16 v7h_gbk12_w2 8.59
+16 v7h_gbk12_w2a1p5 9.10
+16 v7h_gbk12_w2_ct1p5 9.50
+16 v7h_gbk12_w2_ddim50 34.18
+16 v7h_gbk12_w2p5 11.20
+16 v7h_gbk12_w2_seed1 8.20
+16 v7h_gbk12_w2_seed2 8.76
+16 v7h_gbk12_w3 13.87
+16 v7h_gbk20_w2 17.14
+16 v7h_gbk24_w2 17.27
+16 v7h_gbk64_w1p5 18.17
+16 v7h_gbk64_w2 19.34
+16 v7h_gblur2_w1p5 99.89
+16 v7h_gblur2_w2 223.07
+16 v7h_gi7 32.57
+16 v7h_gshift_w2 18.95
+16 v7h_seed1 21.05
+16 v7h_seed2 21.54
+16 v7h_snap10konly 69.16
+16 v7h_stk_w1p5_apgrgb 9.94
+16 v7h_stk_w1p5_ddim50 68.98
+16 v7h_stk_w1p5_ddpm200 9.38
+16 v7h_stk_w1p5_ddpm50 6.81
+16 v7h_stk_w1p5_fdg1 10.03
+16 v7h_stk_w1p5_fdg1p25 8.96
+16 v7h_stk_w1p5_snaphi 8.99
+16 v7h_stk_w1p5_snaplo 7.70
+16 v7h_stk_w1p5_snaplo_seed1 7.16
+16 v7h_stk_w1p5_snaplo_seed2 8.02
+16 v7h_stk_w1p5_snapmid 8.84
+16 v7h_stk_w2_apgfull 13.42
+16 v7h_stk_w2_apgmom 13.15
+16 v7h_stk_w2_apgproj 10.89
+16 v7h_stk_w2_apgrgb 12.68
+16 v7h_stk_w2_fdg1 11.80
+16 v7h_stk_w2_fdg1p25 9.82
+16 v7h_stk_w2p5_fdg1 18.33
+16 v7h_stk_w2_snapmid 9.04
+16 v7h_stk_w3_apgrgb 37.14
+16 v7h_uncond0 32.15
+16 v7_lowres 16.66
+16 v7lr_gbk12_w2_seed1 7.08
+16 v7lr_seed1 15.29
+16 v7s_autog10k_w1p5 13.95
+16 v7s_autog10k_w1p5_seed1 15.17
+16 v7s_cfg4 28.00
+16 v7s_cfg4_seed1 27.75
+16 v7s_gbk12s10k_w1p5 10.54
+16 v7s_gbk12s10k_w1p5_seed1 10.28
+16 v7s_gbk12_w2 12.80
+16 v7s_gbk12_w2_seed1 12.74
+16 v7s_gbk20_w2 25.31
+20 v7h_r20_autog10k_w1p5 31.78
+20 v7h_r20_autog10k_w1p5_seed1 31.24
+20 v7h_r20_bk12only 179.63
+20 v7h_r20_bk12_w2 35.85
+20 v7h_r20_bk16only 94.02
+20 v7h_r20_bk16s10k_w1p5 29.66
+20 v7h_r20_bk16s10k_w1p5_seed1 28.72
+20 v7h_r20_bk16_w2 32.89
+20 v7h_r20_bk16_w2_seed1 32.09
+20 v7h_r20_bk16_w2_seed2 33.26
+20 v7h_r20_bk24only 66.07
+20 v7h_r20_bk24_w2 46.62
+20 v7h_r20_bk32_w2 59.13
+20 v7h_r20_cfg4 45.92
+20 v7h_r20_cfg4_seed1 48.14
+20 v7h_r20_cfg4_seed2 47.05
+20 v7s_r20_autog10k_w1p5 39.13
+20 v7s_r20_bk16s10k_w1p5 36.31
+20 v7s_r20_bk16_w2 45.81
+20 v7s_r20_cfg4 63.32
+24 v7h_r24_autog10k_w1p5 53.36
+24 v7h_r24_autog10k_w1p5_seed1 54.77
+24 v7h_r24_bk12_w2 57.70
+24 v7h_r24_bk16only 173.39
+24 v7h_r24_bk16s10k_w1p5 48.70
+24 v7h_r24_bk16s10k_w1p5_seed1 47.86
+24 v7h_r24_bk16_w2 60.41
+24 v7h_r24_bk16_w2_seed1 57.78
+24 v7h_r24_bk20_w2 66.20
+24 v7h_r24_bk32only 60.16
+24 v7h_r24_bk32_w2 101.67
+24 v7h_r24_cfg4 79.80
+24 v7h_r24_cfg4_seed1 78.68
+24 v7s_r24_autog10k_w1p5 66.83
+24 v7s_r24_bk16s10k_w1p5 60.20
+24 v7s_r24_bk16_w2 78.18
+24 v7s_r24_cfg4 99.47
+32 v7h_r32_autog10k_w1p5 75.23
+32 v7h_r32_bk16_w2 91.26
+32 v7h_r32_bk24s10k_w1p5 69.27
+32 v7h_r32_bk24_w2 77.45
+32 v7h_r32_bk48_w2 113.93
+32 v7h_r32_cfg4 96.85
+FAIR FD@12 floor (3000 held-out real via to_tensor) = 3.37
+FAIR FD@16 runs_out/probe_palhead_eval/s16 (n=3304) = 78.34
+FAIR FD@16 runs_out/probe_palhead_soft_eval/s16 (n=3304) = 52.09
+FAIR FD@16 runs_out/probe_paltok_eval/s16 (n=3304) = 18.18
+FAIR FD@16 runs_out/probe_selfq_eval/s16 (n=3304) = 42.55
+FAIR FD@16 runs_out/probe_selfq_nosc_eval/s16 (n=3304) = 47.23
+FAIR FD@16 runs_out/probe_sgen_eval/s16 (n=3304) = 61.66
+FAIR FD@16 runs_out/probe_tv10_eval/s16 (n=3304) = 569.35
+FAIR FD@16 runs_out/probe_tv3_eval/s16 (n=3304) = 46.57
+FAIR FD@16 runs_out/probe_tv_autog2_eval/s16 (n=3304) = 124.87
+FAIR FD@16 runs_out/probe_tv_autog4_eval/s16 (n=3304) = 93.03
+FAIR FD@16 runs_out/probe_tv_cfg1p5_eval/s16 (n=3304) = 74.69
+FAIR FD@16 runs_out/probe_tv_cfg2_eval/s16 (n=3304) = 51.04
+FAIR FD@16 runs_out/probe_tv_cfg7_eval/s16 (n=3304) = 65.53
+FAIR FD@16 runs_out/probe_tv_cont_eval/s16 (n=3304) = 46.91
+FAIR FD@16 runs_out/probe_tv_ddim50_eval/s16 (n=3304) = 203.56
+FAIR FD@16 runs_out/probe_tv_s32to16/s16 (n=3304) = 52.82
+FAIR FD@16 runs_out/v7_lowres_s32to16/s16 (n=3304) = 84.07
+FAIR FD@20 floor (3000 held-out real via to_tensor) = 12.14
+FAIR FD@24 floor (3000 held-out real via to_tensor) = 12.96
+FAIR FD@32 floor (3000 held-out real via to_tensor) = 13.77

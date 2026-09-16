@@ -82,6 +82,11 @@ def main():
     p.add_argument("--depth", type=int, default=12)
     p.add_argument("--bs_scale", type=float, default=0.35)
     p.add_argument("--sigma", type=float, default=2.0)
+    p.add_argument("--visible_only", action="store_true",
+                   help="A1b: supervise RGB only where the ground-truth pixel is opaque. 62%% of tokens are zeros "
+                        "because most pixels are transparent, and A1 collapsed to predicting zero everywhere "
+                        "(visible-pixel RGB accuracy 0.002 at full masking). Transparent pixels carry no artwork "
+                        "and are zeroed at render time anyway, so training on them only teaches the zero prior.")
     p.add_argument("--ema", type=float, default=0.999)
     p.add_argument("--snap_every", type=int, default=20000)
     p.add_argument("--max_side", type=int, default=32,
@@ -129,11 +134,16 @@ def main():
         m = torch.rand(B, L, device=dev) < t[:, None]
         inp = torch.where(m, torch.full_like(ids, MASK), ids)
         logits = model(inp, pix_idx, ch_idx, t, cond, b)
-        if m.any():
-            tgt = smooth_target(ids[m], args.sigma)
-            lp = F.log_softmax(logits[m], -1)
+        sup = m
+        if args.visible_only:
+            alpha = ids[:, ch_idx == 3]                      # B, H*W  ground-truth alpha per pixel
+            opaque_tok = (alpha >= 128)[:, pix_idx]          # B, L    does this token's pixel carry artwork
+            sup = m & (opaque_tok | (ch_idx == 3)[None])     # keep every alpha token, drop invisible RGB
+        if sup.any():
+            tgt = smooth_target(ids[sup], args.sigma)
+            lp = F.log_softmax(logits[sup], -1)
             per = -(tgt * lp).sum(-1)
-            w = (1.0 / t)[:, None].expand_as(m)[m]
+            w = (1.0 / t)[:, None].expand_as(sup)[sup]
             loss = (per * w).mean()
         else:
             loss = logits.sum() * 0.0

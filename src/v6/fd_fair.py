@@ -29,12 +29,38 @@ from train_cond import to_tensor  # noqa: E402
 from sample_cond import to_rgba  # noqa: E402
 
 
-def real_split():
-    """Same seed-0 shuffle as eval_probe.sh; returns (reference paths, held-out unique paths)."""
+def native_sizes(paths):
+    """max(side) of every sprite, cached: 75k PIL header reads otherwise cost a minute per call."""
+    cache = Path("runs_out/native_sizes.json")
+    d = json.load(open(cache)) if cache.exists() else {}
+    miss = [p for p in paths if p not in d]
+    for p in miss:
+        d[p] = max(Image.open(p).size)
+    if miss:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        json.dump(d, open(cache, "w"))
+    return d
+
+
+def real_split(native_R=None):
+    """Same seed-0 shuffle as eval_probe.sh; returns (reference paths, held-out unique paths).
+
+    native_R keeps only sprites that are *natively* at most R px, i.e. never BOX-downscaled by to_tensor.
+    Two thirds of oga_clean is >=25 px art squashed into the low buckets, which makes the default 16 px
+    reference set soft; the native protocol scores against real low-res pixel art only (2026-09-16)."""
     real = glob.glob("data/oga_clean/**/*.png", recursive=True) + glob.glob("data/oga_clean/*.png")
+    if native_R:
+        # the two globs above list every top-level sprite twice; harmless in the default protocol (3000 of
+        # 75k entries) but the native pool is small enough that duplicates would eat the held-out floor.
+        real = sorted({p.replace("\\", "/") for p in real})
+        sz = native_sizes(real)
+        real = [p for p in real if sz[p] <= native_R]
+        print(f"native <= {native_R}px: {len(real)} sprites", flush=True)
     random.seed(0)
     random.shuffle(real)
-    ref = real[:3000]
+    # native pools are small (2,675 sprites at 16 px): split them in half instead of taking a fixed 3000,
+    # so the real-vs-real floor still has a disjoint set to score.
+    ref = real[:len(real) // 2] if native_R else real[:3000]
     refset = {p.replace("\\", "/") for p in ref}
     held = sorted({p.replace("\\", "/") for p in real} - refset)
     random.seed(2)
@@ -60,13 +86,16 @@ def main():
     ap.add_argument("--gen", nargs="*", default=[])
     ap.add_argument("--floor", action="store_true")
     ap.add_argument("--out", default=None, help="json to append results into")
+    ap.add_argument("--native", action="store_true",
+                    help="reference/floor from sprites natively <= R px (no downscaled art)")
     args = ap.parse_args()
     R = args.size
-    ref, held = real_split()
-    ref_files = dump_totensor(ref, f"runs_out/ref_totensor_s{R}", R)
+    ref, held = real_split(R if args.native else None)
+    tagn = "_native" if args.native else ""
+    ref_files = dump_totensor(ref, f"runs_out/ref{tagn}_totensor_s{R}", R)
     res = {}
     if args.floor:
-        held_files = dump_totensor(held[:3000], f"runs_out/heldout3000_totensor_s{R}", R)
+        held_files = dump_totensor(held[:3000], f"runs_out/heldout3000{tagn}_totensor_s{R}", R)
         res["floor_heldout3000"] = round(F.fd(held_files, ref_files, R), 2)
         print(f"FAIR FD@{R} floor (3000 held-out real via to_tensor) = {res['floor_heldout3000']}", flush=True)
     for g in args.gen:

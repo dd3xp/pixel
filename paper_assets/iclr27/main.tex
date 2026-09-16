@@ -1,0 +1,634 @@
+\documentclass{article} % For LaTeX2e
+\usepackage[T1]{fontenc} % makes Times available under XeTeX/tectonic; harmless with pdflatex
+\usepackage{iclr2027_conference,times}
+
+% Optional math commands from https://github.com/goodfeli/dlbook_notation.
+\input{math_commands.tex}
+
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{bm}
+
+% Visible marker for results that are still running or claims that need a final check.
+% Every \todo must be resolved (or the cell removed) before submission.
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO:~#1]}}}
+\newcommand{\sg}{\operatorname{sg}}
+\newcommand{\blow}{b_{\mathrm{low}}}
+\newcommand{\eref}{e_{\mathrm{ref}}}
+\newcommand{\nfe}{\textsc{nfe}}
+\newcommand{\pmsd}[1]{{\scriptsize$\pm$#1}}
+
+% Title option 1 of paper_assets/iclr27_abstract.md (recommended). Alternatives:
+%  (2) Cross-Resolution Guidance, Internalized: One-Pass Generation of 12--24 px Pixel-Art Sprites
+%  (3) Guiding Tiny Sprites with Their Own Lower Resolution
+\title{Your Lower Resolution Is Your Best Weak Model:\\ Cross-Resolution Guidance for Tiny Pixel-Art Diffusion}
+
+% Anonymous submission: \iclrfinalcopy stays commented out.
+\author{Anonymous authors\\Paper under double-blind review}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Text-to-image models fail at the smallest images people draw on purpose: 12--24\,px RGBA game sprites, where every
+pixel is a design decision and a large generator followed by downscaling or learned pixelization blurs exactly those
+decisions. We train a pixel-space diffusion model over a ladder of resolution buckets and show that it contains its own
+best weak model: the same network queried under a \emph{lower} resolution label (optionally through an early snapshot)
+yields a structure-aligned, lower-contrast prediction whose difference from the target-resolution prediction is a
+precise guidance direction. The effect is directional---a higher or a random bucket hurts---and it is not a
+denoising-error correction: the MSE-optimal extrapolation weight never exceeds 1.07, on forward-noised and on
+self-rolled states alike. We then internalize this reference with a guidance-free-training objective, so that a single
+forward pass reproduces and surpasses the two-pass rule without storing any extra weights; with an empty-caption or a
+random-condition reference, the identical recipe is 39\% and 10\% worse. At 16\,px the internalized model lowers FD from
+11.28 (best-tuned CFG) to 7.23 at one network evaluation, and to 6.25 when combined with independent-condition
+guidance, 16\% below the strongest training-free baseline; it leads at 20 and 24\,px as well ($-30\%$, $-34\%$), and an
+8\,px rung extends the rule to 12\,px. Generating with gpt-image-2 or nano-banana-2 and then downscaling, applying
+PixelOE, or applying learned pixelization gives a 3--7$\times$ higher FD at 16\,px. We also report where the idea does
+not transfer: SDXL's original-size conditioning is not a usable reference.
+\end{abstract}
+
+% ================================================================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Game sprites are among the smallest images anyone draws on purpose: an item or a character on a 12--24\,px RGBA canvas,
+built from hard edges, a handful of flat colour regions and a transparent background. At these sizes there is no texture
+in which to hide a mistake. One wrong pixel changes the silhouette, and one blended colour reads as blur. The obvious
+recipe---prompt a large text-to-image model and shrink its output, or run a pixelization method on it---produces
+something recognisable but not a sprite: the result keeps the soft shading and the many colours of an illustration
+(Figure~\ref{fig:external}). Measured against held-out sprites, such pipelines are 3--7$\times$ further from the data than
+the model we train here (Section~\ref{sec:external}).
+
+We therefore train a dedicated generator: a 72.5M-parameter pixel-space UNet that denoises RGBA sprites directly,
+conditioned on a frozen CLIP text encoder and on a \emph{resolution bucket} label that tells it which of seven canvas
+sizes it is drawing on. Every sprite is also shown, box-downsampled, at every lower bucket, so the buckets share one
+population of objects and differ only in grid size. With a recaptioned corpus, this model already beats the large-model
+pipelines by a wide margin. What remains is the familiar gap between a trained diffusion model and its data, which
+guidance is meant to close. Classifier-free guidance \citep[CFG;][]{HoSalimans2022} closes little of it here: at its best
+weight it stops at FD 11.28 against a real-data floor of 3.45 at 16\,px.
+
+Our starting observation is that a bucketed model already contains a good weak model of itself. Queried on the same noisy
+input and the same caption but under the label of a \emph{lower} bucket (12 when drawing at 16\,px), the network returns
+a prediction on the same grid, with the same layout, but with systematically lower local contrast. Using it as the
+reference of autoguidance-style extrapolation \citep{Karras2024}, $e = \eref + w\,(e_{\text{strong}} - \eref)$, is a
+training-free guidance rule at CFG's cost, and composing it with an early EMA snapshot strengthens it further. This
+reference is \emph{directional}: a higher or a uniformly random bucket makes samples worse than CFG.
+
+Our main contribution is to \emph{internalize} this reference. Following guidance-free training
+\citep[GFT;][]{Chen2025gft}, we reparameterize the model's prediction as
+$\beta\,s_\theta(x_t, c, b, \beta) + (1-\beta)\,\sg[r(x_t, c, \blow)]$, where the stop-gradient reference $r$ is an early
+snapshot of the model queried under the lower bucket, and train it on the ordinary denoising target. At the optimum,
+$s_\theta$ with $\beta = 1/w$ \emph{is} the guided prediction, so sampling needs one network evaluation per step and no
+stored snapshot. The training recipe is GFT's; the reference is not, and the reference is what matters: with GFT's
+empty-caption reference the identical recipe reaches 10.05, with an independent-condition reference 7.96, and with our
+cross-resolution reference 7.23, reproduced by an independent re-training (7.20).
+
+\paragraph{Contributions.}
+\begin{itemize}[leftmargin=1.2em,itemsep=1pt,topsep=2pt]
+  \item A pixel-space, resolution-bucketed text-to-sprite diffusion model for 12--24\,px RGBA, evaluated with a
+  pipeline-matched FD protocol, and the observation that its own lower-resolution belief is a strong, training-free
+  guidance reference (Section~\ref{sec:method}).
+  \item A one-pass internalization of that reference. At 16\,px it lowers FD from 11.28 (best CFG) to 7.23 at 1
+  \nfe{} per step, and to 6.25 $\pm$ 0.09 when combined with independent-condition guidance \citep[ICG;][]{Sadat2024icg}
+  at 2 \nfe{}, 16\% below ICG alone, the strongest training-free baseline we evaluated
+  (Section~\ref{sec:main16}). It also leads at 20 and 24\,px (Section~\ref{sec:otherres}).
+  \item Controls that isolate the reference as the source of the gain. They include plain GFT, an internalized ICG
+  reference, an online lower-bucket reference, fine-tuning alone and a second training run (Section~\ref{sec:controls}).
+  They are complemented by an analysis of what a good reference needs: a lower (not higher or random) resolution, output
+  space rather than embedding space, and degradation along a condition the model actually uses
+  (Section~\ref{sec:why}).
+  \item An external comparison on a shared protocol against two commercial text-to-image models combined with
+  downscaling, PixelOE \citep{PixelOE2024} and learned pixelization \citep{Wu2022} (Section~\ref{sec:external}), and a
+  negative result: SDXL's size conditioning does not give a usable reference.
+\end{itemize}
+
+% ================================================================================================================
+\section{Related work}
+\label{sec:related}
+
+\paragraph{Guidance references.}
+CFG \citep{HoSalimans2022} extrapolates the conditional prediction away from an unconditional one. Many variants keep
+that reference and reshape the update: guidance intervals \citep{Kynkaanniemi2024}, APG \citep{Sadat2024apg}, frequency
+decoupling \citep{Sadat2025fdg}, CADS \citep{Sadat2024cads}, CFG++ \citep{Chung2024} and feedback or stage-wise schedules
+\citep{Koulischer2025,TVCFG2025}. A second line replaces the reference. Autoguidance \citep{Karras2024} uses a smaller or
+less-trained version of the same model. Training-free weak predictions come from perturbed self-attention
+\citep[PAG, SAG, SEG;][]{Ahn2024,Hong2023,Hong2024}, sliding windows \citep{SWG2024}, stochastic sub-networks
+\citep{S2Guidance2025}, a random condition or a perturbed time embedding \citep[ICG, TSG;][]{Sadat2024icg}, or a
+semantically degraded text condition \citep[CDG;][]{CDG2026}. Other weak predictions come from auxiliary or internal
+heads \citep{IG2025,SGGBR2026,SSG2026}. CDG is closest in spirit: it too degrades one condition of the same network.
+It degrades the \emph{text}, whereas we degrade the \emph{resolution label} and keep the caption fixed. We run CDG, ICG,
+TSG, SEG and PAG under our protocol (Table~\ref{tab:guidance}).
+
+\paragraph{Guidance without a second pass.}
+Guidance distillation \citep{Meng2023distill} regresses a student onto a guided teacher. Model guidance
+\citep{Tang2025mg} and guidance-free training \citep{Chen2025gft} instead change the training objective so that its fixed
+point is the guided prediction. GFT does this with a stop-gradient unconditional reference, a scalar $\beta$ input, and
+the true noise as the target, and reports parity with CFG. We use GFT's objective unchanged and swap its reference.
+Our $\beta$ input reuses the guidance-scale embedding of latent consistency models \citep{Luo2023lcm}.
+
+\paragraph{Resolution conditioning.}
+Multi-resolution training with a size or bucket label is standard: aspect-ratio bucketing \citep{NovelAI2022}, SDXL's
+micro-conditioning \citep{Podell2023}, Matryoshka diffusion \citep{Gu2023}, FiT \citep{Lu2024} and simple diffusion
+\citep{Hoogeboom2023}. SDXL documents that a small \texttt{original\_size} reproduces the blur of low-resolution training
+images, and common practice passes it to the negative branch of CFG \citep{diffusers}. We test this as a reference in
+Section~\ref{sec:sdxl} and find no benefit. To our knowledge, no prior work uses a model's own lower-resolution label as a
+guidance reference or internalizes one.
+
+\paragraph{Pixel art.}
+Most pixel-art work converts an existing image, by optimisation \citep{Gerstner2012}, contrast-aware downscaling
+\citep[PixelOE;][]{PixelOE2024} or learned pixelization \citep{Han2018,Wu2022}. Generative approaches include GANs for
+character sprites \citep{Coutinho2022}, pose-conditioned sprite sheets \citep{SpriteSheetDiffusion2024}, a
+palette-conditioned small DDPM \citep{PixDiffPIG}, SD-$\pi$XL, which optimises one image by score distillation from SDXL
+\citep{Binninger2024}, and community LoRAs such as Pixel Art XL \citep{PixelArtXL}. We compare against conversion
+pipelines applied to strong generators; SD-$\pi$XL costs about 8 GPU-hours per sprite (Section~\ref{sec:external}). For
+evaluation we follow \citet{Stein2023} and use DINOv2 features \citep{Oquab2023} rather than Inception
+\citep{Heusel2017,Parmar2022}.
+
+% ================================================================================================================
+\section{Method}
+\label{sec:method}
+
+\subsection{A resolution-bucketed pixel-space sprite model}
+\label{sec:model}
+
+We generate RGBA sprites on an $R \times R$ canvas, $R \in \{12, 16, 20, 24\}$, from a caption $c$. The denoiser
+$\epsilon_\theta(x_t, t, c, b)$ is a UNet (diffusers \texttt{UNet2DConditionModel}; 72.5M parameters; channel widths
+128/256/512; two cross-attention stages at $R$ and $R/2$; no attention at $R/4$ except the mid block). It operates
+directly on the 4-channel image. Text enters through cross-attention to the 77 token states of a frozen CLIP ViT-B/32
+text encoder \citep{Radford2021}. The resolution bucket $b \in \mathcal{B} = \{12, 16, 20, 24, 32, 48, 64\}$ enters as a
+class embedding added to the timestep embedding, and it is never dropped. We train with $\epsilon$-prediction
+\citep{Ho2020}, a cosine schedule with $T = 1000$, AdamW at a constant learning rate of $5\cdot10^{-5}$, EMA 0.999 and
+10\% caption dropout. We sample with 100 ancestral DDPM steps from the EMA weights.
+
+\paragraph{Data.}
+The corpus combines sprites from OpenGameArt \citep{OpenGameArt} with the Kenney and Liberated Pixel Cup packs. Each
+sprite is centred on a transparent canvas at its native bucket (the smallest bucket that fits it) with a hard alpha
+threshold. It is additionally fed, premultiplied-box-downsampled, to every bucket in $\{12, 16, 20, 24\}$ at least 25\%
+below its native size. The low buckets therefore see the same population of objects as the native ones. All 5,928
+evaluation sprites are excluded (180,533 training rows including the low-bucket copies). The original BLIP captions
+\citep{Li2022blip} were nearly uninformative: 15.4\% of rows read ``a pixel art sprite'' and only 23.5\% are distinct. We
+recaptioned all 43,342 unique images with gemini-3-flash \citep{Gemini3}, presented as image grids. This yields usable
+captions for 94.8\% of them, 98.6\% distinct, with a median of 12 words (Appendix~\ref{app:recap}). The main model
+\textbf{v7r} is trained from scratch for 80k steps on the recaptioned corpus. \textbf{v7h} is the same recipe on the BLIP
+captions and is used only where stated.
+
+\subsection{The lower resolution as a weak reference}
+\label{sec:crossres}
+
+All guidance rules we compare combine the target-resolution prediction
+$e_{\text{strong}} = \epsilon_\theta(x_t, t, c, b_R)$ with a reference $\eref$ computed on the same $x_t$:
+\begin{equation}
+  \tilde e \;=\; \eref + w\,\bigl(e_{\text{strong}} - \eref\bigr). \label{eq:guide}
+\end{equation}
+CFG uses $\eref = \epsilon_\theta(x_t, t, \varnothing, b_R)$. Autoguidance \citep{Karras2024} uses an early EMA snapshot
+$\theta_{\text{snap}}$ under the same condition. A bucketed model offers a third choice with no extra weights: the same
+network, input and caption under a \emph{lower} bucket,
+\begin{equation}
+  \eref^{\text{label}} = \epsilon_\theta(x_t, t, c, \blow), \qquad
+  \eref^{\text{comp}} = \epsilon_{\theta_{\text{snap}}}(x_t, t, c, \blow), \qquad \blow < b_R. \label{eq:ref}
+\end{equation}
+We use $\blow = 12$ at 16\,px and $\blow = 16$ at 20 and 24\,px. The \emph{composed} reference evaluates the snapshot
+under the lower label. It is a single weak forward pass, not a sum of two guidance terms. Both rules cost 2 \nfe{} per
+step, like CFG, and we use $w = 2$ (label) and $w = 1.5$ (composed). Because only the label differs, the reference is
+structure-aligned with the strong prediction by construction. On v7h, samples drawn from the 12\,px belief alone at
+16\,px have about the strong model's colour count (78 vs.\ 73 median colours) but much lower local contrast (mean
+adjacent $|\Delta\mathrm{RGB}|$ 21.6 vs.\ 32.0; real sprites 30.2; Appendix~\ref{app:v7h}). For v7r, $\theta_{\text{snap}}$
+is the 10k-step EMA of an independent 10k-step run with v7r's recipe; v7r itself kept snapshots only every 20k steps.
+
+\subsection{Internalizing the reference}
+\label{sec:internal}
+
+The training-free rule needs two passes per step and, in its composed form, a stored snapshot. We fold it into the
+weights with the objective of GFT \citep{Chen2025gft}, replacing GFT's unconditional reference by the composed
+cross-resolution reference. The network gains a scalar input $\beta \in (0, 1]$, and its noise prediction during
+training is parameterized as
+\begin{equation}
+  \hat\epsilon_\beta(x_t, t, c, b) \;=\; \beta\, s_\theta(x_t, t, c, b, \beta) \;+\; (1-\beta)\, \sg\!\bigl[r(x_t, t, c)\bigr],
+  \qquad r = \epsilon_{\theta_{\text{snap}}}(x_t, t, c, \blow(b)), \label{eq:gft}
+\end{equation}
+trained with $\mathcal{L} = \mathbb{E}\,\|\hat\epsilon_\beta - \epsilon\|^2$ on ordinary forward-noised data. Here
+$\sg$ is the stop-gradient and $\blow(b)$ is the reference rung (12 for 16, 16 for 20 and 24). Because the reference is
+fixed given $(x_t, c)$, the population optimum satisfies
+$\beta s^\star + (1-\beta) r = \mu := \mathbb{E}[\epsilon \mid x_t, c, b]$, i.e.
+\begin{equation}
+  s^\star(x_t, t, c, b, \beta) \;=\; r + \tfrac{1}{\beta}\,(\mu - r). \label{eq:fixedpoint}
+\end{equation}
+Setting $\beta = 1/w$ at inference therefore produces, in \emph{one} forward pass, the guided rule of Eq.~\eqref{eq:guide}
+with reference $r$ (with the Bayes denoiser $\mu$ in place of the finite network). The snapshot is used only to compute
+training targets and is not needed at inference. Section~\ref{sec:why} explains why we use this reparameterization rather
+than a learned corrector: a module trained with the plain denoising loss cannot learn to extrapolate away from this
+reference.
+
+\paragraph{Implementation.}
+$\beta$ is embedded like LCM's guidance scale \citep{Luo2023lcm}: a 256-d sinusoidal embedding of $1000\beta$, mapped by
+a \emph{zero-initialized} linear layer (diffusers \texttt{time\_cond\_proj}, 32,768 parameters) and added to the timestep
+features. At step 0 the model is therefore exactly v7r. We draw $\beta \sim \mathcal{U}(0.4, 1)$, set $\beta = 1$ for a
+random 25\% of rows (this keeps the plain model trained) and for all rows of the 12\,px bucket (no lower rung). We
+fine-tune from v7r for 10k steps with v7r's data, batch sizes, optimizer and EMA. The reference is a no-gradient forward
+of the frozen snapshot, so training costs one extra forward pass for the rows with $\beta < 1$. At inference we use
+$w = 1.5$ ($\beta = 2/3$) with 1 \nfe{} per step. We call this model \emph{internalized cross-resolution guidance}.
+
+\subsection{Combining with independent-condition guidance}
+\label{sec:stack}
+
+The internalized reference degrades the resolution axis. ICG \citep{Sadat2024icg} degrades the text axis: its reference
+replaces the caption embedding by i.i.d.\ Gaussian noise with the embedding's standard deviation, redrawn at every step.
+The two compose at 2 \nfe{} per step:
+\begin{equation}
+  \tilde e = s_\theta(x_t, t, \hat c, b_R, \beta) + w_{\text{ICG}}\bigl(s_\theta(x_t, t, c, b_R, \beta) - s_\theta(x_t, t, \hat c, b_R, \beta)\bigr),
+  \qquad \hat c \sim \mathcal{N}\!\bigl(0, \mathrm{std}(c)^2 I\bigr), \label{eq:stack}
+\end{equation}
+where both passes use the internalized model at the same $\beta$. We use internal weight $1/\beta = 1.25$ and
+$w_{\text{ICG}} = 1.5$. Stacking plain CFG on the internalized model instead hurts (8.07--8.34 vs.\ 7.63 on v7h, seed 0;
+Appendix~\ref{app:v7h}).
+
+% ================================================================================================================
+\section{Experiments}
+\label{sec:exp}
+
+\subsection{Protocol}
+\label{sec:protocol}
+
+\paragraph{Matched FD.}
+For every configuration we draw one sample for each of 3,000 held-out captions. These are the recaptions of 3,000
+held-out sprites, so the prompt distribution matches the data. Samples are generated in three chunks of 1,000 with seeds
+$s, s{+}1, s{+}2$; ``seed $s$'' in the tables refers to this. The reference set is 3,000 further real sprites, disjoint
+from the held-out ones and from training, passed through the same canvas preprocessing as the training data. Our primary
+metric is the Fréchet distance of DINOv2-small CLS features \citep{Oquab2023,Stein2023} (FD; lower is better). Features
+are computed at the native resolution $R$: images are composited on white and nearest-neighbour upsampled to 224\,px
+with ImageNet normalization. Scoring the 3,000 held-out real sprites against the reference gives the \emph{floor}: 3.37,
+3.45, 12.14 and 12.96 at 12, 16, 20 and 24\,px. Seed-to-seed standard deviations are 0.06--0.54 at 16\,px. Two
+independent trainings of the same recipe differ by about 0.6 at a single seed and by less than 0.1 in their three-seed
+means. Differences of that order are not interpreted. We report mean $\pm$ sample standard deviation over three seeds
+where marked, otherwise seed 0. \emph{Best CFG} is the lowest-FD CFG weight at each resolution: $w = 1.5$ at 16\,px
+(sweep 11.10 / 12.20 / 15.45 / 20.18 for $w = 1.5 / 2 / 3 / 4$), $w = 2$ at 12 and 20\,px, and $w = 3$ at 24\,px.
+We also report CLIP ViT-B/32 image--text similarity ($100\cos$) and retrieval R@1 of the own caption among 100.
+
+\subsection{Main results at 16\,px}
+\label{sec:main16}
+
+\begin{table}[t]
+\caption{Matched FD-DINOv2 at 16\,px on the recaptioned model v7r (3,000 held-out captions; floor 3.45). \nfe{} per
+sampling step. ``Ours'' rows marked $\dagger$ use no training beyond v7r; the internalized rows fine-tune v7r for 10k
+steps. CLIP and R@1 on the seed-0 samples. Re-training: an independent second fine-tuning with the same recipe.}
+\label{tab:main16}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Method & $w$ & \nfe & seeds 0 / 1 / 2 & FD mean $\pm$ sd & CLIP / R@1 \\
+\midrule
+Real held-out sprites (floor) & -- & -- & -- & 3.45 & 27.66 / 22.6\% \\
+CFG, training default & 4 & 2 & 20.18 / -- / -- & -- & 27.96 / 24.7\% \\
+CFG, best weight & 1.5 & 2 & 11.10 / 10.85 / 11.89 & 11.28 \pmsd{0.54} & 27.68 / 23.1\% \\
+CDG \citep{CDG2026} & 1.5 & 2 & 10.36 / -- / -- & -- & 27.43 / 21.7\% \\
+Autoguidance, 10k snapshot \citep{Karras2024} & 1.5 & 2 & 9.20 / 10.04 / 10.09 & 9.78 \pmsd{0.50} & -- \\
+ICG \citep{Sadat2024icg} & 1.5 & 2 & 7.14 / 7.37 / 7.87 & 7.46 \pmsd{0.37} & 27.72 / 23.4\% \\
+\midrule
+Lower-bucket label reference$^\dagger$ & 2 & 2 & 8.81 / 8.83 / 8.93 & 8.86 \pmsd{0.06} & 27.05 / 18.7\% \\
+Composed reference$^\dagger$ (snapshot + label) & 1.5 & 2 & 8.22 / 8.59 / 8.70 & 8.50 \pmsd{0.25} & 27.32 / 20.3\% \\
+GFT, empty-caption reference \citep{Chen2025gft} & 1.5 & 1 & 9.63 / 10.42 / 10.09 & 10.05 \pmsd{0.40} & \todo{CLIP} \\
+\textbf{Internalized cross-resolution (ours)} & 1.5 & \textbf{1} & 6.79 / 7.68 / 7.22 & \textbf{7.23} \pmsd{0.45} & 27.50 / 22.0\% \\
+\quad re-training & 1.5 & 1 & 7.36 / 6.87 / 7.36 & 7.20 \pmsd{0.28} & -- \\
+\textbf{Internalized + ICG (ours)} & 1.25, 1.5 & 2 & 6.17 / 6.23 / 6.34 & \textbf{6.25} \pmsd{0.09} & \todo{CLIP} \\
+\quad re-training & 1.25, 1.5 & 2 & 6.24 / 6.67 / 6.03 & 6.31 \pmsd{0.33} & -- \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Table~\ref{tab:main16} gives the 16\,px results. Recaptioning already makes the CFG baseline stronger than on BLIP
+captions (best CFG 11.28 vs.\ 12.49 on v7h). Among training-free references the cross-resolution ones clearly beat CFG
+($-21\%$ label, $-25\%$ composed), autoguidance ($-13\%$) and CDG ($-7\%$, seed 0), but on this model they are beaten by
+ICG ($-34\%$). The internalized model reaches 7.23 at \emph{one} network evaluation per step: $-36\%$ against best CFG,
+1.27 below the two-pass composed rule it was trained from (lower at every seed), and level with ICG (7.46) at half
+ICG's cost. An independent re-training gives 7.20 $\pm$ 0.28. Combined with ICG (Eq.~\ref{eq:stack}), it reaches
+\textbf{6.25 $\pm$ 0.09}: 16\% below ICG at equal cost and 45\% below best CFG. The re-training gives 6.31 $\pm$ 0.33,
+so all six values (two trainings $\times$ three seeds) lie below ICG's best seed (7.14). The combination is sensitive to
+its weights, and 1.25/1.5 is the best of the seed-0 neighbourhood we evaluated (internal 1.15/1.25/1.35 with ICG 1.5: 6.39
+/ 6.17 / 6.45; internal 1.25 with ICG 1.25/1.75: 6.27 / 7.40). The internalized model alone is sensitive to $w$ as well
+(1.35 / 1.5 / 1.75: 8.00 / 6.79 / 8.12, seed 0). Qualitatively (Figure~\ref{fig:qual}), CFG samples show bleeding colours
+and noisy interiors, and the internalized rows are cleaner and closer to the real sprites' flat regions and dark outlines.
+Text alignment of the internalized model (CLIP 27.50, R@1 22.0\%) is close to real sprites (27.66, 22.6\%) and above the
+training-free cross-resolution rules, whose same-caption reference removes the text term that CFG adds (R@1 18.7\% for the
+label reference).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_qual16.pdf}
+\caption{16\,px samples from v7r (seed 0; same held-out caption and initial noise in each column; nearest-neighbour
+upsampled on a checkerboard; FD from Table~\ref{tab:main16} in parentheses). Captions, left to right: ear of corn; magic
+wand with a red orb; goblin with a club; green bipedal creature with a pink tongue; magnifying glass with a green lens;
+magenta slime; potion bottle with purple liquid; cowboy with a star; large fire; baked pie (full captions in
+Appendix~\ref{app:prompts}). Columns were chosen from the first 60 held-out prompts for legibility of the real sprite,
+identically for all rows.}
+\label{fig:qual}
+\end{figure}
+
+\begin{table}[t]
+\caption{Training-free guidance references on v7r at 16\,px (seed 0, 2 \nfe{} per step, all used in
+Eq.~\eqref{eq:guide} in place of CFG; best CFG 11.10 at this seed). Implementations follow the original papers; exact
+settings in Appendix~\ref{app:guidance}.}
+\label{tab:guidance}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Method & Reference $\eref$ & Weights / settings $\rightarrow$ FD & Best \\
+\midrule
+CFG & empty caption & $w$ 1.5 / 2 / 3 / 4: 11.10 / 12.20 / 15.45 / 20.18 & 11.10 \\
+CDG \citep{CDG2026} & content tokens $\rightarrow$ empty, padding kept & $w$ 1.5 / 2 / 3: 10.36 / 10.76 / 11.02 & 10.36 \\
+ICG \citep{Sadat2024icg} & Gaussian condition, redrawn per step & $w$ 1.25 / 1.5 / 2: 7.68 / 7.14 / 10.04 & \textbf{7.14} \\
+ICG-label & uniformly random bucket & $w$ 1.5 / 2: 12.23 / 12.68 & 12.23 \\
+TSG \citep{Sadat2024icg} & noised time embedding & SD: $w$ 1.5 / 2.5 / 4: 17.73 / 27.02 / 37.28; DiT: 17.73 & 17.73 \\
+SEG \citep{Hong2024} & blurred self-attention queries & mid $\sigma{=}\infty$: 12.80; d1+u1 $\sigma$ 1 / 2: 16.88 / 26.68 & 12.80 \\
+PAG \citep{Ahn2024} & identity self-attention (mid) & $w$ 1.5 / 2: 12.38 / 12.21 & 12.21 \\
+Autoguidance & 10k EMA snapshot & $w$ 1.5: 9.20 & 9.20 \\
+\midrule
+Ours: label & same network, bucket 12 & $w$ 2: 8.81 & 8.81 \\
+Ours: composed & snapshot under bucket 12 & $w$ 1.5: 8.22 & 8.22 \\
+ICG + lower bucket & Gaussian condition and bucket 12 & $w$ 1.25 / 1.5 / 2: 7.22 / 7.16 / 11.68 & 7.16 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Table~\ref{tab:guidance} lists all training-free references we evaluated. The two that perturb the self-attention
+computation (SEG, PAG) and the time-embedding perturbation (TSG) are worse than tuned CFG. At 16\,px, the mid-block
+self-attention sees only $4\times4$ tokens, which leaves little to perturb. CDG improves slightly on CFG. ICG is the only
+strong external reference; its random-\emph{bucket} variant is harmful (Section~\ref{sec:why}).
+
+\subsection{The reference is what makes internalization work}
+\label{sec:controls}
+
+\begin{table}[t]
+\caption{What the internalized model's gain comes from (16\,px, v7r). All fine-tuned rows use the identical recipe
+(init v7r, 10k steps, $\beta \sim \mathcal{U}(0.4, 1)$ with 25\% $\beta = 1$) and differ only in the training
+reference $r$ of Eq.~\eqref{eq:gft}. Top: 1 \nfe{} at $\beta = 1/1.5$. Bottom: the same models with ICG 1.5 on top
+(2 \nfe{}). $^\ast$compared with the re-training run of the same recipe (7.36 at 10k, seed 0).}
+\label{tab:controls}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+Training reference $r$ & Sampling & seeds & FD \\
+\midrule
+Snapshot under lower bucket (\textbf{ours}) & 1 \nfe{}, $w = 1.5$ & 3 & \textbf{7.23} \pmsd{0.45} (re-training 7.20 \pmsd{0.28}) \\
+Online network under lower bucket, no snapshot & 1 \nfe{}, $w = 1.5$ & 1 & 9.13$^\ast$ \\
+Online network, Gaussian condition (internalized ICG) & 1 \nfe{}, $w = 1.5$ & 3 & 7.96 \pmsd{0.22} \\
+Online network, empty caption (= GFT) & 1 \nfe{}, $w = 1.5$ & 3 & 10.05 \pmsd{0.40} \\
+\midrule
+none (v7r, no fine-tuning) & ICG 1.5 & 3 & 7.46 \pmsd{0.37} \quad (seed 0: 7.14) \\
+Empty caption (GFT), internal guidance off ($\beta = 1$) & ICG 1.5 & 1 & 7.02 \\
+Empty caption (GFT), internal $w = 1.25$ & ICG 1.5 & 1 & 6.63 \\
+Snapshot under lower bucket (ours), internal guidance off & ICG 1.5 & 1 & 6.63 \\
+Snapshot under lower bucket (ours), internal $w = 1.25$ & ICG 1.5 & 3 & \textbf{6.25} \pmsd{0.09} \quad (seed 0: 6.17) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+GFT's recipe alone does not explain the result. Table~\ref{tab:controls} changes only the training reference. With GFT's
+empty-caption reference, the identical recipe internalizes CFG and reaches 10.05, 39\% worse than ours and only 11\%
+better than best CFG. Internalizing ICG's Gaussian-condition reference gives 7.96, 10\% worse than ours and worse than ICG
+applied at sampling time (7.46). Of the references we tried, only the cross-resolution one yields a 1-\nfe{} model that
+beats its own two-pass rule. Within the cross-resolution family, the early snapshot matters: an online reference (the
+network itself at $\beta = 1$ under the lower bucket) reaches only 9.13 against 7.36 for the snapshot reference in the
+same re-training run. Fine-tuning by itself contributes little: with internal guidance switched off ($\beta = 1$), ICG on
+the GFT model moves from 7.14 to 7.02. With ICG on top, our reference is 0.46 better than the empty-caption reference at
+the same internal weight (6.17 vs.\ 6.63). Longer fine-tuning does not help. Our reference reaches 7.47 after 20k steps
+(three seeds) against 7.23 at 10k, and the re-training's curve is 7.66 / 7.39 / 7.36 at 5k / 7.5k / 10k (seed 0). We
+therefore use 10k steps throughout; this choice was made on the evaluation metric (Section~\ref{sec:limits}). The
+internalization also holds on the BLIP-caption model v7h (7.23 $\pm$ 0.34 at 1 \nfe{} vs.\ composed 7.53 $\pm$ 0.19 at
+2 \nfe{}; Appendix~\ref{app:v7h}).
+
+\subsection{Other resolutions: 20, 24 and 12\,px}
+\label{sec:otherres}
+
+\begin{table}[t]
+\caption{Matched FD at 20 and 24\,px (v7r; floors 12.14 / 12.96). ``3s''/``2s'': mean over three/two seeds; otherwise
+seed 0. Reference rung 16 at both resolutions.}
+\label{tab:res2024}
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method & \nfe & 20\,px & 24\,px \\
+\midrule
+Best CFG ($w = 2$ / $w = 3$) & 2 & 34.21 (3s) & 65.87 (3s) \\
+ICG ($w = 1.5$ / $2$) & 2 & 28.30 / 29.73 & 48.82 / 46.21 \\
+Autoguidance, 10k snapshot & 2 & 26.54 (3s) & 52.71 \\
+Lower-bucket label reference, $w = 2$ (ours, training-free) & 2 & 27.73 (3s) & 49.99 \\
+Composed reference, $w = 1.5$ (ours, training-free) & 2 & 25.64 (3s) & 50.26 \\
+\textbf{Internalized, $w = 1.5$ (ours)} & \textbf{1} & \textbf{24.06} \pmsd{0.35} (3s) & 43.35 (2s) \todo{3rd seed} \\
+Internalized $w = 1.25$ + ICG 1.5 (ours) & 2 & 27.39 & \textbf{42.77} \pmsd{1.1} (3s) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+At 20 and 24\,px (Table~\ref{tab:res2024}) the internalized model at 1 \nfe{} is the best single method: $-30\%$ and
+$-34\%$ against best CFG, ahead of ICG at either weight and of every training-free cross-resolution rule. Unlike at 16\,px,
+ICG does not add to it. At 20\,px the combination is worse than the internalized model alone (27.39 vs.\ 24.06; 25.6--25.8
+with ICG 1.25). At 24\,px it is within one seed standard deviation (42.77 $\pm$ 1.1 vs.\ 43.35). The per-resolution
+recommendation is therefore the combination at 16\,px and the internalized model alone at 20 and 24\,px. We attribute
+the difference to ICG, whose own advantage over the cross-resolution rules is specific to 16\,px (at 20\,px it is behind
+all of them), but we have not isolated the cause.
+
+\paragraph{12\,px via an 8\,px rung.}
+v7r has no bucket below 12\,px, so neither the training-free rule nor the internalization applies at 12\,px. There,
+best CFG gives 8.82 (three seeds; floor 3.37) and autoguidance 8.36. We add an 8\,px rung (\textbf{v7r8}): the class
+embedding grows to eight rows, the new row is initialized from the 12\,px row, every sprite of at least 10\,px contributes
+an 8\,px copy (44k rows), and v7r is fine-tuned for 20k steps. At 12\,px the label reference with $\blow = 8$ reaches
+7.50 at $w = 2.5$ (9.77 / 8.15 at $w = 1.5 / 2$), against 8.40 for the best CFG weight on the same model (8.40 / 8.42 /
+8.53 at $w = 1.5 / 2 / 2.5$), i.e.\ $-11\%$ at seed 0 and still improving with $w$ (\todo{$w = 3 / 3.5$ and seeds 1--2}).
+Adding the rung does not hurt 16\,px (CFG 10.58 vs.\ 11.10 on v7r, seed 0). The internalized model on v7r8 (12\,px
+reference rung 8) is training: \todo{12\,px internalized v7r8, three seeds, and its 16\,px regression check}.
+
+\subsection{External systems}
+\label{sec:external}
+
+\begin{table}[t]
+\caption{External comparison on the $n = 200$ protocol: the first 200 held-out recaptions, FD against the same 3,000-sprite
+reference set. At $n = 200$ FD is biased upward (floor 26.53 at 16\,px vs.\ 3.45 at $n = 3000$), so only the comparison
+within a column is meaningful. Large-model renders are produced once at 1024\,px and then converted to each resolution.}
+\label{tab:external}
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method & 16\,px & 20\,px & 24\,px \\
+\midrule
+Real held-out sprites ($n = 200$ floor) & 26.53 & 94.67 & 98.80 \\
+\textbf{Ours: internalized + ICG} (16\,px configuration) & \textbf{27.81} & -- & -- \\
+\textbf{Ours: internalized, 1 \nfe{}} & 29.60 & \textbf{107.03} & \textbf{129.15} \\
+Our model v7r, best CFG & 30.00 & 112.60 & 161.21 \\
+Our model v7r, ICG & 31.72 & 116.72 & 143.85 \\
+\midrule
+gpt-image-2 \citep{GPTImage2} + downscale & 82.23 & 317.62 & 428.51 \\
+gpt-image-2 + PixelOE \citep{PixelOE2024} & 146.32 & 282.51 & 357.97 \\
+gpt-image-2 + Make Your Own Sprites \citep{Wu2022} & 155.20 & 336.66 & 431.21 \\
+nano-banana-2 \citep{NanoBanana2} + downscale & 87.35 & 330.47 & 409.57 \\
+nano-banana-2 + PixelOE & 150.79 & 301.03 & 366.36 \\
+nano-banana-2 + Make Your Own Sprites & 186.95 & 386.73 & 441.40 \\
+SDXL + Pixel Art XL LoRA \citep{Podell2023,PixelArtXL} + downscale & \todo{} & \todo{} & \todo{} \\
+SDXL + Pixel Art XL LoRA + PixelOE & \todo{} & \todo{} & \todo{} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Table~\ref{tab:external} compares against the most common practical alternative: render with a strong text-to-image
+model, then convert to a sprite. Every system receives the same recaption plus a fixed suffix asking for a single object
+on a plain white background. The 1024\,px output is cut out from its background and converted to $R\times R$ in one of
+three ways: by our own training preprocessing (\emph{downscale}), by PixelOE \citep{PixelOE2024}, or by Make Your Own
+Sprites \citep{Wu2022} with the official weights (details in Appendix~\ref{app:externalfig}). Our own rows are recomputed
+on the same 200 prompts. At 16\,px our best configuration is 1.3 above the $n = 200$ floor, while the external pipelines
+are 55.7--160 above it: an FD 3.0--6.7 times ours. The ordering holds at 20 and 24\,px. Learned pixelization is the
+weakest converter at these extreme ratios, and PixelOE is worse than plain downscaling at 16\,px but better at
+20--24\,px. Figure~\ref{fig:external} (appendix) shows why FD separates the systems so clearly. The large models often
+follow the caption more literally, but after conversion their sprites keep soft shading, anti-aliased edges and many
+colours, unlike the flat, outlined style of the data. We did not measure text alignment for the external systems
+(\todo{CLIP for external rows}). SD-$\pi$XL \citep{Binninger2024} optimises each sprite by score distillation from SDXL
+and took 8.2 GPU-hours per 16\,px sprite on our shared node, against well under a second for our sampler
+(Appendix~\ref{app:cost}). An FD over 200 prompts is therefore out of reach, and we show only a small qualitative set
+(\todo{SD-$\pi$XL sprites on the recaptioned prompts; one of about 30 finished}).
+
+% ================================================================================================================
+\section{Why a lower resolution is a good reference}
+\label{sec:why}
+
+This section asks what the reference must satisfy. Its results constrain the design of Section~\ref{sec:method}; they do
+not establish a mechanism.
+
+\paragraph{Direction matters.}
+If any wrong bucket acted as a generic unconditional-like reference, a higher or a random bucket would work as well as a
+lower one. Neither does. On v7r at 16\,px, a bucket drawn uniformly at random at every step (ICG applied to the
+resolution label) gives 12.23 / 12.68 at $w = 1.5 / 2$. That is \emph{worse} than best CFG (11.10, seed 0), whereas the
+lower bucket gives 8.81. On v7h, every higher-bucket reference is worse than best CFG at every resolution (16\,px:
+buckets 20 / 24 / 64 give 17.14 / 17.27 / 19.34 vs.\ 12.24; Appendix~\ref{app:v7h}). On v7h the label also acts as a
+monotone contrast knob: the pure belief's local contrast rises from 21.6 to 31.9 to 40.9 for buckets 12, 24 and 64 at
+16\,px. Only its low-contrast end is useful. Isotropic perturbation of the same embedding (TSG) is harmful at every
+setting we tried (17.73--37.28; Table~\ref{tab:guidance}).
+
+\paragraph{The guidance is not a denoising-error correction.}
+A tempting alternative to Eq.~\eqref{eq:gft} is a learned module that reads the lower-bucket belief and corrects the
+strong prediction, trained with the plain denoising loss. Any such module converges to $\mu$ and can extrapolate away from
+$r$ only as far as the finite network's residual is linearly visible in $d = e_{\text{strong}} - r$. The best such
+extrapolation weight is directly measurable: $w^\star(t) = \mathbb{E}[d \cdot (\epsilon - r)] / \mathbb{E}[d \cdot d]$.
+This is unbiased because $\epsilon - \mu$ has zero mean given $x_t$. On v7h, on 3,000 held-out sprites at 10 timesteps (and 3,000 training
+sprites at 16\,px), $w^\star$ lies in 0.83--1.07 for the label, snapshot and composed references at 16, 20 and 24\,px. It
+is often below 1 on held-out data, and extrapolating to $w = 1.5$ increases the denoising error everywhere (by 1--95\%). On the
+model's own trajectories, obtained by noising a real sprite and running the deployed sampler for $k \in \{1, 5, 20\}$
+steps, $w^\star$ in $x_0$-space stays at or below 1.07 for $k \ge 5$ at all three resolutions (0.64--0.78 is typical at
+$k = 5$; Appendix~\ref{app:wstar}). Guidance with $w \approx 1.5$--2 improves FD while \emph{increasing} per-sample
+regression error. It shapes the distribution, as CFG does, rather than correcting individual predictions. Hence a
+reparameterization whose fixed point is the guided rule (Eq.~\ref{eq:fixedpoint}) is needed; a learned corrector is not
+enough.
+
+\paragraph{The reference must act in output space.}
+The cheapest form of 1-\nfe{} extrapolation acts on the label embedding itself:
+$E[16] + (w-1)(E[16] - E[12])$, used with a single conditional pass. It fails badly on v7h at 16\,px: 39.03 at $w = 1.5$
+and 414.27 at $w = 2$, against 16.39 without any guidance. The lower label is useful only as a second prediction that the
+update extrapolates away from, and the internalization of Section~\ref{sec:internal} keeps it in that role.
+
+\paragraph{A reference must degrade along an axis the model uses.}
+Recaptioning reverses the ranking of the text-axis and resolution-axis references. With BLIP captions (v7h), which the
+model largely ignores, ICG is weak (best 8.88 at $w = 1.25$; 11.29 at $w = 1.5$), and the cross-resolution rules are
+strong (label 8.52, composed 7.53, best CFG 12.49). With informative captions (v7r), ICG becomes the strongest
+training-free reference (7.46), and the cross-resolution rules still help but less (8.86 / 8.50 vs.\ best CFG 11.28).
+A random text condition is a weak reference only when the prediction depends on the text. The resolution label
+matters regardless of caption quality, since every sprite is trained at several buckets. The two axes are complementary
+at 16\,px (Section~\ref{sec:main16}), but only in the internalized form. Placing ICG's condition and the lower bucket in
+the same training-free weak pass gives 7.16, no better than ICG alone (7.14, seed 0), and adding the snapshot to that pass
+is harmful (11.65).
+
+\paragraph{Where it does not transfer: SDXL's size conditioning.}
+\label{sec:sdxl}
+SDXL's \texttt{original\_size} micro-conditioning is the closest public analogue of a resolution label. On 1,000
+COCO-30k captions (Appendix~\ref{app:sdxl}), adding $1\times(e_{c} - e_{c,\text{orig}=512})$ to CFG 5 leaves FD unchanged
+(644.13 vs.\ 644.18). With $\text{orig} = 256$ it is worse (658.98), and without CFG the size reference collapses
+(969.68). The only agreement with our model is directional: keeping the caption in the weak branch beats the common
+\texttt{negative\_original\_size} practice (650.98). We believe that SDXL's size condition encodes the blur of upsampled
+low-resolution training images rather than a coarser target grid, so it does not yield a structure-aligned,
+lower-contrast belief of the same image. The reference is a property of models trained natively over a ladder of grids.
+
+% ================================================================================================================
+\section{Limitations and conclusion}
+\label{sec:limits}
+
+\paragraph{Limitations.}
+(i) \emph{Scope.} Everything is measured on models we trained, from one architecture family, on one corpus of game
+sprites. We have not tested a second domain, and SDXL's size conditioning does not transfer. (ii) \emph{Metric.} FD with
+DINOv2 on images of 12--24\,px, upsampled to 224\,px, assigns one sprite pixel to one or a few patches. It is sensitive to
+exactly the colour and contrast statistics that guidance changes. We report CLIP alignment for most 16\,px rows, but we
+have no human study. The CLIP evaluator also shares its text tower with our model's frozen encoder. (iii) \emph{Tuning.}
+Guidance weights, the ICG combination, the reference rung and the 10k-step fine-tuning length were all selected on the
+same held-out FD that we report; there is no separate validation split. Seed and re-training variation (Section~\ref{sec:protocol})
+is of the same order as some of the smaller differences, which we do not interpret. (iv) \emph{Coverage.} 12\,px needs an
+extra 8\,px rung, and its internalized result is pending. Several 20/24\,px rows are single-seed. The combination with ICG
+helps at 16\,px but not at 20\,px. (v) \emph{Novelty of the objective.} The training objective is GFT's; our claim is the
+reference and the evidence that it, not the objective, carries the gain.
+
+\paragraph{Conclusion.}
+A diffusion model trained over a ladder of resolutions contains its own best weak model: the same network under a lower
+resolution label. Extrapolating away from it is directional, acts in output space and is not an error correction. Folding
+it into the weights with a guidance-free-training objective gives a one-pass sampler that matches or beats every
+training-free guidance rule we tested at 16\,px and is the best single method at 20 and 24\,px. Combined with ICG it reaches 6.25 at 16\,px, against 11.28 for best CFG and 82--187 for
+large-model-plus-conversion pipelines on the shared protocol.
+
+% ================================================================================================================
+\section*{Reproducibility statement}
+Section~\ref{sec:model} and Appendix~\ref{app:details} specify the architecture, data processing, training recipe and
+sampler. Equations~\eqref{eq:gft}--\eqref{eq:stack} and Section~\ref{sec:internal} give the full internalization
+objective with all hyperparameters. Section~\ref{sec:protocol} and Appendix~\ref{app:details} specify the evaluation
+protocol: prompt set, chunked seeding, reference set, preprocessing and floors. Appendix~\ref{app:guidance} gives the exact
+settings of every guidance baseline, and Section~\ref{sec:external} the conversion pipelines for the external systems. We
+will release code for training, sampling and evaluation, the recaptions, and the held-out split
+\todo{anonymous code link in the supplementary material}. The raw sprite corpus carries per-asset licences and will be
+released as a list of sources after a licence audit (see the ethics statement).
+
+\section*{Ethics statement}
+The model generates small game sprites. It adds no capability beyond existing text-to-image systems, and its outputs
+(12--24\,px) have little potential for targeted misuse. Its intended application raises the usual concerns of generative
+art tools, namely the displacement of pixel artists and the reproduction of styles present in the training corpus. The
+training data are community sprites from OpenGameArt and the Kenney and Liberated Pixel Cup packs. OpenGameArt
+submissions carry per-asset licences (CC0, CC-BY, CC-BY-SA, GPL, OGA-BY) that were not recorded at collection time, so a
+per-asset licence audit precedes any release of the corpus. Captions were produced by a commercial vision-language model;
+external baselines were generated through commercial APIs under their terms of use. No human subjects were involved.
+
+\section*{AI use statement}
+% Required by ICLR 2027 (does not count toward the page limit). The authors must complete and confirm this section.
+Generative AI tools were used in this work in the following ways. (a) As part of the method's data pipeline, a
+vision-language model (gemini-3-flash) produced the training and evaluation captions (Section~\ref{sec:model}), and two
+commercial image generators served as external baselines (Section~\ref{sec:external}). (b) An LLM-based coding assistant
+was used to implement and run experiments, to search and verify the literature, and to draft and edit the manuscript.
+\todo{authors: complete the required disclosure per the ICLR 2027 AI policy, e.g.\ which ideas, analyses and text were
+AI-assisted and how they were verified}. The authors reviewed all AI-assisted work and take responsibility for the final
+content, including all text, numbers and claims.
+
+\bibliography{refs}
+\bibliographystyle{iclr2027_conference}
+
+\appendix
+\input{appendix.tex}
+
+\end{document}

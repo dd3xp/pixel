@@ -177,3 +177,14 @@
 [09-04 22:34] cron 巡检: 两条主线均已收官 (基线 32/32, distill2.done); 无监工残留, 无 FAILING, GPU2/3 空闲。项目转入选题/评估阶段(等用户定 ICLR 方向), 无计算任务在跑。
 [09-05 00:02] cron 巡检: 去风险实验 v7 采样进行中, 已出 9915 图(目标约16520), GPU3 100%, 无 FAILING
 [09-05 00:17] cron 巡检: 去风险 v7 采样 13220/约16520, GPU3 100%, 无 FAILING; 无新进展
+[09-11 06:24] patrol start -> patrol_20260911_062441.log
+[09-11 06:24] patrol done
+[09-11 06:28] patrol start -> patrol_20260911_062828.log
+[09-11 06:28] patrol done
+[09-11 06:31] patrol start -> patrol_20260911_063157.log
+[09-11 06:38] skip: previous run still active
+[09-11 06:44] patrol done
+[09-11 06:46] patrol start -> patrol_20260911_064608.log
+[09-11 06:46] patrol done
+[09-11 06:53] patrol start -> patrol_20260911_065317.log
+[09-11 06:53] patrol done

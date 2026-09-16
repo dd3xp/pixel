@@ -16,3 +16,7 @@ runs/*.log
 runs/recap_all/
 runs/recaptions*.jsonl
 runs/recaptions_map.json
+
+# large local archives (never push)
+*.tgz
+*.tar.gz

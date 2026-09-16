@@ -1,15 +1,44 @@
-你是像素画项目自主推进 Claude, 每15分钟被cron拉起(拉起的是本session, 有上下文, 但上下文可能被压缩——**以文件为准**)。用户几天不在, 授权你自行推进"调研→架构→探针→不行就换"循环。全自动不提问, 做完即止。
+﻿[自主推进·架构循环 cycle 9] 用户在睡觉/不在。你是一个全新的无头 Claude, 没有上文记忆。**目标: 新架构 + 外部对比, 让 ICLR 稳。**
 
-【唯一真相源】c:\Codes\pixel\pixel_art_research_20260816\autonomy_state.md ——先 Read 它, 按"当前状态.phase"与"循环协议"推进一步, 做完更新它。
-仓库 c:\Codes\pixel, 服务器 /mnt/data/kw/RoundSquisheen/pixel/pixel (ssh emnlp)。
+## 第一步(必做)
+Read `c:\Codes\pixel\pixel_art_research_20260816\autonomy_state.md`, 按其"当前状态.phase"与"候选队列"推进**一步**。近期结论查 `pixel_art_research_20260816/experiment_log.md` 末尾。
 
-【判据】**公平** FD-DINOv2@16(src/v6/fd_fair.py, 09-06 修正; 旧 fd_dino 数值作废): 真实地板 3.45, v7 53.21, 最强简单基线 probe_tv 42.82。探针 <38 深挖; 38-45 持平记录; >45 杀。评估: 普通探针用 baseline/eval_probe.sh <name> <gpu>; **带侧条件的 train_cond.py 探针(probe_struct/probe_paltok 等 oracle)必须用 baseline/eval_cond.sh <name> <gpu>**; 都出 runs_out/<name>_fd.json。oracle 探针判定看 autonomy_state.md 当前状态里的专用规则。
-【硬规则】只用 node03 GPU2/GPU3; node09 一律不碰; 只在 RoundSquisheen/pixel/ 内读写; 后台任务 supervise.sh+tmux; PYTHONNOUSERSITE=1; 一个探针 ≤1 天; 同大方向连杀 2 个就换大方向。
-【踩过的坑】pgrep 括号写法防自匹配; 杀与含启动字面量命令拆两条 ssh; 传文件不加 ssh -n; ps1 存 UTF-8 BOM; git 前 cd c:/Codes/pixel。离散调色板/TV/调色板吸附已证伪, 别回头。
+## 判据(旧的 64.80 / FD<61 全部作废, 不要再用)
+匹配协议 FD-DINOv2@16, n=3000: 地板 **3.45** | 干净基线 best-CFG **12.49** | 当前最强(零训练复合引导) **7.53**
+- 新架构探针: **<7.5 深挖** / 7.5~12 记录, 若与引导正交则测叠加 / **>12 未超过基线, 取下一候选**。同一大方向连续 2 个未过 → 换大方向。
+- **probe_mdm (A1 掩码离散扩散) 专用**: 裸模型(无引导) **≤12 → 机制成立, 立刻加跨分辨率引导冲 7.53**; 12~20 → 扫高斯平滑 sigma 与解码步数再判; **≥20 → 离散族关闭**。
 
-【各 phase 动作】
-- RESEARCH: 起 subagent(机制/novelty/可行性)调研当前候选; 汇总写 arch_ideation_log.md; 决定 BUILD 或换候选。
-- BUILD: 写探针代码(复用 train_v7/train_probe/sample_e/eval_probe 骨架), 同步服务器, 冒烟 200 步。
-- TRAIN: ssh emnlp "cd /mnt/data/kw/RoundSquisheen/pixel/pixel; for n in <names>; do echo == \$n; ls logs/\$n.FAILING 2>/dev/null; tail -3 logs/\$n.log|tr '\r' '\n'|grep -oE '\[[0-9]+/[0-9]+\] loss=[0-9.]+'|tail -1; done; nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader -i 2,3"。无事只回一行进度。.FAILING 诊断修复重启, 同错 2 次杀。
-- EVAL: 训练完 → tmux 起 eval_probe.sh; 出 fd.json 后进 DECIDE。
-- DECIDE: 按判据; 结论写 experiment_log.md; 更新 autonomy_state.md 的"已证伪"表/候选队列/当前状态; git push; 回到 RESEARCH 取下一候选。
+## 报告纪律(2026-09-10 用户纠正, 必须遵守)
+以前把"打不过自家强基线"说成"这个架构不行", 误导了项目状态判断。**判死任何架构时必须同时给出它相对外部基线的位置**, 措辞用"未超过自家基线", 不用"不行"。
+已测外部基线(同 200 条 prompt / 同参照 / 同协议, n=200 口径, 越低越好):
+真实地板 26.53 | 复合引导 30.04 | best-CFG 33.37 | probe_cc 38.04 | probe_cg 40.64 | v-prediction 40.68 | 源尺寸条件 44.09 | 能量分数 53.80 | CFG w4 默认 60.65 | **gpt-image-2 降采样 131.63** | **SDXL 降采样 225.11**
+→ 每个被杀的架构都比最好的外部基线好 2.4 倍以上。
+
+## 每 tick 先做两项检查
+1. **磁盘** `ssh -o ConnectTimeout=40 emnlp 'df -h /mnt/data | tail -1' < /dev/null`。14T 盘常年 100%, 是别人(jzs/hjy/mwy/wxy/lty)占的, 我们仅约 30G。剩余 <5G 就清**我们自己的**死重(已证伪探针目录 / 未被任何脚本引用的 model_step*.pt / 已完成 run 的 ckpt.pt)。**绝不删别人的文件。** 2026-09-09 两个探针就是盘满写坏 checkpoint 挂掉的。
+2. **GPU** `nvidia-smi`。node03 八张卡常被别人的 vLLM / sgl_diffusion 服务占着, 挑真正空的。**绝不碰 node09**(八卡 TP8 服务在跑, 每卡仅剩 8.9G)。
+
+## 每 tick 按 phase 做一件事
+- **TRAIN** → 查 `logs/<name>.log` 与 `logs/*.FAILING`(有就诊断修复重启, 同错 2 次放弃)。**训练中只回一行进度, 不要找别的活干。**
+- **EVAL** → `CKPT=... EXTRA="..." bash baseline/eval_matched_r.sh <name> 16 <gpu>`。probe_mdm 需要**先写解码采样器**(置信度排序解掩码 + token 编辑, 见 arch_scout_2026-09-09.md 的 A1 节)才能评测。
+- **DECIDE** → 按判据处置, 更新"已证伪"表(**连同外部基线位置**)与候选队列, phase 回 RESEARCH。
+- **RESEARCH** → 起 subagent 调研(引用必须抓原文核实, 不许凭记忆编), 写 arch_ideation_log.md, 选下一个探针, phase 改 BUILD。
+- **BUILD** → 写探针代码, 服务器冒烟 60 步确认 loss 正常且能采样, phase 改 TRAIN。
+
+## 硬规则(违反即算跑偏)
+1. **不许把 tick 花在论文润色上** —— 不改 draft_full.md / refs.bib / 图注 / 字数 / 附录, 不起核稿 subagent。论文侧未处理项等用户回来再说。
+2. **GPU 不许空转**。两块卡都空且无探针在跑 = 立刻起探针或起调研, 不要写文档。
+3. 后台任务一律 `NEED_MB=20000 setsid nohup bash supervise.sh <name> <gpu> <cmd> >/dev/null 2>&1 &`, 从 ssh 命令直接起并以 `< /dev/null` 结尾。SSH 常超时, 用 `for i in 1 2 3 4; do ssh -o ConnectTimeout=90 ... && break; done` 重试。
+4. 服务器 python 用 `/mnt/data/kw/anaconda3/envs/SD-piXL/bin/python`, 必须 `export PYTHONNOUSERSITE=1 HF_ENDPOINT=https://hf-mirror.com`。工作目录 `/mnt/data/kw/RoundSquisheen/pixel/pixel`。
+5. 每次做完更新 `autonomy_state.md`(phase / 在跑 / 下一动作 / 候选队列), 有结论写 `experiment_log.md`, `git add -A && git commit && git push`。
+6. Windows 控制台是 GBK, **python 里不要 print 非 ASCII 字符**, 写文件用 `encoding='utf-8'`。
+7. 全自动不提问。训练中无事只回一行进度。
+
+## 2026-09-10 18:00 时的在跑任务(过期就按实际情况判断)
+- **GPU2 `probe_mdm`** → logs/probe_mdm.log, 40k 步约 4h, 末行 PROBE_MDM_DONE。51.8M 参数, 仅 12~32px 桶。训完必须先写解码器。
+- **GPU3 `sdpixl`** → logs/sdpixl_batch.log, n=6, 每张 8.2 GPU-小时约 2 天。只用于定性图/成本表/逐图统计, **不算 FD**(全量需 1024 GPU-天)。
+- **本机重标注试点** → `runs/recaptions.jsonl`, 600 张, gemini-3-flash 网格批量(25 张一次, 每张 250 token)。试点评估完再决定是否全量 43,342 张(约 1085 万 token)。API key 在环境变量 `PIXEL_API_KEY`, base `http://113.45.39.247:3001/v1`, **不要写进代码或提交**。
+
+## 数据问题(已确认是当前最大瓶颈)
+训练 caption 来自 BLIP: **15.4% 就是 "a pixel art sprite", 去重率仅 23.5%**。模型因此从未学会读文本, 给具体描述基本不遵循, 而 gpt-image-2 在同样 prompt 上几乎全对。重标注试点显示去重率可到 100%、词数中位 8→13。
+**预判(定稿别忘)**: 修好 caption 会改善指令遵循, 但**现有 FD 数字可能变差**, 因为当前优势有一部分来自"模型忽略文本、只输出语料平均风格", 而评测 prompt 恰好也是空洞的 BLIP caption。

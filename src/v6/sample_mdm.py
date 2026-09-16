@@ -39,7 +39,7 @@ def to_rgba(ids, R):
 
 @torch.no_grad()
 def decode(model, cond, R, lab, steps, device, temp=1.0, edit_rounds=0, edit_frac=0.15, seed=0, greedy=False,
-           ctx_ids=None, ctx_mask=None):
+           ctx_ids=None, ctx_mask=None, alpha_first=False):
     B = cond.shape[0]
     L = R * R * CH
     pix_idx = torch.arange(L, device=device) // CH
@@ -53,6 +53,31 @@ def decode(model, cond, R, lab, steps, device, temp=1.0, edit_rounds=0, edit_fra
         ids = torch.where(ctx_mask, ctx_ids, ids)
         unknown = unknown & ~ctx_mask
         conf = torch.where(ctx_mask, torch.ones_like(conf), conf)
+
+    if alpha_first:  # stage 1: silhouette only
+        ch_is_a = (torch.arange(L, device=device) % CH) == 3
+        for s in range(steps // 2):
+            frac = (s + 1) / (steps // 2)
+            t = torch.full((B,), max(1e-3, 1.0 - s / (steps // 2)), device=device)
+            lg = model(ids, pix_idx, ch_idx, t, cond, lab) / max(temp, 1e-4)
+            p_ = F.softmax(lg, -1)
+            pk_, samp_ = p_.max(-1) if greedy else (None, None)
+            if not greedy:
+                samp_ = torch.multinomial(p_.reshape(-1, V), 1, generator=g).reshape(B, L)
+                pk_ = p_.gather(-1, samp_[..., None]).squeeze(-1)
+            cand = unknown & ch_is_a[None]
+            n_un = int(cand[0].sum())
+            tgt_m = int(R * R * math.cos(math.pi * frac / 2))
+            rev = max(1, n_un - tgt_m) if s < steps // 2 - 1 else n_un
+            sc = torch.where(cand, pk_, torch.full_like(pk_, float("-inf")))
+            rk = sc.argsort(dim=-1, descending=True).argsort(dim=-1)
+            nw = cand & (rk < rev)
+            ids = torch.where(nw, samp_, ids); conf = torch.where(nw, pk_, conf); unknown = unknown & ~nw
+            if not cand.any(): break
+        # transparent pixels keep RGB 0 and are never decoded
+        opaque = (ids[:, ch_is_a] >= 128)[:, pix_idx]
+        ids = torch.where(unknown & ~opaque, torch.zeros_like(ids), ids)
+        unknown = unknown & opaque
 
     for s in range(steps):
         frac = (s + 1) / steps
@@ -121,6 +146,10 @@ def main():
     ap.add_argument("--dim", type=int, default=512)
     ap.add_argument("--depth", type=int, default=12)
     ap.add_argument("--max_side", type=int, default=32)
+    ap.add_argument("--alpha_first", action="store_true",
+                    help="A1b decoding: resolve the alpha (silhouette) tokens first, then decode RGB only for the "
+                         "pixels that came out opaque, leaving transparent pixels at zero. Matches --visible_only "
+                         "training, where invisible RGB was never supervised.")
     ap.add_argument("--context_alpha", default=None,
                     help="ORACLE DIAGNOSTIC: directory of real sprites whose ALPHA channel is given to the model as "
                          "context, so it only has to decode RGB. Tests whether probe_mdm's collapse is a missing "
@@ -159,7 +188,7 @@ def main():
             ch = torch.arange(R * R * CH, device=dev) % CH
             ctx_mask = (ch == 3)[None].expand(len(chunk), -1).contiguous()   # alpha channel only
         ids = decode(model, cond, R, lab, a.steps, dev, a.temp, a.edit_rounds, a.edit_frac, a.seed + i, a.greedy,
-                     ctx_ids, ctx_mask)
+                     ctx_ids, ctx_mask, a.alpha_first)
         for k in range(len(chunk)):
             to_rgba(ids[k], R).save(out / f"{i + k:02d}_0.png" if i + k < 100 else out / f"{i + k:05d}.png")
         print(f"[{min(i + a.chunk, len(prompts))}/{len(prompts)}]", flush=True)
