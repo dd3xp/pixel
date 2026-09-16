@@ -1,0 +1,43 @@
+{
+ "gemini-3.1-pro-preview": {
+  "caps": {
+   "0": "Golden horn, crescent shaped, bright yellow with large white highlights and black outline",
+   "1": "Sword, dark purple blade, silver pommel, and golden crossguard pointing upwards and rightwards",
+   "2": "Stone block, isometric view, dark grey with green moss covering the top surface",
+   "3": "Stone monster, dark grey, small legs, two bright yellow eyes, thick black outline",
+   "4": "Grim reaper figure, dark blue hooded cloak, white skull face, holding a silver scythe",
+   "5": "Anime character bust, spiky blue hair, tan skin, surrounded by a bright blue aura",
+   "6": "Armored creature, tall with a conical head, wearing dark purple and grey plated armor",
+   "7": "Police officer, blue uniform and cap, black trousers, holding a small pink object",
+   "8": "Bald human head, tan skin, black outline, single visible blue eye on the side",
+   "9": "Glowing portal or orb, bright white center surrounded by green and blue jagged borders",
+   "10": "Brown"
+  },
+  "dt": 64.9
+ },
+ "gemini-3.8-flash": {
+  "caps": {
+   "0": "White cloth headdress with golden yellow trim and black curved tips",
+   "1": "Sword with a dark purple blade, golden crossguard, and grey pommel",
+   "2": "Stone block with an isometric perspective, covered in green moss on top",
+   "3": "Stone golem with grey rocky skin, two glowing yellow eyes, and stubby limbs",
+   "4": "Grim reaper wearing a dark blue robe and holding a white scythe",
+   "5": "Warrior character with spiky light-blue hair, black outfit, and blue energy aura",
+   "6": "Armored alien warrior with a pointed conical head and purple metallic armor",
+   "7": "Police officer in a blue short-sleeved uniform and cap holding pink spray",
+   "8": "Crawling baby with a large bald peach head and black outlined eyes",
+   "9": "Energy portal with a glowing white center, green jagged edge, and purple border",
+   "10": "unclear abstract shape",
+   "11": "Crescent slash effect glowing yellow and white with a dark brown outer edge",
+   "12": "Handheld green gadget with a circular lens ring and rounded rectangular body",
+   "13": "Golden mushroom with a rounded glowing yellow cap and thick yellow stalk",
+   "14": "Sorcerer viewed from behind, wearing a blue cloak with long black hair",
+   "15": "Emblem showing a blue letter W above Roman numeral II on silver",
+   "16": "Green leaf with a dark outline and a small stem at the top",
+   "17": "Heart shape composed of pink and red shades with lighter diagonal highlights",
+   "18": "Red flag fluttering to the right on a tall red vertical flagpole",
+   "19": "Horned warrior wearing brown and golden armor with a winged bronze helmet"
+  },
+  "dt": 22.5
+ }
+}
