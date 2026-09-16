@@ -42,13 +42,19 @@ def native_sizes(paths):
     return d
 
 
-def real_split(native_R=None):
+def real_split(native_R=None, pool="old"):
     """Same seed-0 shuffle as eval_probe.sh; returns (reference paths, held-out unique paths).
 
     native_R keeps only sprites that are *natively* at most R px, i.e. never BOX-downscaled by to_tensor.
     Two thirds of oga_clean is >=25 px art squashed into the low buckets, which makes the default 16 px
     reference set soft; the native protocol scores against real low-res pixel art only (2026-09-16)."""
     real = glob.glob("data/oga_clean/**/*.png", recursive=True) + glob.glob("data/oga_clean/*.png")
+    if pool == "union":
+        # data/oga3_clean is training data from 09-17 on, so a reference drawn only from oga_clean
+        # penalises a model for learning the new sheets' style even when its sprites get crisper.
+        keep = Path("data/oga3_keep.txt")
+        if keep.exists():
+            real += [f"data/oga3_clean/{l.strip()}" for l in open(keep, encoding="utf-8") if l.strip()]
     if native_R:
         # the two globs above list every top-level sprite twice; harmless in the default protocol (3000 of
         # 75k entries) but the native pool is small enough that duplicates would eat the held-out floor.
@@ -86,12 +92,14 @@ def main():
     ap.add_argument("--gen", nargs="*", default=[])
     ap.add_argument("--floor", action="store_true")
     ap.add_argument("--out", default=None, help="json to append results into")
+    ap.add_argument("--pool", choices=["old", "union"], default="old",
+                    help="union also draws the reference from the 09-17 corpus (data/oga3_clean)")
     ap.add_argument("--native", action="store_true",
                     help="reference/floor from sprites natively <= R px (no downscaled art)")
     args = ap.parse_args()
     R = args.size
-    ref, held = real_split(R if args.native else None)
-    tagn = "_native" if args.native else ""
+    ref, held = real_split(R if args.native else None, args.pool)
+    tagn = ("_native" if args.native else "") + ("_union" if args.pool == "union" else "")
     ref_files = dump_totensor(ref, f"runs_out/ref{tagn}_totensor_s{R}", R)
     res = {}
     if args.floor:
