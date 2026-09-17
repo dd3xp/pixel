@@ -77,6 +77,7 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
 @torch.no_grad()
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
            cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None, gi_snap=None, fdg=None, cfg_text=None,
+           pal=0, pal_from=0.5,
            cond_deg=None):
     scheduler.set_timesteps(steps)
     apg_state = None
@@ -185,10 +186,48 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             x = scheduler.step(e_c + (fdg - 1) * low + (w - 1) * (d - low), t, x).prev_sample
             continue
         e = e_u + w * (e_c - e_u)
+        if pal and float(t) / T <= pal_from:   # late-step palette projection (see palette_project)
+            ab = scheduler.alphas_cumprod.to(device)[t]
+            sa, sb = ab.sqrt(), (1 - ab).sqrt()
+            x0p = palette_project(((x - sb * e) / sa).clamp(-1, 1), pal)
+            e = (x - sa * x0p) / sb
         if cfg_text is not None:  # additive plain-CFG term on top of the reference guidance (3 NFE/step): keeps text alignment
             e = e + (cfg_text - 1) * (e_c - model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample)
         x = scheduler.step(e, t, x).prev_sample
     return ((x + 1) / 2).clamp(0, 1).cpu()
+
+
+def palette_project(x0, k, iters=8):
+    """Project each sprite's opaque RGB onto a k-colour palette (batched k-means, in x0 space).
+
+    09-17: real 16 px sprites carry a median of 11 colours while every sampling configuration we have
+    produces 50+, and quantising the finished samples cuts native FD-DINOv2 from 87.2 to 50.6 -- a bigger
+    move than the gap between any two guidance methods.  Doing it inside the sampler instead of afterwards
+    lets the remaining denoising steps repair the seams that hard quantisation leaves behind.
+    x0: (B,4,H,W) in [-1,1]; alpha channel untouched.
+    """
+    b, c, h, w = x0.shape
+    rgb = x0[:, :3].permute(0, 2, 3, 1).reshape(b, h * w, 3)
+    opaque = (x0[:, 3].reshape(b, h * w) > 0).float().unsqueeze(-1)
+    # init: k evenly spaced luminance quantiles of the opaque pixels (deterministic, no RNG draw)
+    lum = rgb.mean(-1)
+    lo = torch.where(opaque.squeeze(-1) > 0, lum, torch.full_like(lum, float("inf")))
+    order = lo.argsort(dim=1)
+    idx = torch.linspace(0, 1, k, device=x0.device)
+    n_op = opaque.sum(1).clamp(min=1)
+    pick = (idx.view(1, k) * (n_op - 1)).long().clamp(min=0)
+    cent = torch.gather(rgb, 1, torch.gather(order, 1, pick).unsqueeze(-1).expand(-1, -1, 3)).clone()
+    for _ in range(iters):
+        d = (rgb.unsqueeze(2) - cent.unsqueeze(1)).pow(2).sum(-1)      # B, HW, k
+        a = d.argmin(-1)
+        oh = F.one_hot(a, k).float() * opaque                           # transparent pixels never vote
+        cnt = oh.sum(1).clamp(min=1e-6).unsqueeze(-1)
+        cent = torch.where(oh.sum(1).unsqueeze(-1) > 0, (oh.transpose(1, 2) @ rgb) / cnt, cent)
+    q = torch.gather(cent, 1, a.unsqueeze(-1).expand(-1, -1, 3))
+    q = torch.where(opaque > 0, q, rgb)
+    out = x0.clone()
+    out[:, :3] = q.reshape(b, h, w, 3).permute(0, 3, 1, 2)
+    return out
 
 
 class _IdentityAttnProcessor:
@@ -370,6 +409,8 @@ def main():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--buckets", default=None, help="comma list, e.g. 12,16,20,24,32,48,64 for v7 models")
     p.add_argument("--sampler", default="ddpm", choices=["ddpm", "ddim"])
+    p.add_argument("--pal", type=int, default=0, help="project x0 onto a k-colour palette during the late steps (0 = off)")
+    p.add_argument("--pal_from", type=float, default=0.5, help="start the palette projection once t/T <= this")
     p.add_argument("--guide_ckpt", default=None, help="plain 4ch ckpt of a WEAKER model -> autoguidance instead of CFG")
     p.add_argument("--cfg_alpha", type=float, default=None, help="separate guidance weight for the alpha channel")
     p.add_argument("--guide_mode", default=None, help="zero-training bad model from the same net: bucket:<px> | bucketu:<px> | blur:<k> | shift | "
@@ -487,6 +528,7 @@ def main():
         imgs = torch.cat([sample(model, scheduler, cond[i:i + args.chunk], uncond[i:i + args.chunk], size, device,
                                  args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi),
                                  guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg, gi_snap=args.gi_snap, fdg=args.fdg, cfg_text=args.cfg_text,
+                                 pal=args.pal, pal_from=args.pal_from,
                                  cond_deg=None if cond_deg is None else cond_deg[i:i + args.chunk])
                           for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
