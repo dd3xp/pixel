@@ -308,6 +308,17 @@ an independent re-training of the same recipe lands within 2.5 FD of the first (
 steps, biased/native), so we do not interpret differences below that scale. We also report CLIP ViT-B/32 image--text
 similarity ($100\cos$) and retrieval R@1 of the own caption among 100.
 
+% ----------------------------------------------------------------------------------------------------------------
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_native_gt.png}
+\caption{Eight prompts from the native ground-truth set (sprites drawn at 16\,px and excluded from training). Rows:
+ours with ICG and palette projection, ours with ICG only, ours with CFG 1.5, and the real sprite. Unlike
+Figure~\ref{fig:external}, the bottom row here is pixel art rather than a downscaled illustration, which is what the
+model is being asked to match.}
+\label{fig:nativegt}
+\end{figure}
+
 \paragraph{Leakage control.}
 Two forms of contamination are possible here and we check both. First, the prompt set must come from the list the
 training run actually excluded: building it from the evaluation split instead puts training sprites into the prompt set,
