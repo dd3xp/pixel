@@ -302,7 +302,7 @@ $R\times R$, and takes alpha by majority vote of the cut-out mask in each cell. 
 same square to $4R\times4R$ (bicubic), applies the official network with 4\,px cells, and reduces the output by 4 with
 nearest-neighbour sampling, with alpha as for PixelOE. We bypass the official script's minimum input size of 128\,px,
 because it would change the cell count for 12--24\,px targets. The SDXL + Pixel Art XL LoRA row uses SDXL base 1.0 with
-the fused LoRA (scale 1), Euler with 30 steps, CFG 7 and the same prompt and conversions (\todo{results pending}).
+the fused LoRA (scale 1), Euler with 30 steps, CFG 7 and the same prompt and conversions.
 
 \begin{figure}[h]
 \centering
@@ -317,25 +317,25 @@ shown here are re-derived from the saved renders with the same deterministic pip
 \section{Captions of the qualitative figures}
 \label{app:prompts}
 
-Held-out prompt indices 1, 4, 5, 9, 10, 31, 42, 44, 55, 58 (left to right in Figures~\ref{fig:external} and
-\ref{fig:external}):
+Held-out prompt indices 3, 7, 12, 20, 33, 41, 55, 67, left to right in Figure~\ref{fig:external}:
 \begin{enumerate}[leftmargin=1.6em,itemsep=0pt]
-  \item Ear of corn with yellow kernels sitting in green leafy husks
-  \item Magic wand with a brown wooden handle and a red orb with white highlights
-  \item Goblin, green skin and yellow eyes, holding a large brown wooden club
-  \item Green bipedal creature with a wide mouth and a visible pink tongue
-  \item Magnifying glass with a golden handle, white frame, and glowing green lens
-  \item Slime monster, vibrant magenta blob, two tiny dark green rectangular eyes
-  \item Glass potion bottle, brown cork, filled with bubbling dark purple liquid, thick outline
-  \item Cowboy wearing a wide-brimmed brown hat, brown vest, and a yellow star
+  \item Crou \emph{(a caption the vision model could not resolve; kept to show the untouched prompt distribution)}
+  \item Alien soldier, blue with green armor, lunging forward while gripping a black rifle
+  \item Top-down character head with brown hair, black goggles, white antenna, and pale skin
+  \item Platypus like creature with brown body, yellow beak, and large eyes in swimming pose
+  \item Man: blocky person with short brown hair, red shirt, and dark blue pants
+  \item Stone brick wall with yellow rectangular bricks and a central red gem
   \item Large fire, white-yellow core, intense orange glow, dark red jagged outlines
-  \item Baked pie, round golden-brown crust with a dark brown filling inside a dish
+  \item Glowing sun, bright yellow center with an orange border and a white cross
 \end{enumerate}
 
-\section{Pending results}
+Figure~\ref{fig:palette} uses indices 11, 20, 33, 50, 67 of the same file.
+
+\section{What is not in this draft}
 \label{app:pending}
-\todo{Remove this section before submission.} Items still running when this draft was written: the internalized model
-on v7r8 at 12\,px (three seeds) and its 16\,px regression check; the label reference on v7r8 at $w = 3 / 3.5$ and seeds
-1--2; the third seed of the internalized model at 24\,px; CLIP scores for the internalized + ICG configuration, plain
-GFT, the 20/24/12\,px final configurations and the external systems; SDXL + Pixel Art XL LoRA (and its PixelOE variant)
-on the $n = 200$ protocol; SD-$\pi$XL sprites on the recaptioned prompts (qualitative only).
+
+For transparency about scope: SD-$\pi$XL \citep{Binninger2024} is included only qualitatively, because its
+score-distillation optimisation costs about 8 GPU-hours per sprite and we completed 6 of 30 sprites; the internalised
+cross-resolution model is reported at 16, 20 and 24\,px on the rebuilt corpus but its 12\,px variant (which needs an
+extra 8\,px rung) was measured only on the earlier corpus; CLIP alignment is reported at 16\,px only; and no human
+preference study was run, which the limitations discuss.
