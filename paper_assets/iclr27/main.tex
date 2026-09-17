@@ -160,6 +160,41 @@ evaluation we follow \citet{Stein2023} and use DINOv2 features \citep{Oquab2023}
 \citep{Heusel2017,Parmar2022}.
 
 % ================================================================================================================
+\section{The targets and the protocol}
+\label{sec:data}
+
+\paragraph{What the corpus actually contains.}
+Work on tiny sprites uses OpenGameArt \citep{OpenGameArt} together with the Kenney and Liberated Pixel Cup packs. After
+cutting sheets into connected components at their native scale and filtering out glyphs and UI, our copy holds 37{,}489
+unique sprites. Their native sizes, however, are not tiny: only 710 are at most 12\,px, 2{,}675 at most 16\,px (7.1\%)
+and 12{,}516 at most 24\,px, while two thirds are 25--64\,px artwork. A resolution-bucketed model is usually trained by
+box-downsampling every sprite into each lower bucket, so 92.9\% of what the 16\,px bucket sees is squashed artwork
+rather than pixel art drawn at 16\,px. Only 4.6\% of the corpus is integer-upscaled pixel art that could be recovered by
+dividing by its block size, so the softness cannot be undone; it has to be avoided.
+
+\paragraph{Duplicate leakage.}
+Hashing every sprite by its exact pixel content reveals 4{,}888 duplicate copies (9.3\% of the corpus). Because
+held-out sets are defined by path, a pixel-identical twin of a held-out sprite stays in training: 15.5\% of the 3{,}000
+held-out evaluation sprites, and 17.0\% of the 200 used for the external comparison, are memorisable in this way.
+
+\paragraph{Rebuilt targets.}
+We (i) drop every duplicate copy and every copy of a held-out sprite, (ii) allow a sprite to feed a bucket only if it is
+at most $1.5\times$ larger than that bucket, and (iii) add natively small sprites: three further OpenGameArt licence
+collections (CC-BY-4.0, CC-BY-SA-3.0, OGA-BY-3.0) yield 37{,}226 cut sprites, of which 14{,}999 survive the same
+filters, near-duplicate collapse of animation frames and a cap of 60 sprites per source sheet. We caption them with
+gemini-3.8-flash on numbered image grids, keeping 13{,}987 captions (99.6\% distinct, median 13 words); the provenance
+and licence of every sprite is recorded. The rebuilt corpus has 86{,}290 training rows and twice as many natively
+$\le 16$\,px sprites as before. Appendix~\ref{app:data} gives the per-step counts and the verification sheets.
+
+\paragraph{The native protocol.}
+FD-DINOv2 \citep{Stein2023} is computed against a reference set of real sprites pushed through the model's own
+preprocessing. The usual choice---a random sample of the corpus---inherits the bias above. We therefore report the
+\emph{native protocol}: the reference at resolution $R$ is drawn only from sprites whose native size is at most $R$, so
+no downscaling ever touches it (1{,}337 reference and 1{,}338 held-out images at 16\,px, real-vs-real floor 4.47). We
+report the biased protocol as well, because the two disagree systematically (Section~\ref{sec:why}), and we mark which
+is which in every table.
+
+% ================================================================================================================
 \section{Method}
 \label{sec:method}
 
@@ -173,89 +208,48 @@ directly on the 4-channel image. Text enters through cross-attention to the 77 t
 text encoder \citep{Radford2021}. The resolution bucket $b \in \mathcal{B} = \{12, 16, 20, 24, 32, 48, 64\}$ enters as a
 class embedding added to the timestep embedding, and it is never dropped. We train with $\epsilon$-prediction
 \citep{Ho2020}, a cosine schedule with $T = 1000$, AdamW at a constant learning rate of $5\cdot10^{-5}$, EMA 0.999 and
-10\% caption dropout. We sample with 100 ancestral DDPM steps from the EMA weights.
+10\% caption dropout. We sample with 100 ancestral DDPM steps from the EMA weights. The main model, \textbf{v8n}, is
+trained from scratch for 80k steps on the rebuilt corpus of Section~\ref{sec:data}; \textbf{v8f2} is the same run
+without the new sprites and \textbf{v7r} is the same architecture on the original targets, used as controls.
 
-\paragraph{Data.}
-The corpus combines sprites from OpenGameArt \citep{OpenGameArt} with the Kenney and Liberated Pixel Cup packs. Each
-sprite is centred on a transparent canvas at its native bucket (the smallest bucket that fits it) with a hard alpha
-threshold. It is additionally fed, premultiplied-box-downsampled, to every bucket in $\{12, 16, 20, 24\}$ at least 25\%
-below its native size. The low buckets therefore see the same population of objects as the native ones. All 5,928
-evaluation sprites are excluded (180,533 training rows including the low-bucket copies). The original BLIP captions
-\citep{Li2022blip} were nearly uninformative: 15.4\% of rows read ``a pixel art sprite'' and only 23.5\% are distinct. We
-recaptioned all 43,342 unique images with gemini-3-flash \citep{Gemini3}, presented as image grids. This yields usable
-captions for 94.8\% of them, 98.6\% distinct, with a median of 12 words (Appendix~\ref{app:recap}). The main model
-\textbf{v7r} is trained from scratch for 80k steps on the recaptioned corpus. \textbf{v7h} is the same recipe on the BLIP
-captions and is used only where stated.
+\subsection{Palette-projected sampling}
+\label{sec:palette}
 
-\subsection{The lower resolution as a weak reference}
-\label{sec:crossres}
+A 16\,px sprite is defined as much by how few colours it uses as by its shape: in the native reference set the median
+sprite has six opaque colours (12\,px: 5; 20 and 24\,px: 7) and 22.6\% use at most four. A continuous diffusion model in
+RGB has no mechanism that snaps a region to a single value, and none of our samplers does: measured on 600 samples,
+plain CFG emits 56.2 colours and the best guidance rule 50.9, with the fraction of adjacent opaque pixel pairs that are
+exactly equal at 0.36--0.38 against 0.46 for real sprites. The extra colours are dither of a few levels inside regions
+that the model has, in effect, already decided are flat.
 
-All guidance rules we compare combine the target-resolution prediction
-$e_{\text{strong}} = \epsilon_\theta(x_t, t, c, b_R)$ with a reference $\eref$ computed on the same $x_t$:
+We remove that dither inside the sampler. At a step with $t/T \le f$ we form the current estimate
+$\hat x_0 = (x_t - \sqrt{1-\bar\alpha_t}\,\tilde e)/\sqrt{\bar\alpha_t}$, cluster its \emph{opaque} RGB pixels into $k$
+groups with a batched $k$-means (8 iterations, deterministic initialisation at evenly spaced luminance quantiles),
+replace every pixel by its centroid, leave transparent pixels and the alpha channel untouched, and map the result back
+to a noise prediction,
 \begin{equation}
-  \tilde e \;=\; \eref + w\,\bigl(e_{\text{strong}} - \eref\bigr). \label{eq:guide}
+  \hat x_0^{\text{pal}} = \Pi_k(\hat x_0), \qquad
+  \tilde e \;\leftarrow\; \bigl(x_t - \sqrt{\bar\alpha_t}\,\hat x_0^{\text{pal}}\bigr) / \sqrt{1-\bar\alpha_t},
+  \label{eq:palette}
 \end{equation}
-CFG uses $\eref = \epsilon_\theta(x_t, t, \varnothing, b_R)$. Autoguidance \citep{Karras2024} uses an early EMA snapshot
-$\theta_{\text{snap}}$ under the same condition. A bucketed model offers a third choice with no extra weights: the same
-network, input and caption under a \emph{lower} bucket,
-\begin{equation}
-  \eref^{\text{label}} = \epsilon_\theta(x_t, t, c, \blow), \qquad
-  \eref^{\text{comp}} = \epsilon_{\theta_{\text{snap}}}(x_t, t, c, \blow), \qquad \blow < b_R. \label{eq:ref}
-\end{equation}
-We use $\blow = 12$ at 16\,px and $\blow = 16$ at 20 and 24\,px. The \emph{composed} reference evaluates the snapshot
-under the lower label. It is a single weak forward pass, not a sum of two guidance terms. Both rules cost 2 \nfe{} per
-step, like CFG, and we use $w = 2$ (label) and $w = 1.5$ (composed). Because only the label differs, the reference is
-structure-aligned with the strong prediction by construction. On v7h, samples drawn from the 12\,px belief alone at
-16\,px have about the strong model's colour count (78 vs.\ 73 median colours) but much lower local contrast (mean
-adjacent $|\Delta\mathrm{RGB}|$ 21.6 vs.\ 32.0; real sprites 30.2; Appendix~\ref{app:v7h}). For v7r, $\theta_{\text{snap}}$
-is the 10k-step EMA of an independent 10k-step run with v7r's recipe; v7r itself kept snapshots only every 20k steps.
+before taking the scheduler step. The projection is thus a hard constraint applied to the model's own belief, not a
+post-process: the steps that follow see the quantised state and repair the seams it creates, which is why doing this
+inside the sampler beats quantising the finished image (31.8 vs.\ 41.6 at 16\,px, Section~\ref{sec:main16}). It adds no
+network evaluations; $k$-means on $R^2 \le 576$ pixels is negligible next to a UNet pass. We use $f = 0.5$ throughout and
+report $k$ per resolution; $k$ can also be drawn per sprite from the corpus histogram, which we ablate.
 
-\subsection{Internalizing the reference}
-\label{sec:internal}
+\subsection{Guidance rules we compare}
+\label{sec:guidance}
 
-The training-free rule needs two passes per step and, in its composed form, a stored snapshot. We fold it into the
-weights with the objective of GFT \citep{Chen2025gft}, replacing GFT's unconditional reference by the composed
-cross-resolution reference. The network gains a scalar input $\beta \in (0, 1]$, and its noise prediction during
-training is parameterized as
-\begin{equation}
-  \hat\epsilon_\beta(x_t, t, c, b) \;=\; \beta\, s_\theta(x_t, t, c, b, \beta) \;+\; (1-\beta)\, \sg\!\bigl[r(x_t, t, c)\bigr],
-  \qquad r = \epsilon_{\theta_{\text{snap}}}(x_t, t, c, \blow(b)), \label{eq:gft}
-\end{equation}
-trained with $\mathcal{L} = \mathbb{E}\,\|\hat\epsilon_\beta - \epsilon\|^2$ on ordinary forward-noised data. Here
-$\sg$ is the stop-gradient and $\blow(b)$ is the reference rung (12 for 16, 16 for 20 and 24). Because the reference is
-fixed given $(x_t, c)$, the population optimum satisfies
-$\beta s^\star + (1-\beta) r = \mu := \mathbb{E}[\epsilon \mid x_t, c, b]$, i.e.
-\begin{equation}
-  s^\star(x_t, t, c, b, \beta) \;=\; r + \tfrac{1}{\beta}\,(\mu - r). \label{eq:fixedpoint}
-\end{equation}
-Setting $\beta = 1/w$ at inference therefore produces, in \emph{one} forward pass, the guided rule of Eq.~\eqref{eq:guide}
-with reference $r$ (with the Bayes denoiser $\mu$ in place of the finite network). The snapshot is used only to compute
-training targets and is not needed at inference. Section~\ref{sec:why} explains why we use this reparameterization rather
-than a learned corrector: a module trained with the plain denoising loss cannot learn to extrapolate away from this
-reference.
-
-\paragraph{Implementation.}
-$\beta$ is embedded like LCM's guidance scale \citep{Luo2023lcm}: a 256-d sinusoidal embedding of $1000\beta$, mapped by
-a \emph{zero-initialized} linear layer (diffusers \texttt{time\_cond\_proj}, 32,768 parameters) and added to the timestep
-features. At step 0 the model is therefore exactly v7r. We draw $\beta \sim \mathcal{U}(0.4, 1)$, set $\beta = 1$ for a
-random 25\% of rows (this keeps the plain model trained) and for all rows of the 12\,px bucket (no lower rung). We
-fine-tune from v7r for 10k steps with v7r's data, batch sizes, optimizer and EMA. The reference is a no-gradient forward
-of the frozen snapshot, so training costs one extra forward pass for the rows with $\beta < 1$. At inference we use
-$w = 1.5$ ($\beta = 2/3$) with 1 \nfe{} per step. We call this model \emph{internalized cross-resolution guidance}.
-
-\subsection{Combining with independent-condition guidance}
-\label{sec:stack}
-
-The internalized reference degrades the resolution axis. ICG \citep{Sadat2024icg} degrades the text axis: its reference
-replaces the caption embedding by i.i.d.\ Gaussian noise with the embedding's standard deviation, redrawn at every step.
-The two compose at 2 \nfe{} per step:
-\begin{equation}
-  \tilde e = s_\theta(x_t, t, \hat c, b_R, \beta) + w_{\text{ICG}}\bigl(s_\theta(x_t, t, c, b_R, \beta) - s_\theta(x_t, t, \hat c, b_R, \beta)\bigr),
-  \qquad \hat c \sim \mathcal{N}\!\bigl(0, \mathrm{std}(c)^2 I\bigr), \label{eq:stack}
-\end{equation}
-where both passes use the internalized model at the same $\beta$. We use internal weight $1/\beta = 1.25$ and
-$w_{\text{ICG}} = 1.5$. Stacking plain CFG on the internalized model instead hurts (8.07--8.34 vs.\ 7.63 on v7h, seed 0;
-Appendix~\ref{app:v7h}).
+All guidance rules combine the target-resolution prediction $e_{\text{strong}} = \epsilon_\theta(x_t, t, c, b_R)$ with a
+reference $\eref$ on the same state, $\tilde e = \eref + w\,(e_{\text{strong}} - \eref)$. CFG \citep{HoSalimans2022} uses
+the empty caption. ICG \citep{Sadat2024icg} replaces the caption embedding by i.i.d.\ Gaussian noise with the
+embedding's standard deviation, redrawn at every step, which needs no unconditional training and, as we show, is the
+rule that survives the change of protocol. A bucketed model also offers a reference with no extra weights---the same
+network under a \emph{lower} bucket label, optionally through an early EMA snapshot (the \emph{composed} variant)---and
+that reference can be internalised into the weights with guidance-free training \citep{Chen2025gft} so that one forward
+pass reproduces the two-pass rule. These cross-resolution variants are the ones that win under the biased protocol and
+fail under the native one; Appendix~\ref{app:crossres} gives their equations and their full tables.
 
 % ================================================================================================================
 \section{Experiments}
