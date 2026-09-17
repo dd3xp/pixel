@@ -479,7 +479,8 @@ sampler. Equation~\eqref{eq:gft} and Appendix~\ref{app:crossres} give the full i
 objective with all hyperparameters. Section~\ref{sec:protocol} and Appendix~\ref{app:details} specify the evaluation
 protocol: prompt set, chunked seeding, reference set, preprocessing and floors. Appendix~\ref{app:guidance} gives the exact
 settings of every guidance baseline, and Section~\ref{sec:external} the conversion pipelines for the external systems. We
-will release code for training, sampling and evaluation, the recaptions, and the held-out split
+will release code for training, sampling, palette projection and evaluation, the captions, the per-sprite licence
+manifest of the new material, and the held-out split
 \todo{anonymous code link in the supplementary material}. The raw sprite corpus carries per-asset licences and will be
 released as a list of sources after a licence audit (see the ethics statement).
 
@@ -487,15 +488,15 @@ released as a list of sources after a licence audit (see the ethics statement).
 The model generates small game sprites. It adds no capability beyond existing text-to-image systems, and its outputs
 (12--24\,px) have little potential for targeted misuse. Its intended application raises the usual concerns of generative
 art tools, namely the displacement of pixel artists and the reproduction of styles present in the training corpus. The
-training data are community sprites from OpenGameArt and the Kenney and Liberated Pixel Cup packs. OpenGameArt
-submissions carry per-asset licences (CC0, CC-BY, CC-BY-SA, GPL, OGA-BY) that were not recorded at collection time, so a
-per-asset licence audit precedes any release of the corpus. Captions were produced by a commercial vision-language model;
+training data are community sprites from OpenGameArt and the Kenney and Liberated Pixel Cup packs. The 14{,}999 sprites added in this work carry a recorded source zip, member path and licence
+(CC-BY-4.0, CC-BY-SA-3.0, OGA-BY-3.0); the older material predates that bookkeeping, so a per-asset licence audit
+precedes any release of the full corpus. Captions were produced by a commercial vision-language model;
 external baselines were generated through commercial APIs under their terms of use. No human subjects were involved.
 
 \section*{AI use statement}
 % Required by ICLR 2027 (does not count toward the page limit). The authors must complete and confirm this section.
-Generative AI tools were used in this work in the following ways. (a) As part of the method's data pipeline, a
-vision-language model (gemini-3-flash) produced the training and evaluation captions (Section~\ref{sec:model}), and two
+Generative AI tools were used in this work in the following ways. (a) As part of the method's data pipeline, vision-language models (gemini-3-flash, and gemini-3.8-flash for the material added here) produced the training and
+evaluation captions (Section~\ref{sec:data}), and two
 commercial image generators served as external baselines (Section~\ref{sec:external}). (b) An LLM-based coding assistant
 was used to implement and run experiments, to search and verify the literature, and to draft and edit the manuscript.
 \todo{authors: complete the required disclosure per the ICLR 2027 AI policy, e.g.\ which ideas, analyses and text were
