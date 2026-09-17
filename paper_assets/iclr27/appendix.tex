@@ -1,5 +1,72 @@
 % Appendix of the ICLR 2027 draft (input from main.tex after the bibliography).
 
+\section{The rebuilt corpus, step by step}
+\label{app:data}
+
+\paragraph{Counts.}
+The original corpus holds 37{,}489 unique sprites (after cutting sheets into connected components at native scale and
+dropping glyphs, UI and near-monochrome crops). Native sizes: 710 at most 12\,px, 2{,}675 at most 16\,px, 9{,}687 at
+most 20\,px, 12{,}516 at most 24\,px, 19{,}611 at most 32\,px. Exact-pixel hashing finds 4{,}888 duplicate copies;
+15.5\% of the 3{,}000 held-out evaluation sprites and 17.0\% of the 200 external-comparison sprites have a
+pixel-identical twin that the path-based hold-out leaves in training. Integer-upscaled pixel art, which could be
+restored by dividing by its block size, accounts for only 4.6\% of the corpus.
+
+\paragraph{New material.}
+The CC-BY-4.0, CC-BY-SA-3.0 and OGA-BY-3.0 OpenGameArt collections (8.8\,GB of 2D art) yield 37{,}226 cut sprites.
+Filtering by the same rules removes 8{,}184; cross-corpus pixel hashing removes a further 6{,}062 that duplicate the
+existing corpus; a filename filter removes 367 font, UI and text sheets; average-hash collapse of animation frames
+removes 3{,}456; a cap of 60 sprites per source sheet removes the rest, leaving 14{,}999 sprites from 1{,}207 sheets.
+Verification of this set: median palette 6 colours, 98.2\% of visible pixels fully opaque, mean flat-neighbour fraction
+0.434, native sizes 234 / 1{,}726 / 5{,}374 / 6{,}028 at most 12 / 16 / 20 / 24\,px. Every sprite keeps its source zip,
+member path and licence in a manifest.
+
+\paragraph{Captions.}
+We caption the new sprites with gemini-3.8-flash on numbered $4\times5$ grids of nearest-upscaled sprites on a
+checkerboard, one caption per cell, 6--15 words, with an explicit ``unclear abstract shape'' escape. Of 14{,}999
+sprites, 14{,}845 receive a caption (99.0\%); dropping the escapes, degenerate strings and 11 rows that echoed the
+instruction leaves 13{,}987 usable captions, 99.6\% distinct, median 13 words. We selected the captioner by running the
+same grid through ten vision--language models: gemini-3.8-flash parsed all 20 cells in both trials at 22\,s per call and
+was the most accurate, while a larger sibling truncated at cell 11 in both trials and several models mislabelled
+weapons and buildings.
+
+\paragraph{Training-set composition.}
+With duplicates removed and downscaling limited to $1.5\times$, the rebuilt corpus yields 86{,}290 training rows
+(12/16/20/24\,px buckets: 7{,}357 / 11{,}733 / 15{,}087 / 17{,}199), against 64{,}990 without the new sprites and
+180{,}533 under the original policy, which fed 48\,px artwork to the 16\,px bucket.
+
+\paragraph{Near-duplicate collapse is harmful.}
+Collapsing average-hash near-duplicates in the \emph{old} corpus as well (37{,}489 $\to$ 26{,}504 groups) costs more
+than it gains: at 20k steps it scores 21.07 biased / 162.23 native against 20.31 / 151.85 for the same recipe without
+the collapse. We therefore drop only exact duplicates in the main corpus and apply the collapse only to the new
+material, where single sheets contributed up to 563 frames of one character.
+
+\section{Cross-resolution guidance: equations and full tables}
+\label{app:crossres}
+
+The cross-resolution rules referenced in Section~\ref{sec:guidance} use the guided prediction
+$\tilde e = \eref + w\,(e_{\text{strong}} - \eref)$ with
+\begin{equation}
+  \eref^{\text{label}} = \epsilon_\theta(x_t, t, c, \blow), \qquad
+  \eref^{\text{comp}} = \epsilon_{\theta_{\text{snap}}}(x_t, t, c, \blow), \qquad \blow < b_R,
+  \label{eq:ref}
+\end{equation}
+i.e.\ the same network (or an early EMA snapshot of it) queried under a lower resolution bucket, with $\blow = 12$ at
+16\,px and $\blow = 16$ at 20 and 24\,px. The internalised variant follows guidance-free training \citep{Chen2025gft}:
+the network gains a scalar input $\beta \in (0,1]$ and is trained with
+\begin{equation}
+  \hat\epsilon_\beta(x_t, t, c, b) = \beta\,s_\theta(x_t, t, c, b, \beta) + (1-\beta)\,\sg[\epsilon_{\theta_{\text{snap}}}(x_t, t, c, \blow(b))],
+  \label{eq:gft}
+\end{equation}
+so that setting $\beta = 1/w$ at inference reproduces Eq.~\eqref{eq:ref}'s rule in a single forward pass.
+
+On the original targets this was our strongest result: at 16\,px the internalised model reached 7.23 against 11.28 for
+the best-tuned CFG under the biased protocol, 6.25 when combined with ICG, with controls (empty-caption reference 10.05,
+independent-condition reference 7.96, online reference 9.13) isolating the lower-resolution reference as the source of
+the gain. On the rebuilt model, and scored against native pixel art, the same rules give 114.9 (label), 117.0
+(composed), 178.8 ($\beta = 1$, no extrapolation) and 170.3 ($w = 1.5$), against 113.2 for unguided sampling and 87.1
+for ICG. The mechanism is in Section~\ref{sec:why}: the reference is a lower-resolution belief, so extrapolating away
+from it adds contrast without reducing the palette, and internalising it bakes a smoothed reference into the weights.
+
 \section{Implementation and protocol details}
 \label{app:details}
 
@@ -80,7 +147,7 @@ the held-out sprites, so the evaluation prompts follow the training caption dist
 \section{Guidance baselines: exact settings}
 \label{app:guidance}
 
-All baselines replace CFG in Eq.~\eqref{eq:guide}, on the same model, sampler, prompts and initial noise. Random draws
+All baselines replace CFG in Eq.~\eqref{eq:ref}, on the same model, sampler, prompts and initial noise. Random draws
 for ICG and TSG come from a separate generator, so that switching methods does not change the sampler noise.
 \begin{itemize}[leftmargin=1.2em,itemsep=1pt]
   \item \textbf{CDG} \citep{CDG2026}, $R_{\deg} = 1$: every position covered by the tokenizer's attention mask (BOS, words,
@@ -240,17 +307,17 @@ the fused LoRA (scale 1), Euler with 30 steps, CFG 7 and the same prompt and con
 \begin{figure}[h]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_external16.pdf}
-\caption{``Generate large, then shrink'' vs.\ ours at 16\,px (same captions as Figure~\ref{fig:qual}; $n = 200$ FD in
+\caption{``Generate large, then shrink'' vs.\ ours at 16\,px (same captions as Figure~\ref{fig:external}; $n = 200$ FD in
 parentheses). The 1024\,px renders (shown as downsampled thumbnails) often follow the caption closely. After conversion
 they keep soft shading, anti-aliased edges and many colours, which are absent from the data. The ``downscale'' sprites
 shown here are re-derived from the saved renders with the same deterministic pipeline that produced the scored ones.}
-\label{fig:external}
+\label{fig:externalapp}
 \end{figure}
 
 \section{Captions of the qualitative figures}
 \label{app:prompts}
 
-Held-out prompt indices 1, 4, 5, 9, 10, 31, 42, 44, 55, 58 (left to right in Figures~\ref{fig:qual} and
+Held-out prompt indices 1, 4, 5, 9, 10, 31, 42, 44, 55, 58 (left to right in Figures~\ref{fig:external} and
 \ref{fig:external}):
 \begin{enumerate}[leftmargin=1.6em,itemsep=0pt]
   \item Ear of corn with yellow kernels sitting in green leafy husks

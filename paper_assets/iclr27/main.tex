@@ -144,7 +144,7 @@ less-trained version of the same model. Training-free weak predictions come from
 semantically degraded text condition \citep[CDG;][]{CDG2026}. Other weak predictions come from auxiliary or internal
 heads \citep{IG2025,SGGBR2026,SSG2026}. CDG is closest in spirit: it too degrades one condition of the same network.
 It degrades the \emph{text}, whereas we degrade the \emph{resolution label} and keep the caption fixed. We run CDG, ICG,
-TSG, SEG and PAG under our protocol (Table~\ref{tab:guidance}).
+TSG, SEG and PAG under our protocol (Table~\ref{app:guidance}).
 
 \paragraph{Guidance without a second pass.}
 Guidance distillation \citep{Meng2023distill} regresses a student onto a guided teacher. Model guidance
@@ -158,7 +158,7 @@ Multi-resolution training with a size or bucket label is standard: aspect-ratio 
 micro-conditioning \citep{Podell2023}, Matryoshka diffusion \citep{Gu2023}, FiT \citep{Lu2024} and simple diffusion
 \citep{Hoogeboom2023}. SDXL documents that a small \texttt{original\_size} reproduces the blur of low-resolution training
 images, and common practice passes it to the negative branch of CFG \citep{diffusers}. We test this as a reference in
-Section~\ref{sec:sdxl} and find no benefit. To our knowledge, no prior work uses a model's own lower-resolution label as a
+Appendix~\ref{app:sdxl} and find no benefit. To our knowledge, no prior work uses a model's own lower-resolution label as a
 guidance reference or internalizes one.
 
 \paragraph{Pixel art.}
@@ -458,7 +458,7 @@ which is the part of this paper we would most like others to check.
 % ================================================================================================================
 \section*{Reproducibility statement}
 Section~\ref{sec:model} and Appendix~\ref{app:details} specify the architecture, data processing, training recipe and
-sampler. Equations~\eqref{eq:gft}--\eqref{eq:stack} and Section~\ref{sec:internal} give the full internalization
+sampler. Equation~\eqref{eq:gft} and Appendix~\ref{app:crossres} give the full internalization
 objective with all hyperparameters. Section~\ref{sec:protocol} and Appendix~\ref{app:details} specify the evaluation
 protocol: prompt set, chunked seeding, reference set, preprocessing and floors. Appendix~\ref{app:guidance} gives the exact
 settings of every guidance baseline, and Section~\ref{sec:external} the conversion pipelines for the external systems. We
