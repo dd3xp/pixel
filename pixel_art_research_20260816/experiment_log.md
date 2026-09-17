@@ -2459,3 +2459,4 @@ v8f2(80k, 旧语料+修好喂法), 16px, 3000 题, 格式 旧参考 / 原生参�
   | **v8n ICG w2 + 4 色投影** | **37.06** |
   → 排序与前两套口径一致; 我们仍优于"混合来源真值"(37.06 vs 161.29), 因为后者多数是压缩来的美术图。
 - 产物: `runs/cls_heldout3000.jsonl`, `runs/cls_refnative.jsonl`, `runs_out/ref_object_s16`, `runs_out/obj16/*`, 脚本 `baseline/classify_sprites.py` + `src/v6/fd_ref.py`。
+- **外部基线在原生题目上的成绩**: FLUX.2-klein + pixel LoRA 在那 210 条原生留出题目上 = **342.15**(我们同题 51.94)。定性图 `runs/fig_final/final_compare.png` 已替换论文 Figure 3(fig_native_gt.png): 我们与真值同一种画法, FLUX 是"插画缩略图"。
