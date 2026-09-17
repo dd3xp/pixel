@@ -161,6 +161,23 @@ images, and common practice passes it to the negative branch of CFG \citep{diffu
 Appendix~\ref{app:sdxl} and find no benefit. To our knowledge, no prior work uses a model's own lower-resolution label as a
 guidance reference or internalizes one.
 
+\paragraph{Palettes and quantisation.}
+Reducing an image to a small palette is classical: median cut \citep{Heckbert1982}, error diffusion \citep{FloydSteinberg1976}
+and, for pixel art specifically, joint palette-and-pixel optimisation \citep{Gerstner2012} and palette-conditioned
+generation \citep{PixDiffPIG}. In diffusion, hard constraints are usually enforced by projecting the predicted $x_0$ at
+each step, as in plug-and-play priors and inverse-problem solvers \citep{Venkatakrishnan2013,Chung2023dps}, and by
+quantisation-aware or discrete-state formulations \citep{Austin2021,Gu2022vqdiffusion}. Our projection is the same
+device applied to the property that defines this medium, with the palette estimated per sprite from the model's own
+current belief rather than supplied as a condition; unlike a discrete-state model it needs no change of training and
+keeps the continuous denoiser.
+
+\paragraph{Data and protocol audits.}
+Reports that a benchmark's reference set decides the ranking are common in generative evaluation: FID's sensitivity to
+the feature extractor and to preprocessing \citep{Parmar2022,Stein2023}, duplicate and near-duplicate contamination in
+image corpora \citep{Barz2020,Webster2023}, and dataset-bias analyses more generally \citep{Torralba2011}. Our
+contribution here is narrow and concrete: for tiny sprites, the conventional reference is dominated by downscaled
+artwork, and that single fact reverses the ranking of the guidance methods we and others would otherwise report.
+
 \paragraph{Pixel art.}
 Most pixel-art work converts an existing image, by optimisation \citep{Gerstner2012}, contrast-aware downscaling
 \citep[PixelOE;][]{PixelOE2024} or learned pixelization \citep{Han2018,Wu2022}. Generative approaches include GANs for
