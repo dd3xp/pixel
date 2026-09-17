@@ -58,6 +58,18 @@ pixel art, while independent-condition guidance transfers and composes with pale
 \end{abstract}
 
 % ================================================================================================================
+% ----------------------------------------------------------------------------------------------------------------
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_external.png}
+\caption{Eight held-out captions at 16\,px. Top: our model with ICG and palette projection ($k{=}4$); second row: the
+same model without the projection; then gpt-image-2 and FLUX.2-klein + pixel-art LoRA, both generated large and reduced
+by the same code, with the same four-colour post-process applied to gpt-image-2; bottom: the real held-out sprite. The
+external pipelines often produce the more attractive picture while being $2.6\times$ further from native pixel art
+(Table~\ref{tab:external}); our samples share the grammar --- and the crudeness --- of the data.}
+\label{fig:external}
+\end{figure}
+
 \section{Introduction}
 \label{sec:intro}
 
@@ -237,6 +249,16 @@ post-process: the steps that follow see the quantised state and repair the seams
 inside the sampler beats quantising the finished image (31.8 vs.\ 41.6 at 16\,px, Section~\ref{sec:main16}). It adds no
 network evaluations; $k$-means on $R^2 \le 576$ pixels is negligible next to a UNet pass. We use $f = 0.5$ throughout and
 report $k$ per resolution; $k$ can also be drawn per sprite from the corpus histogram, which we ablate.
+
+% ----------------------------------------------------------------------------------------------------------------
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\linewidth]{figures/fig_palette.png}
+\caption{Palette-projected sampling at 16\,px, same prompts and seed. Without projection (top) flat regions carry a few
+levels of dither; projecting the predicted $x_0$ onto four or six colours during the late steps (middle, bottom) removes
+it, and the remaining denoising steps repair the seams. Native FD 87.2 / 36.9 / 34.1.}
+\label{fig:palette}
+\end{figure}
 
 \subsection{Guidance rules we compare}
 \label{sec:guidance}
