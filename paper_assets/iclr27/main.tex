@@ -399,6 +399,31 @@ the sampling side; the rebuilt targets then remove a further 26\% (42.9 $\to$ 41
 $\to$ 31.8 once the new sprites are added). The two are complementary: palette projection on top of plain CFG reaches
 only 58.4, against 31.8 with ICG, so the guidance and the projection do different work.
 
+\paragraph{Is it the palette, or just less information?}
+Two controls replace $\Pi_k$ at exactly the same steps. The first projects onto \emph{one} four-colour palette shared
+by every sprite, learned by $k$-means over the opaque colours of the reference set: the same colour count, without the
+per-sprite structure. The second applies a $3\times3$ median filter, which removes the same few-level dither but imposes
+no palette at all. Neither reproduces the effect (Table~\ref{tab:palctrl}): both are \emph{worse} than not projecting,
+so the gain is not ``fewer colours'' and not ``smoother'', but each sprite's own small palette.
+
+\begin{table}[h]
+\caption{Controls for palette-projected sampling. 16\,px, v8n, ICG $w{=}2$, 3{,}000 prompts, projection from
+$t/T \le 0.5$ in every row.}
+\label{tab:palctrl}
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Late-step treatment of $\hat x_0$ & Native FD $\downarrow$ & Biased FD \\
+\midrule
+none                                                & 87.1 & 20.7 \\
+\textbf{per-sprite $k$-means, $k{=}4$ (ours)}        & \textbf{31.6} & 111.2 \\
+one corpus-wide 4-colour palette                    & 120.1 & 233.9 \\
+$3\times3$ median filter (de-dither, no palette)     & 112.2 & 92.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{Palette size.}
 Sweeping $k$ at 16\,px gives 38.1 / 31.8 / 33.7 / 36.9 / 50.6 for $k = 3 / 4 / 5 / 6 / 8$, and 39.9 when $k$ is drawn per
 sprite from the corpus histogram. The optimum sits at the median palette size of the real data (six colours, 22.6\% of
