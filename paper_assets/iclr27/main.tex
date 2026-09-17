@@ -371,87 +371,67 @@ truth, which is a statement about that corpus rather than about our model. At 24
 us (150.7 versus 192.2).
 
 % ================================================================================================================
-\section{Why a lower resolution is a good reference}
+\section{Why the two protocols disagree}
 \label{sec:why}
 
-This section asks what the reference must satisfy. Its results constrain the design of Section~\ref{sec:method}; they do
-not establish a mechanism.
+Table~\ref{tab:main16} contains two rankings of the same samples. Under the biased reference the internalised
+cross-resolution model is best (10.4) and our final configuration is worst (111.2); under the native reference the order
+is reversed (170.3 versus 31.8). Only one of these references is a description of the medium, but both are the kind of
+reference set that a paper in this area would plausibly build, so it is worth being precise about what separates them.
 
-\paragraph{Direction matters.}
-If any wrong bucket acted as a generic unconditional-like reference, a higher or a random bucket would work as well as a
-lower one. Neither does. On v7r at 16\,px, a bucket drawn uniformly at random at every step (ICG applied to the
-resolution label) gives 12.23 / 12.68 at $w = 1.5 / 2$. That is \emph{worse} than best CFG (11.10, seed 0), whereas the
-lower bucket gives 8.81. On v7h, every higher-bucket reference is worse than best CFG at every resolution (16\,px:
-buckets 20 / 24 / 64 give 17.14 / 17.27 / 19.34 vs.\ 12.24; Appendix~\ref{app:v7h}). On v7h the label also acts as a
-monotone contrast knob: the pure belief's local contrast rises from 21.6 to 31.9 to 40.9 for buckets 12, 24 and 64 at
-16\,px. Only its low-contrast end is useful. Isotropic perturbation of the same embedding (TSG) is harmful at every
-setting we tried (17.73--37.28; Table~\ref{tab:guidance}).
+\paragraph{The two references are different distributions.}
+At 16\,px the biased reference is 92.9\% artwork drawn at 25--64\,px and box-downsampled. Downsampling averages
+neighbouring pixels, so those images have soft transitions and large palettes: their median opaque-colour count is 32
+against 6 for sprites drawn at 16\,px, and their fraction of exactly-equal adjacent pixel pairs is 0.30 against 0.46.
+Scoring against them rewards a generator that produces the same softness. This is not a subtle effect: real held-out
+sprites of mixed provenance score 136.1 against the native reference (77.0 after palette quantisation), i.e.\ the
+``ground truth'' of the conventional protocol is itself far from native pixel art.
 
-\paragraph{The guidance is not a denoising-error correction.}
-A tempting alternative to Eq.~\eqref{eq:gft} is a learned module that reads the lower-bucket belief and corrects the
-strong prediction, trained with the plain denoising loss. Any such module converges to $\mu$ and can extrapolate away from
-$r$ only as far as the finite network's residual is linearly visible in $d = e_{\text{strong}} - r$. The best such
-extrapolation weight is directly measurable: $w^\star(t) = \mathbb{E}[d \cdot (\epsilon - r)] / \mathbb{E}[d \cdot d]$.
-This is unbiased because $\epsilon - \mu$ has zero mean given $x_t$. On v7h, on 3,000 held-out sprites at 10 timesteps (and 3,000 training
-sprites at 16\,px), $w^\star$ lies in 0.83--1.07 for the label, snapshot and composed references at 16, 20 and 24\,px. It
-is often below 1 on held-out data, and extrapolating to $w = 1.5$ increases the denoising error everywhere (by 1--95\%). On the
-model's own trajectories, obtained by noising a real sprite and running the deployed sampler for $k \in \{1, 5, 20\}$
-steps, $w^\star$ in $x_0$-space stays at or below 1.07 for $k \ge 5$ at all three resolutions (0.64--0.78 is typical at
-$k = 5$; Appendix~\ref{app:wstar}). Guidance with $w \approx 1.5$--2 improves FD while \emph{increasing} per-sample
-regression error. It shapes the distribution, as CFG does, rather than correcting individual predictions. Hence a
-reparameterization whose fixed point is the guided rule (Eq.~\ref{eq:fixedpoint}) is needed; a learned corrector is not
-enough.
+\paragraph{What guidance does to those statistics.}
+Per-image statistics on 600 samples explain the reversal. Classifier-free guidance sharpens by increasing contrast, not
+by reducing the palette: at $w = 1.5$ it emits 56.2 colours with contrast 59.4 (real: 11.0 colours, contrast 62.3), and
+raising $w$ further increases both contrast and colour count, which the biased reference rewards (12.2 at $w{=}2$) and
+the native one punishes (131.1). ICG moves all three statistics towards the data at once (50.9 colours, flat-pair
+fraction 0.381, contrast 63.9), which is why it is the one external rule that improves both protocols' agreement and
+composes with the projection. The cross-resolution reference, by construction, is a \emph{lower-resolution} belief: it
+is smoother than the target-resolution prediction, so extrapolating away from it adds contrast in the same way CFG does
+while leaving the palette untouched, and internalising it bakes a smoothed reference into the weights --- which is why
+the internalised model is worse than its own base model under the native reference even at $w = 1$ (178.8 versus 113.2),
+before any extrapolation is applied.
 
-\paragraph{The reference must act in output space.}
-The cheapest form of 1-\nfe{} extrapolation acts on the label embedding itself:
-$E[16] + (w-1)(E[16] - E[12])$, used with a single conditional pass. It fails badly on v7h at 16\,px: 39.03 at $w = 1.5$
-and 414.27 at $w = 2$, against 16.39 without any guidance. The lower label is useful only as a second prediction that the
-update extrapolates away from, and the internalization of Section~\ref{sec:internal} keeps it in that role.
-
-\paragraph{A reference must degrade along an axis the model uses.}
-Recaptioning reverses the ranking of the text-axis and resolution-axis references. With BLIP captions (v7h), which the
-model largely ignores, ICG is weak (best 8.88 at $w = 1.25$; 11.29 at $w = 1.5$), and the cross-resolution rules are
-strong (label 8.52, composed 7.53, best CFG 12.49). With informative captions (v7r), ICG becomes the strongest
-training-free reference (7.46), and the cross-resolution rules still help but less (8.86 / 8.50 vs.\ best CFG 11.28).
-A random text condition is a weak reference only when the prediction depends on the text. The resolution label
-matters regardless of caption quality, since every sprite is trained at several buckets. The two axes are complementary
-at 16\,px (Section~\ref{sec:main16}), but only in the internalized form. Placing ICG's condition and the lower bucket in
-the same training-free weak pass gives 7.16, no better than ICG alone (7.14, seed 0), and adding the snapshot to that pass
-is harmful (11.65).
-
-\paragraph{Where it does not transfer: SDXL's size conditioning.}
-\label{sec:sdxl}
-SDXL's \texttt{original\_size} micro-conditioning is the closest public analogue of a resolution label. On 1,000
-COCO-30k captions (Appendix~\ref{app:sdxl}), adding $1\times(e_{c} - e_{c,\text{orig}=512})$ to CFG 5 leaves FD unchanged
-(644.13 vs.\ 644.18). With $\text{orig} = 256$ it is worse (658.98), and without CFG the size reference collapses
-(969.68). The only agreement with our model is directional: keeping the caption in the weak branch beats the common
-\texttt{negative\_original\_size} practice (650.98). We believe that SDXL's size condition encodes the blur of upsampled
-low-resolution training images rather than a coarser target grid, so it does not yield a structure-aligned,
-lower-contrast belief of the same image. The reference is a property of models trained natively over a ladder of grids.
+\paragraph{Consequence for practice.}
+A benchmark built from ``sprites'' that are downscaled illustrations will keep selecting methods that produce downscaled
+illustrations. We do not claim the native protocol is the only defensible choice --- a corpus of 25--64\,px artwork is a
+legitimate target if that is what one wants to generate --- but it should be a deliberate choice, and papers should say
+which one they used. We report both throughout, and we release the split so that either can be reproduced.
 
 % ================================================================================================================
 \section{Limitations and conclusion}
 \label{sec:limits}
 
 \paragraph{Limitations.}
-(i) \emph{Scope.} Everything is measured on models we trained, from one architecture family, on one corpus of game
-sprites. We have not tested a second domain, and SDXL's size conditioning does not transfer. (ii) \emph{Metric.} FD with
-DINOv2 on images of 12--24\,px, upsampled to 224\,px, assigns one sprite pixel to one or a few patches. It is sensitive to
-exactly the colour and contrast statistics that guidance changes. We report CLIP alignment for most 16\,px rows, but we
-have no human study. The CLIP evaluator also shares its text tower with our model's frozen encoder. (iii) \emph{Tuning.}
-Guidance weights, the ICG combination, the reference rung and the 10k-step fine-tuning length were all selected on the
-same held-out FD that we report; there is no separate validation split. Seed and re-training variation (Section~\ref{sec:protocol})
-is of the same order as some of the smaller differences, which we do not interpret. (iv) \emph{Coverage.} 12\,px needs an
-extra 8\,px rung, and its internalized result is pending. Several 20/24\,px rows are single-seed. The combination with ICG
-helps at 16\,px but not at 20\,px. (v) \emph{Novelty of the objective.} The training objective is GFT's; our claim is the
-reference and the evidence that it, not the objective, carries the gain.
+(i) \emph{Scope.} Everything is measured on models we trained, from one architecture family, on one family of game-sprite
+corpora. We have not tested a second domain. (ii) \emph{Metric.} FD with DINOv2 on 12--24\,px images upsampled to
+224\,px assigns one sprite pixel to one or a few patches, and is sensitive to exactly the colour and contrast statistics
+that our projection changes; we report CLIP alignment alongside it and both references throughout, but we have no human
+study, and a human study is the obvious next check for a claim about a medium people look at. (iii) \emph{Palette
+tuning.} $k$ and the projection start $f$ were selected on the same held-out FD we report, with no separate validation
+split; the per-sprite variant drawn from the corpus histogram (39.9) is worse than the tuned constant (31.8), so some of
+the gap is fitted to the metric. (iv) \emph{Where we still lose.} At 24\,px real sprites remain closer to native pixel
+art than our samples (150.7 versus 192.2), and on individual prompts a large generator plus downscaling still produces a
+more attractive picture than ours even though it is further from the medium --- our samples inherit the crudeness of the
+data as well as its grammar. (v) \emph{Alignment.} The strongest setting costs 4.4 points of CLIP retrieval; at $k{=}6$
+the cost is 1.3 points, and prompt following at these sizes is weak for every model we tested.
 
 \paragraph{Conclusion.}
-A diffusion model trained over a ladder of resolutions contains its own best weak model: the same network under a lower
-resolution label. Extrapolating away from it is directional, acts in output space and is not an error correction. Folding
-it into the weights with a guidance-free-training objective gives a one-pass sampler that matches or beats every
-training-free guidance rule we tested at 16\,px and is the best single method at 20 and 24\,px. Combined with ICG it reaches 6.25 at 16\,px, against 11.28 for best CFG and 82--187 for
-large-model-plus-conversion pipelines on the shared protocol.
+For 12--24\,px sprites, what the model is asked to imitate matters more than which guidance rule it uses. The corpus
+that this literature trains on is 93\% downscaled artwork at 16\,px, it leaks 15.5\% of its own held-out set through
+exact duplicates, and the evaluation reference built from it rewards the softness it introduced. Rebuilding the targets
+and scoring against real low-resolution pixel art moves FD-DINOv2 from 209.6 to 117.9; projecting the predicted $x_0$
+onto a small per-sprite palette during the late denoising steps --- the property of the medium that continuous diffusion
+cannot express --- takes it to $31.8\pm0.5$, against 134.4 for the strongest external pipeline under the same palette
+post-process. The same change of reference set reverses the ranking of our earlier cross-resolution guidance results,
+which is the part of this paper we would most like others to check.
 
 % ================================================================================================================
 \section*{Reproducibility statement}
