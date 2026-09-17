@@ -77,7 +77,7 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
 @torch.no_grad()
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
            cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None, gi_snap=None, fdg=None, cfg_text=None,
-           pal=0, pal_from=0.5, pal_dist=False,
+           pal=0, pal_from=0.5, pal_dist=False, pal_mode='kmeans', pal_cent=None,
            cond_deg=None):
     scheduler.set_timesteps(steps)
     apg_state = None
@@ -191,7 +191,11 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             ab = scheduler.alphas_cumprod.to(device)[t]
             sa, sb = ab.sqrt(), (1 - ab).sqrt()
             x0 = ((x - sb * e) / sa).clamp(-1, 1)
-            if pal_ks is None:
+            if pal_mode == "median":
+                x0p = dedither(x0)
+            elif pal_mode == "global":
+                x0p = palette_global(x0, pal_cent)
+            elif pal_ks is None:
                 x0p = palette_project(x0, pal)
             else:                                   # per-image k: one projection call per distinct size
                 x0p = x0.clone()
@@ -215,6 +219,33 @@ def palette_sizes(b, device, g, hist=None):
     q = torch.tensor(hist or [4, 4, 4, 5, 5, 6, 6, 6, 7, 8, 9, 11, 14, 20, 29, 42], device=device)
     idx = torch.randint(0, len(q), (b,), device=device, generator=g)
     return q[idx]
+
+
+def palette_global(x0, cent):
+    """Control for palette_project: project onto ONE palette shared by every sprite (learned from the corpus),
+    instead of a palette estimated per sprite. Same number of colours, no per-sprite structure."""
+    b, c, h, w = x0.shape
+    rgb = x0[:, :3].permute(0, 2, 3, 1).reshape(b, h * w, 3)
+    d = (rgb.unsqueeze(2) - cent.view(1, 1, -1, 3)).pow(2).sum(-1)
+    q = cent.view(1, -1, 3).expand(b, -1, -1).gather(1, d.argmin(-1).unsqueeze(-1).expand(-1, -1, 3))
+    opaque = (x0[:, 3].reshape(b, h * w) > 0).unsqueeze(-1)
+    q = torch.where(opaque, q, rgb)
+    out = x0.clone()
+    out[:, :3] = q.reshape(b, h, w, 3).permute(0, 3, 1, 2)
+    return out
+
+
+def dedither(x0, ksize=3):
+    """Control for palette_project: a 3x3 median filter on the opaque RGB, which removes the same few-level
+    dither without imposing any palette. Isolates 'fewer colours' from 'smoother'."""
+    pad = ksize // 2
+    rgb = x0[:, :3]
+    patches = F.unfold(F.pad(rgb, (pad,) * 4, mode="replicate"), ksize)
+    b, _, n = patches.shape
+    med = patches.view(b, 3, ksize * ksize, n).median(dim=2).values
+    out = x0.clone()
+    out[:, :3] = med.view(b, 3, x0.shape[2], x0.shape[3])
+    return out
 
 
 def palette_project(x0, k, iters=8):
@@ -432,6 +463,9 @@ def main():
     p.add_argument("--text_model", default=None,
                    help="override the frozen text encoder; default: the run's text_model.txt, else ViT-B/32")
     p.add_argument("--pal", type=int, default=0, help="project x0 onto a k-colour palette during the late steps (0 = off)")
+    p.add_argument("--pal_mode", default="kmeans", choices=["kmeans", "global", "median"],
+                   help="controls for the projection: one corpus-wide palette, or a median filter that "
+                        "removes the same dither without any palette")
     p.add_argument("--pal_dist", action="store_true",
                    help="draw the palette size per sprite from the corpus distribution instead of a fixed --pal")
     p.add_argument("--pal_from", type=float, default=0.5, help="start the palette projection once t/T <= this")
@@ -468,6 +502,34 @@ def main():
         BUCKETS.clear()
         BUCKETS.extend(int(v) for v in args.buckets.split(","))
     device = "cuda"
+    PAL_CENT = None
+    if args.pal_mode == "global":
+        # one palette for the whole corpus: k-means over the opaque colours of the native reference sprites,
+        # cached so every run uses the same control palette
+        import json
+        cf = Path(f"runs_out/global_palette_k{args.pal}.json")
+        if cf.exists():
+            PAL_CENT = torch.tensor(json.loads(cf.read_text()), device=device)
+        else:
+            import glob as _g
+            import numpy as _np
+            from PIL import Image as _I
+            cols = []
+            for q in sorted(_g.glob("runs_out/ref_native_totensor_s16/*.png"))[:400]:
+                a = _np.array(_I.open(q).convert("RGBA"))
+                cols.append(a[a[:, :, 3] > 0][:, :3])
+            cols = _np.concatenate(cols).astype(_np.float32) / 127.5 - 1.0
+            x = torch.tensor(cols, device=device)
+            c = x[torch.randperm(len(x), device=device)[:args.pal]]
+            for _ in range(25):
+                a_ = (x.unsqueeze(1) - c.unsqueeze(0)).pow(2).sum(-1).argmin(1)
+                for j in range(args.pal):
+                    m = a_ == j
+                    if m.any():
+                        c[j] = x[m].mean(0)
+            PAL_CENT = c
+            cf.write_text(json.dumps(c.tolist()))
+        print(f"global control palette: {args.pal} colours", flush=True)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -558,6 +620,7 @@ def main():
                                  args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi),
                                  guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg, gi_snap=args.gi_snap, fdg=args.fdg, cfg_text=args.cfg_text,
                                  pal=args.pal, pal_from=args.pal_from, pal_dist=args.pal_dist,
+                                 pal_mode=args.pal_mode, pal_cent=PAL_CENT,
                                  cond_deg=None if cond_deg is None else cond_deg[i:i + args.chunk])
                           for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
