@@ -77,7 +77,7 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
 @torch.no_grad()
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
            cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None, gi_snap=None, fdg=None, cfg_text=None,
-           pal=0, pal_from=0.5,
+           pal=0, pal_from=0.5, pal_dist=False,
            cond_deg=None):
     scheduler.set_timesteps(steps)
     apg_state = None
@@ -88,6 +88,7 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
     # method never changes the initial noise or anything else drawn from g
     g2 = torch.Generator(device=device).manual_seed(seed + 7919)
     x = torch.randn(n, 4, size, size, device=device, generator=g)
+    pal_ks = palette_sizes(n, device, g2) if pal_dist else None
     last = scheduler.timesteps[-1]
     sc = None
     T = scheduler.config.num_train_timesteps
@@ -186,15 +187,34 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
             x = scheduler.step(e_c + (fdg - 1) * low + (w - 1) * (d - low), t, x).prev_sample
             continue
         e = e_u + w * (e_c - e_u)
-        if pal and float(t) / T <= pal_from:   # late-step palette projection (see palette_project)
+        if (pal or pal_ks is not None) and float(t) / T <= pal_from:  # late-step palette projection
             ab = scheduler.alphas_cumprod.to(device)[t]
             sa, sb = ab.sqrt(), (1 - ab).sqrt()
-            x0p = palette_project(((x - sb * e) / sa).clamp(-1, 1), pal)
+            x0 = ((x - sb * e) / sa).clamp(-1, 1)
+            if pal_ks is None:
+                x0p = palette_project(x0, pal)
+            else:                                   # per-image k: one projection call per distinct size
+                x0p = x0.clone()
+                for kv in pal_ks.unique():
+                    m = pal_ks == kv
+                    x0p[m] = palette_project(x0[m], int(kv))
             e = (x - sa * x0p) / sb
         if cfg_text is not None:  # additive plain-CFG term on top of the reference guidance (3 NFE/step): keeps text alignment
             e = e + (cfg_text - 1) * (e_c - model(x, t, encoder_hidden_states=uncond, class_labels=lab).sample)
         x = scheduler.step(e, t, x).prev_sample
     return ((x + 1) / 2).clamp(0, 1).cpu()
+
+
+def palette_sizes(b, device, g, hist=None):
+    """Per-image palette size drawn from the corpus' own distribution.
+
+    Real 16 px sprites have a median of 6 opaque colours (mean 11, p90 29, 22.6% use <= 4), so a single
+    global k is a crude stand-in: this draws k per sprite from that empirical histogram instead of tuning
+    one number against the metric.
+    """
+    q = torch.tensor(hist or [4, 4, 4, 5, 5, 6, 6, 6, 7, 8, 9, 11, 14, 20, 29, 42], device=device)
+    idx = torch.randint(0, len(q), (b,), device=device, generator=g)
+    return q[idx]
 
 
 def palette_project(x0, k, iters=8):
@@ -410,6 +430,8 @@ def main():
     p.add_argument("--buckets", default=None, help="comma list, e.g. 12,16,20,24,32,48,64 for v7 models")
     p.add_argument("--sampler", default="ddpm", choices=["ddpm", "ddim"])
     p.add_argument("--pal", type=int, default=0, help="project x0 onto a k-colour palette during the late steps (0 = off)")
+    p.add_argument("--pal_dist", action="store_true",
+                   help="draw the palette size per sprite from the corpus distribution instead of a fixed --pal")
     p.add_argument("--pal_from", type=float, default=0.5, help="start the palette projection once t/T <= this")
     p.add_argument("--guide_ckpt", default=None, help="plain 4ch ckpt of a WEAKER model -> autoguidance instead of CFG")
     p.add_argument("--cfg_alpha", type=float, default=None, help="separate guidance weight for the alpha channel")
@@ -528,7 +550,7 @@ def main():
         imgs = torch.cat([sample(model, scheduler, cond[i:i + args.chunk], uncond[i:i + args.chunk], size, device,
                                  args.steps, args.cfg, args.seed + i // args.chunk, guide, cads=cads, gi=tuple(args.gi),
                                  guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg, gi_snap=args.gi_snap, fdg=args.fdg, cfg_text=args.cfg_text,
-                                 pal=args.pal, pal_from=args.pal_from,
+                                 pal=args.pal, pal_from=args.pal_from, pal_dist=args.pal_dist,
                                  cond_deg=None if cond_deg is None else cond_deg[i:i + args.chunk])
                           for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
