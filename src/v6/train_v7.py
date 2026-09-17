@@ -202,6 +202,9 @@ def main():
                    help="also keep EMA snapshots model_step{N}.pt every N steps (autoguidance bad model)")
     p.add_argument("--width", type=int, default=128,
                    help="base channel width; blocks = (w, 2w, 4w). 128 = v7/v7h; 96 = clean second model v7s")
+    p.add_argument("--text_model", default="openai/clip-vit-base-patch32",
+                   help="frozen text encoder; its hidden size sets cross_attention_dim. ViT-B/32 leaves the model at "
+                        "R@1 21.6%% on its own captions, which is the ceiling on instruction following (09-18)")
     args = p.parse_args()
     for k in BATCH:
         BATCH[k] = max(8, int(BATCH[k] * args.bs_scale))
@@ -224,13 +227,16 @@ def main():
     print(f"dataset: {len(ds)} buckets {dict(zip(BUCKETS, counts))}", flush=True)
     loader = torch.utils.data.DataLoader(ds, batch_sampler=BucketSampler(ds.bucket_of, args.steps), num_workers=8)
 
-    tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
-    text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch32").to(device).eval()
+    tokenizer = CLIPTokenizer.from_pretrained(args.text_model)
+    text_encoder = CLIPTextModel.from_pretrained(args.text_model).to(device).eval()
     text_encoder.requires_grad_(False)
+    cad = text_encoder.config.hidden_size          # 512 for ViT-B/32, 768 for ViT-L/14
+    (out / "text_model.txt").write_text(args.text_model, encoding="utf-8")
+    print(f"text encoder {args.text_model} (cross_attention_dim {cad})", flush=True)
 
     model = UNet2DConditionModel(
         sample_size=64, in_channels=4, out_channels=4, layers_per_block=2,
-        block_out_channels=(args.width, 2 * args.width, 4 * args.width), cross_attention_dim=512,
+        block_out_channels=(args.width, 2 * args.width, 4 * args.width), cross_attention_dim=cad,
         down_block_types=("CrossAttnDownBlock2D", "CrossAttnDownBlock2D", "DownBlock2D"),
         up_block_types=("UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D"),
         num_class_embeds=len(BUCKETS),

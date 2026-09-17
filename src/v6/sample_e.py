@@ -19,10 +19,10 @@ from transformers import CLIPTextModel, CLIPTokenizer
 BUCKETS = [16, 24, 32, 48, 64]  # overridden by --buckets
 
 
-def build_model(device, n_class=None, width=128, cond_dim=None):
+def build_model(device, n_class=None, width=128, cond_dim=None, xattn=512):
     return UNet2DConditionModel(
         sample_size=64, in_channels=4, out_channels=4, layers_per_block=2,
-        block_out_channels=(width, 2 * width, 4 * width), cross_attention_dim=512,
+        block_out_channels=(width, 2 * width, 4 * width), cross_attention_dim=xattn,
         down_block_types=("CrossAttnDownBlock2D", "CrossAttnDownBlock2D", "DownBlock2D"),
         up_block_types=("UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D"),
         num_class_embeds=n_class or len(BUCKETS), time_cond_proj_dim=cond_dim,
@@ -429,6 +429,8 @@ def main():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--buckets", default=None, help="comma list, e.g. 12,16,20,24,32,48,64 for v7 models")
     p.add_argument("--sampler", default="ddpm", choices=["ddpm", "ddim"])
+    p.add_argument("--text_model", default=None,
+                   help="override the frozen text encoder; default: the run's text_model.txt, else ViT-B/32")
     p.add_argument("--pal", type=int, default=0, help="project x0 onto a k-colour palette during the late steps (0 = off)")
     p.add_argument("--pal_dist", action="store_true",
                    help="draw the palette size per sprite from the corpus distribution instead of a fixed --pal")
@@ -470,8 +472,13 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
 
     prompts = [l.strip() for l in open(args.prompts, encoding="utf-8") if l.strip() and not l.startswith("#")]
-    tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
-    enc = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch32").to(device).eval()
+    # A run records its text encoder next to the weights (train_v7 writes text_model.txt); older checkpoints predate
+    # that file and are all ViT-B/32.
+    side = Path(args.ckpt).parent / "text_model.txt"
+    tm = args.text_model or (side.read_text(encoding="utf-8").strip() if side.exists() else "openai/clip-vit-base-patch32")
+    tokenizer = CLIPTokenizer.from_pretrained(tm)
+    enc = CLIPTextModel.from_pretrained(tm).to(device).eval()
+    XATTN = enc.config.hidden_size
     sd = torch.load(args.ckpt, map_location=device)
     if isinstance(sd, dict) and "palhead" in sd:  # palette-factorised head probe (train_palhead.py)
         import sys
@@ -501,12 +508,12 @@ def main():
     elif "time_embedding.cond_proj.weight" in sd:  # GFT-form internaliser (train_gft_res.py)
         import sys
         sys.path.insert(0, str(Path(__file__).parent))
-        net = build_model(device, n_class_of(sd), width_of(sd), sd["time_embedding.cond_proj.weight"].shape[1])
+        net = build_model(device, n_class_of(sd), width_of(sd), sd["time_embedding.cond_proj.weight"].shape[1], XATTN)
         net.load_state_dict(sd)
         model = BetaWrap(net.eval(), args.gft_beta)
         print(f"GFT-form model, beta = {args.gft_beta} (w = {1 / args.gft_beta:.2f})", flush=True)
     else:
-        model = build_model(device, n_class_of(sd), width_of(sd))
+        model = build_model(device, n_class_of(sd), width_of(sd), xattn=XATTN)
         model.load_state_dict(sd)
     model.eval()
     if args.emb_extrap:
@@ -523,7 +530,7 @@ def main():
     guide = None
     if args.guide_ckpt:
         gsd = torch.load(args.guide_ckpt, map_location=device)
-        guide = build_model(device, n_class_of(gsd), width_of(gsd))
+        guide = build_model(device, n_class_of(gsd), width_of(gsd), xattn=XATTN)
         guide.load_state_dict(gsd)
         guide.eval()
         print(f"autoguidance with weak model {args.guide_ckpt}", flush=True)
