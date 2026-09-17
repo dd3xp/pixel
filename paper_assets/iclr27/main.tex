@@ -308,6 +308,39 @@ an independent re-training of the same recipe lands within 2.5 FD of the first (
 steps, biased/native), so we do not interpret differences below that scale. We also report CLIP ViT-B/32 image--text
 similarity ($100\cos$) and retrieval R@1 of the own caption among 100.
 
+\paragraph{Leakage control.}
+Two forms of contamination are possible here and we check both. First, the prompt set must come from the list the
+training run actually excluded: building it from the evaluation split instead puts training sprites into the prompt set,
+and the model then reconstructs them almost pixel for pixel. Second, exact-duplicate removal is not enough --- sprite
+sheets contain animation frames, so a held-out sprite can have a near-identical twin in training. Hashing every sprite
+by an $8\times8$ luminance-plus-alpha average hash, 1{,}241 of the 3{,}000 held-out prompts (41.4\%) have such a twin.
+Rescoring on the 1{,}759 prompts that do not (Table~\ref{tab:leak}) moves every number by less than 3 FD and changes no
+ordering, so we report the full set in the main tables and the clean subset here.
+
+\begin{table}[h]
+\caption{Removing every prompt whose sprite has a near-duplicate twin in training. Native protocol, 16\,px.}
+\label{tab:leak}
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Configuration & all 3{,}000 prompts & clean 1{,}759 \\
+\midrule
+v7r, CFG 1.5 (original targets)   & 167.2 & 164.2 \\
+v8f2, CFG 1.5                     & 123.1 & 125.0 \\
+v8n, CFG 1.5                      & 117.9 & 120.1 \\
+v8n, ICG $w{=}2$                  & 87.1  & 87.3 \\
+v8n, ICG $w{=}2$ + palette $k{=}4$ & 31.8 & 29.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A second evaluation set makes the ground truth itself native pixel art: the 210 held-out sprites that are natively
+$\le 16$\,px \emph{and} were excluded from training (124 after removing near-duplicate twins). Scores there are higher
+for everyone, including the real sprites, because the prompts describe genuine low-resolution art rather than
+downscaled illustrations: CFG 1.5 97.7, ICG $w{=}2$ 76.2, ICG + palette 61.1, real held-out sprites 34.4 (all $n=124$).
+The ordering is the same as in Table~\ref{tab:main16}.
+
 \subsection{Main results at 16\,px}
 \label{sec:main16}
 
