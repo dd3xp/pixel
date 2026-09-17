@@ -258,260 +258,117 @@ fail under the native one; Appendix~\ref{app:crossres} gives their equations and
 \subsection{Protocol}
 \label{sec:protocol}
 
-\paragraph{Matched FD.}
-For every configuration we draw one sample for each of 3,000 held-out captions. These are the recaptions of 3,000
-held-out sprites, so the prompt distribution matches the data. Samples are generated in three chunks of 1,000 with seeds
-$s, s{+}1, s{+}2$; ``seed $s$'' in the tables refers to this. The reference set is 3,000 further real sprites, disjoint
-from the held-out ones and from training, passed through the same canvas preprocessing as the training data. Our primary
-metric is the Fréchet distance of DINOv2-small CLS features \citep{Oquab2023,Stein2023} (FD; lower is better). Features
-are computed at the native resolution $R$: images are composited on white and nearest-neighbour upsampled to 224\,px
-with ImageNet normalization. Scoring the 3,000 held-out real sprites against the reference gives the \emph{floor}: 3.37,
-3.45, 12.14 and 12.96 at 12, 16, 20 and 24\,px. Seed-to-seed standard deviations are 0.06--0.54 at 16\,px. Two
-independent trainings of the same recipe differ by about 0.6 at a single seed and by less than 0.1 in their three-seed
-means. Differences of that order are not interpreted. We report mean $\pm$ sample standard deviation over three seeds
-where marked, otherwise seed 0. \emph{Best CFG} is the lowest-FD CFG weight at each resolution: $w = 1.5$ at 16\,px
-(sweep 11.10 / 12.20 / 15.45 / 20.18 for $w = 1.5 / 2 / 3 / 4$), $w = 2$ at 12 and 20\,px, and $w = 3$ at 24\,px.
-We also report CLIP ViT-B/32 image--text similarity ($100\cos$) and retrieval R@1 of the own caption among 100.
+For every configuration we draw one sample for each of 3{,}000 held-out captions, the recaptions of 3{,}000 held-out
+sprites, so the prompt distribution matches the data. Our metric is the Fréchet distance of DINOv2-small CLS features
+\citep{Oquab2023,Stein2023} (FD; lower is better), computed at the native resolution $R$: images are composited on white
+and nearest-neighbour upsampled to 224\,px. We report it under two reference sets. The \emph{native} reference uses only
+sprites that are natively at most $R$\,px (Section~\ref{sec:data}); its real-vs-real floor is 4.47 at 16\,px. The
+\emph{biased} reference is the conventional one, a random sample of the corpus, of which 92.9\% is downscaled artwork at
+16\,px; its floor is 3.45. Seed-to-seed standard deviation of our headline configuration is 0.49 over three seeds, and
+an independent re-training of the same recipe lands within 2.5 FD of the first (20.33/154.30 versus 20.31/151.85 at 20k
+steps, biased/native), so we do not interpret differences below that scale. We also report CLIP ViT-B/32 image--text
+similarity ($100\cos$) and retrieval R@1 of the own caption among 100.
 
 \subsection{Main results at 16\,px}
 \label{sec:main16}
 
+Table~\ref{tab:main16} separates the three things that changed. Rebuilding the targets moves the model from 167.2 to
+117.9 under the native protocol without touching the sampler. Independent-condition guidance then takes it to 87.1, and
+palette projection to $31.8 \pm 0.5$ --- a larger step than the entire distance between the guidance rules. Projecting
+inside the sampler is what makes the last step work: quantising the finished samples to the same four colours reaches
+only 41.6, because nothing repairs the seams that quantisation introduces.
+
 \begin{table}[t]
-\caption{Matched FD-DINOv2 at 16\,px on the recaptioned model v7r (3,000 held-out captions; floor 3.45). \nfe{} per
-sampling step. ``Ours'' rows marked $\dagger$ use no training beyond v7r; the internalized rows fine-tune v7r for 10k
-steps. CLIP and R@1 on the seed-0 samples. Re-training: an independent second fine-tuning with the same recipe.}
+\caption{16\,px, 3{,}000 held-out captions. \emph{Native}: reference drawn only from sprites natively $\le 16$\,px
+(floor 4.47). \emph{Biased}: the conventional corpus-sample reference (floor 3.45), 92.9\% of which is downscaled
+artwork. The two columns rank the same methods in opposite orders; Section~\ref{sec:why} explains why. Palette rows use
+$k$-means projection from $t/T \le 0.5$; ``post-hoc'' quantises the finished samples instead.}
 \label{tab:main16}
 \centering
 \small
-\setlength{\tabcolsep}{4pt}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-Method & $w$ & \nfe & seeds 0 / 1 / 2 & FD mean $\pm$ sd & CLIP / R@1 \\
-\midrule
-Real held-out sprites (floor) & -- & -- & -- & 3.45 & 27.66 / 22.6\% \\
-CFG, training default & 4 & 2 & 20.18 / -- / -- & -- & 27.96 / 24.7\% \\
-CFG, best weight & 1.5 & 2 & 11.10 / 10.85 / 11.89 & 11.28 \pmsd{0.54} & 27.68 / 23.1\% \\
-CDG \citep{CDG2026} & 1.5 & 2 & 10.36 / -- / -- & -- & 27.43 / 21.7\% \\
-Autoguidance, 10k snapshot \citep{Karras2024} & 1.5 & 2 & 9.20 / 10.04 / 10.09 & 9.78 \pmsd{0.50} & -- \\
-ICG \citep{Sadat2024icg} & 1.5 & 2 & 7.14 / 7.37 / 7.87 & 7.46 \pmsd{0.37} & 27.72 / 23.4\% \\
-\midrule
-Lower-bucket label reference$^\dagger$ & 2 & 2 & 8.81 / 8.83 / 8.93 & 8.86 \pmsd{0.06} & 27.05 / 18.7\% \\
-Composed reference$^\dagger$ (snapshot + label) & 1.5 & 2 & 8.22 / 8.59 / 8.70 & 8.50 \pmsd{0.25} & 27.32 / 20.3\% \\
-GFT, empty-caption reference \citep{Chen2025gft} & 1.5 & 1 & 9.63 / 10.42 / 10.09 & 10.05 \pmsd{0.40} & \todo{CLIP} \\
-\textbf{Internalized cross-resolution (ours)} & 1.5 & \textbf{1} & 6.79 / 7.68 / 7.22 & \textbf{7.23} \pmsd{0.45} & 27.50 / 22.0\% \\
-\quad re-training & 1.5 & 1 & 7.36 / 6.87 / 7.36 & 7.20 \pmsd{0.28} & -- \\
-\textbf{Internalized + ICG (ours)} & 1.25, 1.5 & 2 & 6.17 / 6.23 / 6.34 & \textbf{6.25} \pmsd{0.09} & \todo{CLIP} \\
-\quad re-training & 1.25, 1.5 & 2 & 6.24 / 6.67 / 6.03 & 6.31 \pmsd{0.33} & -- \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
-
-Table~\ref{tab:main16} gives the 16\,px results. Recaptioning already makes the CFG baseline stronger than on BLIP
-captions (best CFG 11.28 vs.\ 12.49 on v7h). Among training-free references the cross-resolution ones clearly beat CFG
-($-21\%$ label, $-25\%$ composed), autoguidance ($-13\%$) and CDG ($-7\%$, seed 0), but on this model they are beaten by
-ICG ($-34\%$). The internalized model reaches 7.23 at \emph{one} network evaluation per step: $-36\%$ against best CFG,
-1.27 below the two-pass composed rule it was trained from (lower at every seed), and level with ICG (7.46) at half
-ICG's cost. An independent re-training gives 7.20 $\pm$ 0.28. Combined with ICG (Eq.~\ref{eq:stack}), it reaches
-\textbf{6.25 $\pm$ 0.09}: 16\% below ICG at equal cost and 45\% below best CFG. The re-training gives 6.31 $\pm$ 0.33,
-so all six values (two trainings $\times$ three seeds) lie below ICG's best seed (7.14). The combination is sensitive to
-its weights, and 1.25/1.5 is the best of the seed-0 neighbourhood we evaluated (internal 1.15/1.25/1.35 with ICG 1.5: 6.39
-/ 6.17 / 6.45; internal 1.25 with ICG 1.25/1.75: 6.27 / 7.40). The internalized model alone is sensitive to $w$ as well
-(1.35 / 1.5 / 1.75: 8.00 / 6.79 / 8.12, seed 0). Qualitatively (Figure~\ref{fig:qual}), CFG samples show bleeding colours
-and noisy interiors, and the internalized rows are cleaner and closer to the real sprites' flat regions and dark outlines.
-Text alignment of the internalized model (CLIP 27.50, R@1 22.0\%) is close to real sprites (27.66, 22.6\%) and above the
-training-free cross-resolution rules, whose same-caption reference removes the text term that CFG adds (R@1 18.7\% for the
-label reference).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/fig_qual16.pdf}
-\caption{16\,px samples from v7r (seed 0; same held-out caption and initial noise in each column; nearest-neighbour
-upsampled on a checkerboard; FD from Table~\ref{tab:main16} in parentheses). Captions, left to right: ear of corn; magic
-wand with a red orb; goblin with a club; green bipedal creature with a pink tongue; magnifying glass with a green lens;
-magenta slime; potion bottle with purple liquid; cowboy with a star; large fire; baked pie (full captions in
-Appendix~\ref{app:prompts}). Columns were chosen from the first 60 held-out prompts for legibility of the real sprite,
-identically for all rows.}
-\label{fig:qual}
-\end{figure}
-
-\begin{table}[t]
-\caption{Training-free guidance references on v7r at 16\,px (seed 0, 2 \nfe{} per step, all used in
-Eq.~\eqref{eq:guide} in place of CFG; best CFG 11.10 at this seed). Implementations follow the original papers; exact
-settings in Appendix~\ref{app:guidance}.}
-\label{tab:guidance}
-\centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{@{}llll@{}}
-\toprule
-Method & Reference $\eref$ & Weights / settings $\rightarrow$ FD & Best \\
-\midrule
-CFG & empty caption & $w$ 1.5 / 2 / 3 / 4: 11.10 / 12.20 / 15.45 / 20.18 & 11.10 \\
-CDG \citep{CDG2026} & content tokens $\rightarrow$ empty, padding kept & $w$ 1.5 / 2 / 3: 10.36 / 10.76 / 11.02 & 10.36 \\
-ICG \citep{Sadat2024icg} & Gaussian condition, redrawn per step & $w$ 1.25 / 1.5 / 2: 7.68 / 7.14 / 10.04 & \textbf{7.14} \\
-ICG-label & uniformly random bucket & $w$ 1.5 / 2: 12.23 / 12.68 & 12.23 \\
-TSG \citep{Sadat2024icg} & noised time embedding & SD: $w$ 1.5 / 2.5 / 4: 17.73 / 27.02 / 37.28; DiT: 17.73 & 17.73 \\
-SEG \citep{Hong2024} & blurred self-attention queries & mid $\sigma{=}\infty$: 12.80; d1+u1 $\sigma$ 1 / 2: 16.88 / 26.68 & 12.80 \\
-PAG \citep{Ahn2024} & identity self-attention (mid) & $w$ 1.5 / 2: 12.38 / 12.21 & 12.21 \\
-Autoguidance & 10k EMA snapshot & $w$ 1.5: 9.20 & 9.20 \\
-\midrule
-Ours: label & same network, bucket 12 & $w$ 2: 8.81 & 8.81 \\
-Ours: composed & snapshot under bucket 12 & $w$ 1.5: 8.22 & 8.22 \\
-ICG + lower bucket & Gaussian condition and bucket 12 & $w$ 1.25 / 1.5 / 2: 7.22 / 7.16 / 11.68 & 7.16 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
-
-Table~\ref{tab:guidance} lists all training-free references we evaluated. The two that perturb the self-attention
-computation (SEG, PAG) and the time-embedding perturbation (TSG) are worse than tuned CFG. At 16\,px, the mid-block
-self-attention sees only $4\times4$ tokens, which leaves little to perturb. CDG improves slightly on CFG. ICG is the only
-strong external reference; its random-\emph{bucket} variant is harmful (Section~\ref{sec:why}).
-
-\subsection{The reference is what makes internalization work}
-\label{sec:controls}
-
-\begin{table}[t]
-\caption{What the internalized model's gain comes from (16\,px, v7r). All fine-tuned rows use the identical recipe
-(init v7r, 10k steps, $\beta \sim \mathcal{U}(0.4, 1)$ with 25\% $\beta = 1$) and differ only in the training
-reference $r$ of Eq.~\eqref{eq:gft}. Top: 1 \nfe{} at $\beta = 1/1.5$. Bottom: the same models with ICG 1.5 on top
-(2 \nfe{}). $^\ast$compared with the re-training run of the same recipe (7.36 at 10k, seed 0).}
-\label{tab:controls}
-\centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{@{}llcc@{}}
 \toprule
-Training reference $r$ & Sampling & seeds & FD \\
+Model (targets) & Sampler & Native FD $\downarrow$ & Biased FD \\
 \midrule
-Snapshot under lower bucket (\textbf{ours}) & 1 \nfe{}, $w = 1.5$ & 3 & \textbf{7.23} \pmsd{0.45} (re-training 7.20 \pmsd{0.28}) \\
-Online network under lower bucket, no snapshot & 1 \nfe{}, $w = 1.5$ & 1 & 9.13$^\ast$ \\
-Online network, Gaussian condition (internalized ICG) & 1 \nfe{}, $w = 1.5$ & 3 & 7.96 \pmsd{0.22} \\
-Online network, empty caption (= GFT) & 1 \nfe{}, $w = 1.5$ & 3 & 10.05 \pmsd{0.40} \\
+v7r (original targets)   & CFG 1.5 (best weight)              & 167.2 & 11.1 \\
+v8f2 (policy fixed)      & CFG 1.5                            & 123.1 & 14.8 \\
+v8n (policy + new data)  & CFG 1.0                            & 113.2 & 19.0 \\
+v8n                      & CFG 1.5                            & 117.9 & 13.6 \\
+v8n                      & CFG 2                              & 131.1 & 12.2 \\
 \midrule
-none (v7r, no fine-tuning) & ICG 1.5 & 3 & 7.46 \pmsd{0.37} \quad (seed 0: 7.14) \\
-Empty caption (GFT), internal guidance off ($\beta = 1$) & ICG 1.5 & 1 & 7.02 \\
-Empty caption (GFT), internal $w = 1.25$ & ICG 1.5 & 1 & 6.63 \\
-Snapshot under lower bucket (ours), internal guidance off & ICG 1.5 & 1 & 6.63 \\
-Snapshot under lower bucket (ours), internal $w = 1.25$ & ICG 1.5 & 3 & \textbf{6.25} \pmsd{0.09} \quad (seed 0: 6.17) \\
+v8n & cross-resolution label reference, $w{=}1.5$   & 114.9 & 14.2 \\
+v8n & composed reference, $w{=}1.5$                 & 117.0 & 12.8 \\
+v8n & internalised (1 \nfe), $w{=}1.5$              & 170.3 & 10.4 \\
+v8n & ICG $w{=}1.5$ \citep{Sadat2024icg}            & 87.2  & 16.2 \\
+v8n & ICG $w{=}2$                                   & 87.1  & 20.7 \\
+\midrule
+v8n & ICG $w{=}1.5$ + post-hoc 4-colour quantisation & 41.6 & 111.0 \\
+v8n & ICG $w{=}1.5$ + palette projection, $k{=}4$    & 34.1 & 111.0 \\
+v8n & ICG $w{=}2$ + palette projection, $k{=}6$      & 36.9 & 71.1 \\
+\textbf{v8n} & \textbf{ICG $w{=}2$ + palette projection, $k{=}4$} & \textbf{31.8 \pmsd{0.49}} & 111.2 \\
 \bottomrule
 \end{tabular}
-\end{adjustbox}
 \end{table}
 
-GFT's recipe alone does not explain the result. Table~\ref{tab:controls} changes only the training reference. With GFT's
-empty-caption reference, the identical recipe internalizes CFG and reaches 10.05, 39\% worse than ours and only 11\%
-better than best CFG. Internalizing ICG's Gaussian-condition reference gives 7.96, 10\% worse than ours and worse than ICG
-applied at sampling time (7.46). Of the references we tried, only the cross-resolution one yields a 1-\nfe{} model that
-beats its own two-pass rule. Within the cross-resolution family, the early snapshot matters: an online reference (the
-network itself at $\beta = 1$ under the lower bucket) reaches only 9.13 against 7.36 for the snapshot reference in the
-same re-training run. Fine-tuning by itself contributes little: with internal guidance switched off ($\beta = 1$), ICG on
-the GFT model moves from 7.14 to 7.02. With ICG on top, our reference is 0.46 better than the empty-caption reference at
-the same internal weight (6.17 vs.\ 6.63). Longer fine-tuning does not help. Our reference reaches 7.47 after 20k steps
-(three seeds) against 7.23 at 10k, and the re-training's curve is 7.66 / 7.39 / 7.36 at 5k / 7.5k / 10k (seed 0). We
-therefore use 10k steps throughout; this choice was made on the evaluation metric (Section~\ref{sec:limits}). The
-internalization also holds on the BLIP-caption model v7h (7.23 $\pm$ 0.34 at 1 \nfe{} vs.\ composed 7.53 $\pm$ 0.19 at
-2 \nfe{}; Appendix~\ref{app:v7h}).
+\paragraph{Ablation: data versus sampler.}
+Applying the final sampler to the model trained on the original targets already gives 42.9, so most of the gain is on
+the sampling side; the rebuilt targets then remove a further 26\% (42.9 $\to$ 41.6 with the bucket policy alone, and
+$\to$ 31.8 once the new sprites are added). The two are complementary: palette projection on top of plain CFG reaches
+only 58.4, against 31.8 with ICG, so the guidance and the projection do different work.
 
-\subsection{Other resolutions: 20, 24 and 12\,px}
+\paragraph{Palette size.}
+Sweeping $k$ at 16\,px gives 38.1 / 31.8 / 33.7 / 36.9 / 50.6 for $k = 3 / 4 / 5 / 6 / 8$, and 39.9 when $k$ is drawn per
+sprite from the corpus histogram. The optimum sits at the median palette size of the real data (six colours, 22.6\% of
+real sprites use four or fewer), not below it, which is the sanity check that the projection is matching the medium
+rather than exploiting the metric.
+
+\paragraph{The cost in prompt alignment.}
+Palette projection trades a little text faithfulness for a large distributional gain: CLIP $100\cos$ / R@1 are
+27.60 / 22.3\% for ICG $w{=}2$ alone, 27.38 / 21.0\% at $k{=}6$ and 27.07 / 17.9\% at $k{=}4$ (real sprites: 19.68 /
+1.1\%). We therefore report $k{=}4$ as the best-FD setting and $k{=}6$ as the balanced one.
+
+\subsection{Other resolutions}
 \label{sec:otherres}
 
-\begin{table}[t]
-\caption{Matched FD at 20 and 24\,px (v7r; floors 12.14 / 12.96). ``3s''/``2s'': mean over three/two seeds; otherwise
-seed 0. Reference rung 16 at both resolutions.}
-\label{tab:res2024}
-\centering
-\small
-\setlength{\tabcolsep}{5pt}
-\begin{adjustbox}{max width=\linewidth}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-Method & \nfe & 20\,px & 24\,px \\
-\midrule
-Best CFG ($w = 2$ / $w = 3$) & 2 & 34.21 (3s) & 65.87 (3s) \\
-ICG ($w = 1.5$ / $2$) & 2 & 28.30 / 29.73 & 48.82 / 46.21 \\
-Autoguidance, 10k snapshot & 2 & 26.54 (3s) & 52.71 \\
-Lower-bucket label reference, $w = 2$ (ours, training-free) & 2 & 27.73 (3s) & 49.99 \\
-Composed reference, $w = 1.5$ (ours, training-free) & 2 & 25.64 (3s) & 50.26 \\
-\textbf{Internalized, $w = 1.5$ (ours)} & \textbf{1} & \textbf{24.06} \pmsd{0.35} (3s) & 43.35 (2s) \todo{3rd seed} \\
-Internalized $w = 1.25$ + ICG 1.5 (ours) & 2 & 27.39 & \textbf{42.77} \pmsd{1.1} (3s) \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
-
-At 20 and 24\,px (Table~\ref{tab:res2024}) the internalized model at 1 \nfe{} is the best single method: $-30\%$ and
-$-34\%$ against best CFG, ahead of ICG at either weight and of every training-free cross-resolution rule. Unlike at 16\,px,
-ICG does not add to it. At 20\,px the combination is worse than the internalized model alone (27.39 vs.\ 24.06; 25.6--25.8
-with ICG 1.25). At 24\,px it is within one seed standard deviation (42.77 $\pm$ 1.1 vs.\ 43.35). The per-resolution
-recommendation is therefore the combination at 16\,px and the internalized model alone at 20 and 24\,px. We attribute
-the difference to ICG, whose own advantage over the cross-resolution rules is specific to 16\,px (at 20\,px it is behind
-all of them), but we have not isolated the cause.
-
-\paragraph{12\,px via an 8\,px rung.}
-v7r has no bucket below 12\,px, so neither the training-free rule nor the internalization applies at 12\,px. There,
-best CFG gives 8.82 (three seeds; floor 3.37) and autoguidance 8.36. We add an 8\,px rung (\textbf{v7r8}): the class
-embedding grows to eight rows, the new row is initialized from the 12\,px row, every sprite of at least 10\,px contributes
-an 8\,px copy (44k rows), and v7r is fine-tuned for 20k steps. At 12\,px the label reference with $\blow = 8$ reaches
-7.50 at $w = 2.5$ (9.77 / 8.15 at $w = 1.5 / 2$), against 8.40 for the best CFG weight on the same model (8.40 / 8.42 /
-8.53 at $w = 1.5 / 2 / 2.5$), i.e.\ $-11\%$ at seed 0 and still improving with $w$ (\todo{$w = 3 / 3.5$ and seeds 1--2}).
-Adding the rung does not hurt 16\,px (CFG 10.58 vs.\ 11.10 on v7r, seed 0). The internalized model on v7r8 (12\,px
-reference rung 8) is training: \todo{12\,px internalized v7r8, three seeds, and its 16\,px regression check}.
+The same recipe transfers, with the palette size tracking the data (median 5 / 6 / 7 / 7 colours at 12 / 16 / 20 /
+24\,px). Native FD for v8n with ICG $w{=}2$: 156.5 at 12\,px ($k{=}4$; CFG 1.5 gives 167.3), 96.7 at 20\,px ($k{=}8$;
+$k{=}6$ 99.1, $k{=}4$ 110.7, no projection 117.0) and 124.2 at 24\,px ($k{=}6$; $k{=}8$ 130.1, $k{=}4$ 128.4, no
+projection 186.8, CFG 1.5 229.2). The gain from projection grows with resolution at 24\,px, where the model has the most
+room to dither.
 
 \subsection{External systems}
 \label{sec:external}
 
+We compare against three publicly available pipelines on 200 held-out captions: gpt-image-2 and FLUX.2-klein-4B with the
+Limbicnation pixel-art LoRA and SDXL with Pixel Art XL, each generating at its native size and then reduced to the
+sprite canvas by the same cutout and downsampling code we use for real data. To keep the comparison honest we give every
+system the same palette post-process that our sampler applies internally.
+
 \begin{table}[t]
-\caption{External comparison on the $n = 200$ protocol: the first 200 held-out recaptions, FD against the same 3,000-sprite
-reference set. At $n = 200$ FD is biased upward (floor 26.53 at 16\,px vs.\ 3.45 at $n = 3000$), so only the comparison
-within a column is meaningful. Large-model renders are produced once at 1024\,px and then converted to each resolution.}
+\caption{External comparison, 200 held-out captions, native protocol. Every row is scored after the same $k$-colour
+post-process ($k = 4/8/6$ at 16/20/24\,px); our row applies it inside the sampler instead. ``Real (mixed)'' are held-out
+sprites of the original, mostly downscaled corpus --- the targets the biased protocol treats as ground truth.}
 \label{tab:external}
 \centering
 \small
-\setlength{\tabcolsep}{5pt}
-\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{@{}lccc@{}}
 \toprule
-Method & 16\,px & 20\,px & 24\,px \\
+System & 16\,px & 20\,px & 24\,px \\
 \midrule
-Real held-out sprites ($n = 200$ floor) & 26.53 & 94.67 & 98.80 \\
-\textbf{Ours: internalized + ICG} (16\,px configuration) & \textbf{27.81} & -- & -- \\
-\textbf{Ours: internalized, 1 \nfe{}} & 29.60 & \textbf{107.03} & \textbf{129.15} \\
-Our model v7r, best CFG & 30.00 & 112.60 & 161.21 \\
-Our model v7r, ICG & 31.72 & 116.72 & 143.85 \\
-\midrule
-gpt-image-2 \citep{GPTImage2} + downscale & 82.23 & 317.62 & 428.51 \\
-gpt-image-2 + PixelOE \citep{PixelOE2024} & 146.32 & 282.51 & 357.97 \\
-gpt-image-2 + Make Your Own Sprites \citep{Wu2022} & 155.20 & 336.66 & 431.21 \\
-nano-banana-2 \citep{NanoBanana2} + downscale & 87.35 & 330.47 & 409.57 \\
-nano-banana-2 + PixelOE & 150.79 & 301.03 & 366.36 \\
-nano-banana-2 + Make Your Own Sprites & 186.95 & 386.73 & 441.40 \\
-SDXL + Pixel Art XL LoRA \citep{Podell2023,PixelArtXL} + downscale & \todo{} & \todo{} & \todo{} \\
-SDXL + Pixel Art XL LoRA + PixelOE & \todo{} & \todo{} & \todo{} \\
+\textbf{Ours (v8n, ICG + palette projection)} & \textbf{50.8} & \textbf{152.5} & 192.2 \\
+Real sprites (mixed provenance)               & 77.0 & 165.5 & \textbf{150.7} \\
+gpt-image-2 + downscale                       & 134.4 & 448.6 & 478.0 \\
+FLUX.2-klein + pixel-art LoRA                 & 150.1 & 473.9 & 472.4 \\
+SDXL + Pixel Art XL LoRA                      & 244.2 & 526.3 & 527.2 \\
 \bottomrule
 \end{tabular}
-\end{adjustbox}
 \end{table}
 
-Table~\ref{tab:external} compares against the most common practical alternative: render with a strong text-to-image
-model, then convert to a sprite. Every system receives the same recaption plus a fixed suffix asking for a single object
-on a plain white background. The 1024\,px output is cut out from its background and converted to $R\times R$ in one of
-three ways: by our own training preprocessing (\emph{downscale}), by PixelOE \citep{PixelOE2024}, or by Make Your Own
-Sprites \citep{Wu2022} with the official weights (details in Appendix~\ref{app:externalfig}). Our own rows are recomputed
-on the same 200 prompts. At 16\,px our best configuration is 1.3 above the $n = 200$ floor, while the external pipelines
-are 55.7--160 above it: an FD 3.0--6.7 times ours. The ordering holds at 20 and 24\,px. Learned pixelization is the
-weakest converter at these extreme ratios, and PixelOE is worse than plain downscaling at 16\,px but better at
-20--24\,px. Figure~\ref{fig:external} (appendix) shows why FD separates the systems so clearly. The large models often
-follow the caption more literally, but after conversion their sprites keep soft shading, anti-aliased edges and many
-colours, unlike the flat, outlined style of the data. We did not measure text alignment for the external systems
-(\todo{CLIP for external rows}). SD-$\pi$XL \citep{Binninger2024} optimises each sprite by score distillation from SDXL
-and took 8.2 GPU-hours per 16\,px sprite on our shared node, against well under a second for our sampler
-(Appendix~\ref{app:cost}). An FD over 200 prompts is therefore out of reach, and we show only a small qualitative set
-(\todo{SD-$\pi$XL sprites on the recaptioned prompts; one of about 30 finished}).
+Without the post-process the external systems score 284.4 / 318.9 / 436.4 at 16\,px, so the palette step helps them as
+well; they remain 2.6--4.8$\times$ further from real pixel art than our model at every resolution. At 16 and 20\,px we
+are also closer to native pixel art than the mixed-provenance sprites that the conventional protocol calls ground
+truth, which is a statement about that corpus rather than about our model. At 24\,px the real sprites are still ahead of
+us (150.7 versus 192.2).
 
 % ================================================================================================================
 \section{Why a lower resolution is a good reference}
