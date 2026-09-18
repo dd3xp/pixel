@@ -14,11 +14,12 @@ STEPS=${STEPS:-80000}; OUT=${OUT:-workdir/v8full}; DROP=${DROP:-data/corpus_v8_d
 # (data/oga3_clean + data/oga3_captions_recap.csv: 13,987 natively small sprites, captioned with
 # gemini-3.8-flash), i.e. the half of the data problem that the bucket-policy fixes cannot reach.
 EXTRA_SRC=${EXTRA_SRC:-}
+# CSV_SUFFIX picks the caption set: _recap (plain) or _q (craft-quality tag prepended, 09-18)
 EX_ARG=""; [ -n "$EXTRA_SRC" ] && EX_ARG="--extra $EXTRA_SRC"
 TAG=$(basename $OUT)
 [ -f $OUT/.trained ] || {
   echo "[$(date +%m%d-%H:%M)] STAGE train $TAG steps=$STEPS drop=$DROP quant=$QUANT"
-  $P src/v6/train_v8.py --steps $STEPS --out $OUT --exclude runs_out/holdout_exclude.txt --csv_suffix _recap \
+  $P src/v6/train_v8.py --steps $STEPS --out $OUT --exclude runs_out/holdout_exclude.txt --csv_suffix ${CSV_SUFFIX:-_recap} \
      --max_down 1.5 --quant $QUANT --dupdrop $DROP --snap_every 20000 $EX_ARG || { echo V8FULL_TRAIN_FAIL; exit 1; }
   touch $OUT/.trained
 }
