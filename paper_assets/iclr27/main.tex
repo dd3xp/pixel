@@ -46,7 +46,7 @@ fifty-colour blobs---and the evaluation reference inherits the same bias, reward
 targets (drop 4{,}888 pixel-identical duplicates that leak 15.5\% of the held-out set into training, forbid
 downscaling by more than $1.5\times$, add 14k natively small sprites from three permissively licensed corpora) and we
 evaluate against a reference drawn only from real low-resolution pixel art. Under this protocol the data fix alone
-takes FD-DINOv2 from 209.6 to 117.9 at 16\,px. We then close the remaining gap where it actually is: real sprites use
+takes FD-DINOv2 from 167.2 to 117.9 at 16\,px. We then close the remaining gap where it actually is: real sprites use
 a median of six opaque colours while every sampling configuration we tested emits more than fifty. Projecting the
 predicted $x_0$ onto a per-sprite $k$-colour palette during the late denoising steps---so that the remaining steps
 repair the quantisation seams---reaches $31.8\pm0.5$, better than quantising the finished samples (41.6), and
@@ -94,7 +94,7 @@ duplicates, which had left a pixel-identical twin in training for 15.5\% of the 
 feeding a sprite to a bucket more than $1.5\times$ below its native size, and (iii) add 14{,}999 natively small sprites
 cut from three permissively licensed OpenGameArt collections and captioned with a vision--language model. On the
 evaluation side we define the \emph{native protocol}: FD-DINOv2 against real sprites that are natively at most $R$\,px,
-never downscaled. At 16\,px the data work alone moves the model from 209.6 to 117.9 under this protocol.
+never downscaled. At 16\,px the data work alone moves the model from 167.2 to 117.9 under this protocol.
 
 What remains is a property of the medium that continuous diffusion has no way to express. Real 16\,px sprites use a
 median of six opaque colours; every sampling configuration we tested---classifier-free guidance at any weight,
@@ -604,7 +604,7 @@ the cost is 1.3 points, and prompt following at these sizes is weak for every mo
 For 12--24\,px sprites, what the model is asked to imitate matters more than which guidance rule it uses. The corpus
 that this literature trains on is 93\% downscaled artwork at 16\,px, it leaks 15.5\% of its own held-out set through
 exact duplicates, and the evaluation reference built from it rewards the softness it introduced. Rebuilding the targets
-and scoring against real low-resolution pixel art moves FD-DINOv2 from 209.6 to 117.9; projecting the predicted $x_0$
+and scoring against real low-resolution pixel art moves FD-DINOv2 from 167.2 to 117.9; projecting the predicted $x_0$
 onto a small per-sprite palette during the late denoising steps --- the property of the medium that continuous diffusion
 cannot express --- takes it to $31.8\pm0.5$, against 134.4 for the strongest external pipeline under the same palette
 post-process. The same change of reference set reverses the ranking of our earlier cross-resolution guidance results,
