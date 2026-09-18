@@ -352,6 +352,35 @@ for everyone, including the real sprites, because the prompts describe genuine l
 downscaled illustrations: CFG 1.5 97.7, ICG $w{=}2$ 76.2, ICG + palette 61.1, real held-out sprites 34.4 (all $n=124$).
 The ordering is the same as in Table~\ref{tab:main16}.
 
+\paragraph{What the reference sprites actually depict.}
+The corpus is cut from sheets on alpha connected components, so besides sprites it contains letters, UI strips, tile
+fragments and pieces of larger drawings; the colour and contrast filters of the extraction pipeline do not remove them.
+We labelled every evaluation image with a vision--language model (20 per numbered grid, classes: object, effect,
+fragment, glyph, junk). Of the 3{,}000 held-out sprites, 73.2\% are standalone objects, 15.7\% are fragments, 7.8\% are
+effects, 2.0\% are glyphs and 1.3\% is junk; in the native reference set the object share is 61.7\%. A third protocol
+therefore keeps only objects on both sides: 825 reference sprites and 2{,}181 prompts. The ordering is the same as under
+the other two references (Table~\ref{tab:obj}), which is why we keep the full native protocol for the main tables and
+report this one as a content control.
+
+\begin{table}[h]
+\caption{Object-only protocol at 16\,px: the reference and the prompts are restricted to sprites a vision--language
+model labels as standalone objects.}
+\label{tab:obj}
+\centering
+\small
+\begin{tabular}{@{}lc@{}}
+\toprule
+Configuration & FD (object reference) $\downarrow$ \\
+\midrule
+v7r, CFG 1.5 (original targets)     & 201.3 \\
+real held-out sprites (mixed provenance) & 161.3 \\
+v8n, CFG 1.5                        & 144.9 \\
+v8n, ICG $w{=}2$                    & 103.0 \\
+\textbf{v8n, ICG $w{=}2$ + palette $k{=}4$} & \textbf{37.1} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Main results at 16\,px}
 \label{sec:main16}
 
