@@ -633,13 +633,17 @@ external baselines were generated through commercial APIs under their terms of u
 
 \section*{AI use statement}
 % Required by ICLR 2027 (does not count toward the page limit). The authors must complete and confirm this section.
-Generative AI tools were used in this work in the following ways. (a) As part of the method's data pipeline, vision-language models (gemini-3-flash, and gemini-3.8-flash for the material added here) produced the training and
-evaluation captions (Section~\ref{sec:data}), and two
-commercial image generators served as external baselines (Section~\ref{sec:external}). (b) An LLM-based coding assistant
-was used to implement and run experiments, to search and verify the literature, and to draft and edit the manuscript.
-\todo{authors: complete the required disclosure per the ICLR 2027 AI policy, e.g.\ which ideas, analyses and text were
-AI-assisted and how they were verified}. The authors reviewed all AI-assisted work and take responsibility for the final
-content, including all text, numbers and claims.
+Generative AI tools were used in this work in the following ways. (a) Inside the method and its data pipeline:
+vision--language models produced the training and evaluation captions (gemini-3-flash for the original corpus,
+gemini-3.8-flash for the material added here), labelled every evaluation sprite by content type and rated sprite craft
+for the ablations of Section~\ref{sec:datablations}; two commercial image generators served as external baselines
+(Section~\ref{sec:external}). Each of these uses is an experimental component, is described where it is used, and its
+outputs were spot-checked against manual inspection --- the caption classifier was validated against image-level labels
+on 2{,}980 held-out sprites (82.5\% agreement), and the content and craft labels were checked on random grids by the
+authors. (b) In the research process: an LLM-based coding assistant implemented and ran experiments, searched and
+verified related work, and drafted and edited parts of this manuscript. Every number reported here comes from a script
+in the released code and was regenerated from the saved samples; the authors reviewed all AI-assisted work, including
+the negative results, and take responsibility for the final content, its claims and its errors.
 
 \bibliography{refs}
 \bibliographystyle{iclr2027_conference}
