@@ -24,3 +24,8 @@ nothing under a native one.
 - TL;DR: For tiny sprites the targets and the reference set decide the result; projecting each sample onto its own
   small palette during late denoising closes most of the remaining gap.
 - Primary area: generative models / datasets and benchmarks
+
+## Change log vs the registered abstract
+- 2026-09-19: the data-only gain now reads 167.2 -> 117.9 (both at 80k steps, best-tuned CFG). The registered
+  text said 209.6 -> 117.9, which compared a 20k control against an 80k model. Update the abstract field when
+  submitting the full paper.
