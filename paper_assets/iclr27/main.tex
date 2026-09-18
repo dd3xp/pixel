@@ -462,7 +462,9 @@ rather than exploiting the metric.
 \paragraph{The cost in prompt alignment.}
 Palette projection trades a little text faithfulness for a large distributional gain: CLIP $100\cos$ / R@1 are
 27.60 / 22.3\% for ICG $w{=}2$ alone, 27.38 / 21.0\% at $k{=}6$ and 27.07 / 17.9\% at $k{=}4$ (real sprites: 19.68 /
-1.1\%). We therefore report $k{=}4$ as the best-FD setting and $k{=}6$ as the balanced one.
+1.1\%). We therefore report $k{=}4$ as the best-FD setting and $k{=}6$ as the balanced one. The cost shrinks as the
+canvas grows and the quantisation error with it: at 20\,px the projection costs 0.4 points of retrieval (25.3\% to
+24.9\%) and at 24\,px 0.9 points (26.2\% to 25.3\%).
 
 \subsection{Two data interventions that do not belong in the main model}
 \label{sec:datablations}
