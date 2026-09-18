@@ -464,6 +464,39 @@ Palette projection trades a little text faithfulness for a large distributional 
 27.60 / 22.3\% for ICG $w{=}2$ alone, 27.38 / 21.0\% at $k{=}6$ and 27.07 / 17.9\% at $k{=}4$ (real sprites: 19.68 /
 1.1\%). We therefore report $k{=}4$ as the best-FD setting and $k{=}6$ as the balanced one.
 
+\subsection{Two data interventions that do not belong in the main model}
+\label{sec:datablations}
+
+The corpus contains material that is not a sprite and material that is badly drawn. We tried to fix both at training
+time; neither earns a place in the main recipe, and the second is instructive about the metric.
+
+\paragraph{Content filtering.}
+A vision--language model labels every sprite as object / effect / fragment / glyph / junk (Section~\ref{sec:data}).
+Dropping the 8{,}818 sprites it calls fragment, glyph or junk (training rows 86{,}290 $\to$ 73{,}845) improves a
+20k-step run from 165.6 to 156.7 native FD at equal steps, a 5.4\% gain. That is real but small next to the effect of
+the sampler, and it costs a full retraining, so we report it as an ablation and keep the unfiltered model.
+
+\paragraph{Quality conditioning, and what it does to FD.}
+The same model rates each sprite's craft from 1 to 5; on the original corpus 25\% of the images are rated 1--2 and 8\%
+are rated 5. Prepending the rating to the caption as a tag (``crisp detailed sprite,'' / ``clean sprite,'' / nothing /
+``rough sprite,'') and asking for the top tag at sampling time is the standard aesthetic-tag recipe and needs no
+architecture change. It works as intended in the only sense a person can check: the samples are visibly more finished
+(Figure~\ref{fig:qualtag}). Both distributional metrics get worse --- 158.4 $\to$ 208.4 against the native reference,
+and 186.5 $\to$ 227.5 against a reference restricted to the 719 sprites rated 4--5 --- because conditioning on the best
+8\% of the corpus narrows the output distribution, and FD measures distance to the whole distribution, not to its best
+part. We keep the main model unconditioned, report the knob for practitioners, and note the disagreement as a limit of
+distributional evaluation for this medium: a reviewer who looks at Figure~\ref{fig:qualtag} and a reviewer who reads
+the table will draw opposite conclusions, and both are reading their instrument correctly.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_quality_tag.png}
+\caption{Quality conditioning at 16\,px: same model, same prompts and seed, sampled with (top) and without (bottom) the
+top craft tag. The tagged samples are more finished and more detailed; both FD protocols rate them worse, because the
+tag narrows the distribution.}
+\label{fig:qualtag}
+\end{figure}
+
 \subsection{Other resolutions}
 \label{sec:otherres}
 
