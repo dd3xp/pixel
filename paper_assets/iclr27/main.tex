@@ -261,7 +261,8 @@ to a noise prediction,
   \tilde e \;\leftarrow\; \bigl(x_t - \sqrt{\bar\alpha_t}\,\hat x_0^{\text{pal}}\bigr) / \sqrt{1-\bar\alpha_t},
   \label{eq:palette}
 \end{equation}
-before taking the scheduler step. The projection is thus a hard constraint applied to the model's own belief, not a
+before taking the scheduler step (Figure~\ref{fig:palette} shows the effect). The projection is thus a hard
+constraint applied to the model's own belief, not a
 post-process: the steps that follow see the quantised state and repair the seams it creates, which is why doing this
 inside the sampler beats quantising the finished image (31.8 vs.\ 41.6 at 16\,px, Section~\ref{sec:main16}). It adds no
 network evaluations; $k$-means on $R^2 \le 576$ pixels is negligible next to a UNet pass. We use $f = 0.5$ throughout and
@@ -347,7 +348,7 @@ v8n, ICG $w{=}2$ + palette $k{=}4$ & 31.8 & 29.0 \\
 \end{table}
 
 A second evaluation set makes the ground truth itself native pixel art: the 210 held-out sprites that are natively
-$\le 16$\,px \emph{and} were excluded from training (124 after removing near-duplicate twins). Scores there are higher
+$\le 16$\,px \emph{and} were excluded from training (124 after removing near-duplicate twins; Figure~\ref{fig:nativegt}). Scores there are higher
 for everyone, including the real sprites, because the prompts describe genuine low-resolution art rather than
 downscaled illustrations: CFG 1.5 97.7, ICG $w{=}2$ 76.2, ICG + palette 61.1, real held-out sprites 34.4 (all $n=124$).
 The ordering is the same as in Table~\ref{tab:main16}.
