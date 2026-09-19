@@ -16,8 +16,7 @@ opaque colours while every sampling rule we tested emits more than fifty. Projec
 k-colour palette during the late denoising steps reaches 31.8 ± 0.5 — better than quantising finished samples (41.6),
 than one corpus-wide palette (120.1) and than a median filter that removes the same dither (112.2). Against external
 systems given the same palette post-process we reach 50.8 versus 134.4 for gpt-image-2 with downscaling. We also report
-a negative result: cross-resolution self-guidance, which wins by 40% under the downscale-biased reference, gives
-nothing under a native one.
+a negative result: cross-resolution self-guidance, which wins by 44% under the downscale-biased reference (6.24 against 11.10), gives nothing under a native one.
 
 ## Notes for the submission form
 - Keywords: pixel art, diffusion models, sampling, dataset quality, evaluation protocol
@@ -26,6 +25,7 @@ nothing under a native one.
 - Primary area: generative models / datasets and benchmarks
 
 ## Change log vs the registered abstract
+- 2026-09-20: the negative result now reads 44% (6.24 vs 11.10) instead of 40%.
 - 2026-09-19: the data-only gain now reads 167.2 -> 117.9 (both at 80k steps, best-tuned CFG). The registered
   text said 209.6 -> 117.9, which compared a 20k control against an 80k model. Update the abstract field when
   submitting the full paper.

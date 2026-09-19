@@ -53,7 +53,7 @@ repair the quantisation seams---reaches $31.8\pm0.5$, better than quantising the
 $2.6\times$ better than the strongest external system under the same palette post-process (50.8 versus 134.4 at
 $n{=}200$); it also beats the mixed-provenance ``real'' sprites that the downscale-biased protocol treats as ground
 truth (77.0). We report an equally instructive negative result: cross-resolution self-guidance and its internalised
-one-pass variant, which win by 40\% under the downscale-biased reference, give no gain once the reference is real
+one-pass variant, which win by 44\% under the downscale-biased reference (6.24 against 11.10), give no gain once the reference is real
 pixel art, while independent-condition guidance transfers and composes with palette projection.
 \end{abstract}
 
@@ -106,7 +106,7 @@ At 16\,px this takes FD from 87.2 to $31.8\pm0.5$; quantising the finished sampl
 
 Finally, we report a negative result that we consider as informative as the positive one. Cross-resolution
 self-guidance---querying the same network under a lower bucket label and extrapolating away from that prediction---and
-its internalised one-pass variant were, on the downscale-biased reference, our strongest method (a 40\% improvement over
+its internalised one-pass variant were, on the downscale-biased reference, our strongest method (a 44\% improvement over
 the best-tuned CFG). Under the native protocol they give nothing (114.9 and 117.0 versus 113.2 for unguided sampling),
 and the internalised variant is actively harmful (170.3). Independent-condition guidance, an external method, transfers
 and composes with palette projection. Which reference set one scores against decides which of these conclusions one
