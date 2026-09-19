@@ -576,6 +576,22 @@ while leaving the palette untouched, and internalising it bakes a smoothed refer
 the internalised model is worse than its own base model under the native reference even at $w = 1$ (178.8 versus 113.2),
 before any extrapolation is applied.
 
+\paragraph{What a sprite generator is asked to produce.}
+It is tempting to read the external systems' more attractive samples as better generation, but the target here is not an
+attractive picture. A sprite sheet is a production asset: our content labels put 73.2\% of the held-out sprites in the
+object class, 7.8\% in effects (fire, smoke, sparkles, projectiles) and 15.7\% in fragments --- tiles, strips, borders
+and parts of larger drawings that a game assembles at run time. At $16\times16$ an explosion particle or a wall tile
+\emph{is} a small cluster of flat colours; drawing it as a polished illustration with shading and highlights is the
+wrong answer, however pleasant it looks in isolation. This is the sense in which the medium, not the eye, sets the
+objective, and it is what the native protocol measures: a system that renders every caption as a miniature painting
+scores 134--527 against real low-resolution art, while our samples, which are often plain, score 50.8--192.2.
+
+It also explains the quality-conditioning result of Section~\ref{sec:datablations} at the level of mechanism. The
+craft-5 sprites in the corpus are predominantly finished items and characters; conditioning on that tag does not only
+remove badly drawn sprites, it removes whole legitimate categories --- effects and tiles --- from the output
+distribution. The samples look better one at a time and the distributional score gets worse, because the model is now
+answering a narrower question than the one the corpus asks.
+
 \paragraph{Consequence for practice.}
 A benchmark built from ``sprites'' that are downscaled illustrations will keep selecting methods that produce downscaled
 illustrations. We do not claim the native protocol is the only defensible choice --- a corpus of 25--64\,px artwork is a
