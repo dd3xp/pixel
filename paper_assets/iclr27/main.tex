@@ -603,6 +603,22 @@ which one they used. We report both throughout, and we release the split so that
 \section{Limitations and conclusion}
 \label{sec:limits}
 
+\paragraph{Where the remaining error lives.}
+Our samples are recognisable but crude, and it is worth saying which knobs we ruled out. Swapping the frozen CLIP
+ViT-B/32 text encoder for ViT-L/14 (512 to 768 dimensions) changes nothing at equal steps: 164.0 against 165.6 native
+FD, with retrieval R@1 slightly \emph{lower} (19.6\% against 20.6\%). Training longer is exhausted: continuing the main
+model past 80k gives 31.8, 30.8 and 32.3 at 80k, 100k and 120k steps on the final recipe, a flat line inside seed
+noise. Capacity does not help either at this data scale --- a $2.2\times$ model (72.5M to 161.2M parameters, same data
+and schedule) leads early and loses late: 46.1 against 54.2 at 20k, 38.3 against 35.8 at 40k, and 38.5 against
+\textbf{31.8} at 80k. The one intervention that visibly improves the samples is quality conditioning, which narrows the
+distribution and therefore scores worse.
+
+What is left is the corpus. It holds roughly 50k sprites, a vision--language model rates 25\% of them 1--2 out of 5 for
+craft, and 19\% of the held-out set is not a standalone object at all. A model fitted to that mixture reproduces the
+mixture, which is the correct behaviour under our own protocol and also the reason we do not present this as a system
+for producing attractive sprites. The path we would take next is more and better data --- curated sprite collections,
+or a much larger corpus with the craft rating used for filtering rather than conditioning --- not a larger network.
+
 \paragraph{Limitations.}
 (i) \emph{Scope.} Everything is measured on models we trained, from one architecture family, on one family of game-sprite
 corpora. We have not tested a second domain. (ii) \emph{Metric.} FD with DINOv2 on 12--24\,px images upsampled to
