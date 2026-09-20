@@ -1,4 +1,4 @@
-"""Build the 09-20 CC0 corpus: clean, dedup against everything we already have, verify, report.
+"""Verify a new sprite bundle: clean, dedup against everything we already have, report, contact sheet.
 
 Why (09-20): the 09-16 rebuild cut three OGA licence bundles (CC-BY-4.0, CC-BY-SA-3.0, OGA-BY-3.0) but not
 the CC0 one, which is both the largest 2D bundle and the cleanest licence for a released corpus.  This is
@@ -11,7 +11,7 @@ runs_out/corpus_v9_report.json (the verification checklist: native size distribu
 statistics, cross-corpus duplicate count, licence coverage), runs_out/corpus_v9_sheet.png (random sample of
 the natively tiny survivors, for eyeballing).
 
-Usage: python src/v6/build_corpus_v9.py [--limit N]
+Usage: python src/v6/build_corpus_v9.py [--new dir:licence ...] [--out DIR] [--tag NAME] [--limit N]
 """
 import argparse
 import csv
@@ -25,9 +25,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-NEW = [("data/oga4_cut_cc0", "CC0-1.0")]
-OLD = ["data/oga_clean", "data/extra_all", "data/oga3_clean", "data/kenney_cut"]
-OUT = Path("data/oga4_clean")
+DEFAULT_NEW = ["data/oga4_cut_cc0:CC0-1.0"]
+OLD = ["data/oga_clean", "data/extra_all", "data/oga3_clean", "data/kenney_cut", "data/oga4_clean"]
 
 
 def pixhash(a):
@@ -74,13 +73,18 @@ def flat_ratio(a):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--new", nargs="+", default=DEFAULT_NEW, help="cut_dir:licence, one per bundle")
+    ap.add_argument("--out", default="data/oga4_clean")
+    ap.add_argument("--tag", default="v9", help="names runs_out/corpus_<tag>_report.json and _sheet.png")
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
+    NEW = [tuple(x.rsplit(":", 1)) for x in args.new]
+    OUT = Path(args.out)
     OUT.mkdir(parents=True, exist_ok=True)
 
     # ---- hashes of everything we already have, so the CC0 material cannot duplicate it
     seen = {}
-    for d in OLD:
+    for d in [x for x in OLD if x != str(OUT).replace(chr(92), "/")]:
         n0 = len(seen)
         for p in sorted({q.replace("\\", "/") for q in glob.glob(f"{d}/**/*.png", recursive=True)}):
             try:
@@ -98,7 +102,7 @@ def main():
                 prov[f"{d}/{r['path']}"] = (r["zip"], r["member"], r["licence"])
     print(f"provenance rows: {len(prov)}", flush=True)
 
-    man = open("data/oga4_manifest.csv", "w", newline="", encoding="utf-8")
+    man = open(f"{args.out}_manifest.csv", "w", newline="", encoding="utf-8")
     mw = csv.writer(man)
     mw.writerow(["path", "src", "zip", "member", "licence", "side", "palette", "flat"])
     n_kept = n_dup = n_junk = n_selfdup = 0
@@ -153,7 +157,7 @@ def main():
            "flat_median_native24": round(float(np.median(np.array(flats)[small])), 4) if small.any() else 0,
            "licences": dict(lic_count)}
     Path("runs_out").mkdir(exist_ok=True)
-    json.dump(rep, open("runs_out/corpus_v9_report.json", "w"), indent=2)
+    json.dump(rep, open(f"runs_out/corpus_{args.tag}_report.json", "w"), indent=2)
     print(json.dumps(rep, indent=2), flush=True)
 
     # ---- contact sheet of natively tiny survivors: the material the 16 px bucket actually needs
@@ -170,9 +174,9 @@ def main():
         bg = Image.new("RGB", im.size, (240, 240, 240))
         bg.paste(im, (0, 0), im)
         sheet.paste(bg, ((k % cols) * cell, (k // cols) * cell))
-    sheet.save("runs_out/corpus_v9_sheet.png")
+    sheet.save(f"runs_out/corpus_{args.tag}_sheet.png")
     print(f"sheet: {len(tiny)} sprites natively <= 24 px", flush=True)
-    print("BUILD_V9_DONE", flush=True)
+    print("BUILD_DONE", flush=True)
 
 
 if __name__ == "__main__":

@@ -8,8 +8,9 @@ The pixel-hash dedup in build_corpus_v8.py only catches *identical* copies.  Two
 Frames are collapsed with an average hash over a 8x8 luma + alpha grid (near-duplicates share a hash),
 then each source sheet is capped so no sheet can flood a bucket.
 
-Writes data/oga3_keep.txt (one kept filename per line) and prints the audit.
-Usage: python src/v6/filter_corpus_v8.py [--cap 60]
+Writes a keep-list (one kept filename per line) and prints the audit.  The 09-20 CC-BY-3.0 bundle reuses
+it through --manifest/--imgs/--out.
+Usage: python src/v6/filter_corpus_v8.py [--cap 60] [--manifest CSV --imgs DIR --out TXT]
 """
 import argparse
 import csv
@@ -34,8 +35,11 @@ def ahash(p):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cap", type=int, default=60, help="max sprites kept from one source sheet")
+    ap.add_argument("--manifest", default="data/oga3_manifest.csv")
+    ap.add_argument("--imgs", default="data/oga3_clean")
+    ap.add_argument("--out", default="data/oga3_keep.txt")
     a = ap.parse_args()
-    rows = list(csv.DictReader(open("data/oga3_manifest.csv", encoding="utf-8")))
+    rows = list(csv.DictReader(open(a.manifest, encoding="utf-8")))
     by_sheet = defaultdict(list)
     n_junk = 0
     for r in rows:
@@ -50,7 +54,7 @@ def main():
         seen = {}
         for r in items:
             try:
-                h = ahash(Path("data/oga3_clean") / r["path"])
+                h = ahash(Path(a.imgs) / r["path"])
             except Exception:
                 continue
             if h in seen:
@@ -65,7 +69,7 @@ def main():
 
     sides = np.array([int(r["side"]) for r in keep])
     pals = np.array([int(r["palette"]) for r in keep])
-    Path("data/oga3_keep.txt").write_text("\n".join(r["path"] for r in keep), encoding="utf-8")
+    Path(a.out).write_text("\n".join(r["path"] for r in keep), encoding="utf-8")
     print(f"manifest {len(rows)} -> junk sheets {n_junk}, near-duplicate frames {n_frame}, "
           f"sheet cap {a.cap} -> kept {len(keep)} from {len(by_sheet)} sheets", flush=True)
     for R in (12, 16, 20, 24, 32, 64):
