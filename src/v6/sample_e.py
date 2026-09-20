@@ -541,6 +541,9 @@ def main():
     tokenizer = CLIPTokenizer.from_pretrained(tm)
     enc = CLIPTextModel.from_pretrained(tm).to(device).eval()
     XATTN = enc.config.hidden_size
+    # a run also records its backbone (train_v7 writes arch.txt); everything before 09-20 is the UNet
+    aside = Path(args.ckpt).parent / "arch.txt"
+    ARCH = aside.read_text(encoding="utf-8").strip() if aside.exists() else "unet"
     sd = torch.load(args.ckpt, map_location=device)
     if isinstance(sd, dict) and "palhead" in sd:  # palette-factorised head probe (train_palhead.py)
         import sys
@@ -574,6 +577,14 @@ def main():
         net.load_state_dict(sd)
         model = BetaWrap(net.eval(), args.gft_beta)
         print(f"GFT-form model, beta = {args.gft_beta} (w = {1 / args.gft_beta:.2f})", flush=True)
+    elif ARCH == "dit":
+        # transformer backbone: no conv_in or class_embedding to read the shapes from
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        from train_v7 import DiTBackbone
+        model = DiTBackbone(128, XATTN).to(device)
+        model.load_state_dict(sd)
+        print("transformer backbone", flush=True)
     else:
         model = build_model(device, n_class_of(sd), width_of(sd), xattn=XATTN)
         model.load_state_dict(sd)
