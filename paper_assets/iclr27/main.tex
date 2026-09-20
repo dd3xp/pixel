@@ -460,6 +460,18 @@ sprite from the corpus histogram. The optimum sits at the median palette size of
 real sprites use four or fewer), not below it, which is the sanity check that the projection is matching the medium
 rather than exploiting the metric.
 
+\paragraph{Is it the network?}
+Every number so far comes from one convolutional network, so the projection could in principle be repairing a
+failure mode particular to it. We retrained the pilot with the UNet replaced by a 69.7M-parameter transformer
+(PixArt-style adaptive norm; the resolution bucket enters through the text context, since that design has no
+class-conditioning path), leaving the corpus, the noise schedule, the sampler and the evaluation untouched. At
+20k steps the transformer is the weaker model by a wide margin --- 185.6 against 149.1 native FD under plain
+CFG --- and yet under the reported configuration the two land at 42.5 and 42.9, a gap of 0.36 against a seed
+spread of $\pm$0.5. The projection is not a property of convolutions, and at this scale it matters more than the
+choice of backbone: a 36.5-point difference between two architectures is absorbed almost entirely by the
+decoding rule. We draw no conclusion about which backbone is better --- one seed at 20k steps cannot support
+that --- only that the method transfers.
+
 \paragraph{The cost in prompt alignment.}
 Palette projection trades a little text faithfulness for a large distributional gain: CLIP $100\cos$ / R@1 are
 27.60 / 22.3\% for ICG $w{=}2$ alone, 27.38 / 21.0\% at $k{=}6$ and 27.07 / 17.9\% at $k{=}4$ (real sprites: 19.68 /
