@@ -2566,3 +2566,12 @@ v8f2(80k, 旧语料+修好喂法), 16px, 3000 题, 格式 旧参考 / 原生参�
 ### 工具改动
 - `src/v6/build_corpus_v9.py` 与 `src/v6/filter_corpus_v8.py` 都改成带参数(`--new/--out/--tag`, `--manifest/--imgs/--out`), 不再硬编码某一批语料。
 - `baseline/recaption.py` 等四个标注/分类脚本此前只在本机, 服务器上没有; 已同步过去(服务器能连 API, 401 说明只差 key)。
+
+## 09-20 CC-BY-3.0 语料标注/分类完成 → v8m 20k 对照开跑
+
+- 标注 **12,802 / 13,481**(gemini-3.8-flash, 20 张/网格)。
+- 文本内容分类踩坑: 100 条/批时解析率掉到三成(出现 `0/100`、`33/100`), 改 **40 条/批**后恢复满解析, 脚本可续跑 → 分类 12,564 条。
+- **内容构成比 Kenney 干净得多**: object **82.4%** / fragment 6.6% / effect 4.8% / junk 3.5% / glyph 0.6%(Kenney 切割集是 object 41.8% / fragment 44.1%)。
+- 过滤(junk 454 + 未分类 238 + glyph 76 + 提示词回声/unclear 39 + 过短 7) → **11,988 条可训练**(`data/oga5_captions_final.csv`)。
+- **v8m 20k 对照**(v8n 数据 + Kenney + CC-BY-3.0, GPU6): 训练行数 98,590 → **118,378**; 桶 12/16/20/24 = 14,391 / 14,677 / 23,218 / 22,241。对照 v8n@20k(165.63 / 54.23)与 v8k@20k(155.93 / 53.19)。
+- `baseline/run_v8full.sh` 增加 `EXTRA_SRC3` 槽位; 新脚本 `baseline/run_v8m.sh`。

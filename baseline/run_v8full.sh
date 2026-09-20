@@ -16,8 +16,10 @@ STEPS=${STEPS:-80000}; OUT=${OUT:-workdir/v8full}; DROP=${DROP:-data/corpus_v8_d
 EXTRA_SRC=${EXTRA_SRC:-}
 # CSV_SUFFIX picks the caption set: _recap (plain) or _q (craft-quality tag prepended, 09-18)
 EXTRA_SRC2=${EXTRA_SRC2:-}      # a second added source, e.g. the CC0 Kenney corpus (09-20)
+EXTRA_SRC3=${EXTRA_SRC3:-}      # a third, e.g. the CC-BY-3.0 bundle (09-20)
 EX_ARG=""; [ -n "$EXTRA_SRC" ] && EX_ARG="--extra $EXTRA_SRC"
 [ -n "$EXTRA_SRC2" ] && EX_ARG="$EX_ARG --extra $EXTRA_SRC2"
+[ -n "$EXTRA_SRC3" ] && EX_ARG="$EX_ARG --extra $EXTRA_SRC3"
 TAG=$(basename $OUT)
 [ -f $OUT/.trained ] || {
   echo "[$(date +%m%d-%H:%M)] STAGE train $TAG steps=$STEPS drop=$DROP quant=$QUANT"
