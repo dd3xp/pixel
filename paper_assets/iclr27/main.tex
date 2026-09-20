@@ -470,14 +470,32 @@ canvas grows and the quantisation error with it: at 20\,px the projection costs 
 \subsection{Two data interventions that do not belong in the main model}
 \label{sec:datablations}
 
-The corpus contains material that is not a sprite and material that is badly drawn. We tried to fix both at training
-time; neither earns a place in the main recipe, and the second is instructive about the metric.
+The corpus contains material that is not a sprite, material that is badly drawn, and less real pixel art than we
+would like. We tried to fix all three at training time; none earns a place in the main recipe, and the last two
+are instructive --- about the metric, and about where the ceiling of this approach is.
 
 \paragraph{Content filtering.}
 A vision--language model labels every sprite as object / effect / fragment / glyph / junk (Section~\ref{sec:data}).
 Dropping the 8{,}818 sprites it calls fragment, glyph or junk (training rows 86{,}290 $\to$ 73{,}845) improves a
 20k-step run from 165.6 to 156.7 native FD at equal steps, a 5.4\% gain. That is real but small next to the effect of
 the sampler, and it costs a full retraining, so we report it as an ablation and keep the unfiltered model.
+
+\paragraph{More clean data.}
+The obvious remedy for a corpus that is only 7.1\% natively small is more natively small sprites. We added the
+Kenney CC0 packs: 7{,}546 sprites cut from 19 packs, captioned and content-filtered to 6{,}566 usable rows with a
+median palette of three colours, which is cleaner material than anything else we have (training rows 86{,}290
+$\to$ 98{,}590, the 12\,px bucket by 82\%). At 20k steps it helps where the decoder does not: plain CFG improves from
+165.6 to 155.9 native FD (5.9\%), but the configuration we actually report --- ICG with a four-colour projection ---
+improves only from 54.2 to 53.2 (1.9\%, within the seed spread of $\pm$0.5 measured at full length). The two
+interventions are substitutes rather than complements: projecting each sample onto its own small palette already
+supplies the flatness that clean data supplies, so buying the same property twice buys it once.
+
+This also bounds what more of the same data could do. Wanting more, we processed the one OpenGameArt licence bundle
+the rebuild had skipped, CC0. It cuts into 54{,}781 sprites, of which exact pixel hashing finds 1{,}017 that are not
+already in the corpus and 166 that are natively 24\,px or smaller: the bundle is the one the original corpus was
+built from. With all four licence bundles and the Kenney packs exhausted, the public supply of natively tiny,
+licence-clean sprites is close to spent at this scale, and the next gain has to come from somewhere other than
+collecting more of it.
 
 \paragraph{Quality conditioning, and what it does to FD.}
 The same model rates each sprite's craft from 1 to 5; on the original corpus 25\% of the images are rated 1--2 and 8\%
