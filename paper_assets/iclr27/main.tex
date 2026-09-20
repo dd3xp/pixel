@@ -466,11 +466,12 @@ failure mode particular to it. We retrained the pilot with the UNet replaced by 
 (PixArt-style adaptive norm; the resolution bucket enters through the text context, since that design has no
 class-conditioning path), leaving the corpus, the noise schedule, the sampler and the evaluation untouched. At
 20k steps the transformer is the weaker model by a wide margin --- 185.6 against 149.1 native FD under plain
-CFG --- and yet under the reported configuration the two land at 42.5 and 42.9, a gap of 0.36 against a seed
-spread of $\pm$0.5. The projection is not a property of convolutions, and at this scale it matters more than the
-choice of backbone: a 36.5-point difference between two architectures is absorbed almost entirely by the
-decoding rule. We draw no conclusion about which backbone is better --- one seed at 20k steps cannot support
-that --- only that the method transfers.
+CFG, a gap of 36.5 --- and yet under the reported configuration the two land at 42.4 and 43.1 (two seeds each,
+spread 0.3 and 0.4), a residual gap of 0.7 with the sign reversed. The projection is not a property of
+convolutions, and at this scale it matters more than the choice of backbone: it absorbs 98\% of the difference
+between two architectures. We draw no conclusion about which backbone is better --- two seeds at 20k steps
+cannot support that --- only that the method transfers, and that what separates the two networks is almost
+entirely something the decoder can repair.
 
 \paragraph{The cost in prompt alignment.}
 Palette projection trades a little text faithfulness for a large distributional gain: CLIP $100\cos$ / R@1 are
