@@ -24,7 +24,7 @@ TAG=$(basename $OUT)
 [ -f $OUT/.trained ] || {
   echo "[$(date +%m%d-%H:%M)] STAGE train $TAG steps=$STEPS drop=$DROP quant=$QUANT"
   $P src/v6/train_v8.py --steps $STEPS --out $OUT --exclude runs_out/holdout_exclude.txt --csv_suffix ${CSV_SUFFIX:-_recap} \
-     --max_down 1.5 --quant $QUANT --dupdrop $DROP --snap_every 20000 $EX_ARG || { echo V8FULL_TRAIN_FAIL; exit 1; }
+     --max_down 1.5 --quant $QUANT --dupdrop $DROP --snap_every 20000 $EX_ARG ${ARCH_ARG:-} || { echo V8FULL_TRAIN_FAIL; exit 1; }
   touch $OUT/.trained
 }
 for w in 1.5 2; do
