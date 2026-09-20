@@ -2575,3 +2575,13 @@ v8f2(80k, 旧语料+修好喂法), 16px, 3000 题, 格式 旧参考 / 原生参�
 - 过滤(junk 454 + 未分类 238 + glyph 76 + 提示词回声/unclear 39 + 过短 7) → **11,988 条可训练**(`data/oga5_captions_final.csv`)。
 - **v8m 20k 对照**(v8n 数据 + Kenney + CC-BY-3.0, GPU6): 训练行数 98,590 → **118,378**; 桶 12/16/20/24 = 14,391 / 14,677 / 23,218 / 22,241。对照 v8n@20k(165.63 / 54.23)与 v8k@20k(155.93 / 53.19)。
 - `baseline/run_v8full.sh` 增加 `EXTRA_SRC3` 槽位; 新脚本 `baseline/run_v8m.sh`。
+
+## 09-20 人评材料就绪(CVPR 优先级 1)
+
+`src/v6/build_human_study.py`: 从 200 题外部对比集抽 40 题, 五个系统各出一张 16px 图(最近邻 8 倍放大 + 棋盘透明底):
+real(真值 + 同样的 4 色后处理) / ours(v8n, ICG w2 + pal4) / flux(FLUX.2-klein + LoRA 缩图) / gpt(gpt-image-2 缩图) / sdxl(SDXL + Pixel Art XL 缩图)。
+- **两个问题, 预期会打架**: `fidelity` "哪张更像这个尺寸下真实的游戏 sprite" / `preference` "哪张你更愿意放进游戏"。
+- 配对只保留含 real 或 ours 的组合(外部之间的对比论文里没有主张), 40 题 × 7 对 × 2 问 = **560 trial**, `runs_out/human_study/trials.json`。
+- 踩坑: 各系统文件名不一致(我们的采样器写 `<题号>_<种子>.png`, 转换后的基线写 `00000.png`), 按文件名交集会得到空集; 改成按名字里的题号序数索引。
+- 目视 `runs_out/human_study/preview.png`: 材料正确, 且问题设得对 —— **真值那一行本身就很糙**(有一张几乎是黑色涂块), flux/gpt 明显更好看但更像图标而不是 sprite。fidelity 与 preference 大概率分叉, 这正是论文要的。
+- **尚未发布、未招募任何评分者**, 等用户定平台与预算。
