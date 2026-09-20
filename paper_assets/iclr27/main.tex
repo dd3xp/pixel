@@ -518,8 +518,8 @@ ICG with an eight-colour projection 74.5 (twelve colours: 78.7), so nothing abou
 \subsection{External systems}
 \label{sec:external}
 
-We compare against three publicly available pipelines on 200 held-out captions: gpt-image-2 and FLUX.2-klein-4B with the
-Limbicnation pixel-art LoRA and SDXL with Pixel Art XL, each generating at its native size and then reduced to the
+We compare against three publicly available pipelines on 200 held-out captions: gpt-image-2 and FLUX.2-klein-4B \citep{FLUX2} with the
+Limbicnation pixel-art LoRA \citep{PixelArtLoRAFlux} and SDXL with Pixel Art XL \citep{PixelArtXL}, each generating at its native size and then reduced to the
 sprite canvas by the same cutout and downsampling code we use for real data. To keep the comparison honest we give every
 system the same palette post-process that our sampler applies internally.
 
