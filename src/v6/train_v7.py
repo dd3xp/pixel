@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from types import SimpleNamespace
 import torch.nn.functional as F
 from diffusers import DDPMScheduler, UNet2DConditionModel
 from PIL import Image
@@ -181,6 +182,52 @@ def surgical_load(model, ckpt_path, device):
     print(f"surgical init: missing={len(missing)} unexpected={len(unexpected)}", flush=True)
 
 
+class DiTBackbone(torch.nn.Module):
+    """PixArt-style transformer wearing the UNet's call signature, so nothing else in the loop changes.
+
+    diffusers' Transformer2DModel carries its own timestep embedding under norm_type "ada_norm_single"
+    but has no class-conditioning path, so the resolution bucket is added to the timestep embedding
+    instead of going through num_class_embeds.  Everything else -- 4-channel pixel space, frozen-CLIP
+    cross attention, the same DDPM schedule -- is identical to the UNet run.
+    """
+
+    def __init__(self, width, cad, patch=2, depth=16, heads=8):   # 69.7M, against the UNet's 72.5M
+        super().__init__()
+        from diffusers import Transformer2DModel
+        self.net = Transformer2DModel(
+            num_attention_heads=heads, attention_head_dim=64, in_channels=4, out_channels=8,
+            num_layers=depth, cross_attention_dim=cad, sample_size=64, patch_size=patch,
+            activation_fn="gelu-approximate", norm_type="ada_norm_single",
+            norm_elementwise_affine=False, norm_eps=1e-6, caption_channels=cad)
+        self.bucket = torch.nn.Embedding(len(BUCKETS), cad)
+        torch.nn.init.zeros_(self.bucket.weight)
+
+    def forward(self, sample, timestep, encoder_hidden_states=None, class_labels=None, **kw):
+        t = timestep
+        if not torch.is_tensor(t):
+            t = torch.tensor([t], device=sample.device)
+        t = t.expand(sample.shape[0]).to(sample.device)
+        ctx = encoder_hidden_states
+        if class_labels is not None:
+            # the bucket rides on the text context: ada_norm_single has no class path
+            ctx = ctx + self.bucket(class_labels).unsqueeze(1)
+        out = self.net(sample, encoder_hidden_states=ctx, timestep=t,
+                       added_cond_kwargs={"resolution": None, "aspect_ratio": None},
+                       return_dict=True).sample
+        return SimpleNamespace(sample=out[:, :4])   # learn_sigma head: keep the mean, drop the variance
+
+
+def build_backbone(arch, width, cad):
+    if arch == "dit":
+        return DiTBackbone(width, cad)
+    return UNet2DConditionModel(
+        sample_size=64, in_channels=4, out_channels=4, layers_per_block=2,
+        block_out_channels=(width, 2 * width, 4 * width), cross_attention_dim=cad,
+        down_block_types=("CrossAttnDownBlock2D", "CrossAttnDownBlock2D", "DownBlock2D"),
+        up_block_types=("UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D"),
+        num_class_embeds=len(BUCKETS),
+    )
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--steps", type=int, default=60000)
@@ -202,6 +249,9 @@ def main():
                    help="also keep EMA snapshots model_step{N}.pt every N steps (autoguidance bad model)")
     p.add_argument("--width", type=int, default=128,
                    help="base channel width; blocks = (w, 2w, 4w). 128 = v7/v7h; 96 = clean second model v7s")
+    p.add_argument("--arch", default="unet", choices=["unet", "dit"],
+                   help="dit swaps the UNet for a PixArt-style transformer, to show a result is a "
+                        "property of the recipe rather than of convolutions")
     p.add_argument("--text_model", default="openai/clip-vit-base-patch32",
                    help="frozen text encoder; its hidden size sets cross_attention_dim. ViT-B/32 leaves the model at "
                         "R@1 21.6%% on its own captions, which is the ceiling on instruction following (09-18)")
@@ -234,13 +284,8 @@ def main():
     (out / "text_model.txt").write_text(args.text_model, encoding="utf-8")
     print(f"text encoder {args.text_model} (cross_attention_dim {cad})", flush=True)
 
-    model = UNet2DConditionModel(
-        sample_size=64, in_channels=4, out_channels=4, layers_per_block=2,
-        block_out_channels=(args.width, 2 * args.width, 4 * args.width), cross_attention_dim=cad,
-        down_block_types=("CrossAttnDownBlock2D", "CrossAttnDownBlock2D", "DownBlock2D"),
-        up_block_types=("UpBlock2D", "CrossAttnUpBlock2D", "CrossAttnUpBlock2D"),
-        num_class_embeds=len(BUCKETS),
-    ).to(device)
+    model = build_backbone(args.arch, args.width, cad).to(device)
+    (out / "arch.txt").write_text(args.arch, encoding="utf-8")
     print(f"params: {sum(q.numel() for q in model.parameters()) / 1e6:.1f}M", flush=True)
     if args.init_v6:
         surgical_load(model, args.init_v6, device)
