@@ -76,3 +76,17 @@ other resolutions, external table), the rule on other systems, discussion and li
 3. The per-image statistics behind "why the protocols disagree".
 
 Still missing and blocked: the human study, the anonymous code link, SD-piXL on its subset.
+
+## Numbers that left the body (checked 2026-09-22)
+
+`scripts/verify_paper_numbers.py` now checks both drafts and reports which headline numbers the CVPR
+version dropped. Five, all deliberate, and all owed to the supplementary:
+
+| Number | Where it was | Must appear in |
+|---|---|---|
+| 139.2 / 97.1 / 74.5 | 32 px results, one rung above the target range | supplementary |
+| 29.0 | clean-subset column of the near-duplicate table | supplementary (body keeps the sentence) |
+| 37.1 | object-only reference protocol | supplementary |
+
+Nothing else was lost in the retyping: the other fourteen appear in both drafts and all twenty-nine
+verified entries still match the scoring output (`src/v6/verify_against_json.py`).
