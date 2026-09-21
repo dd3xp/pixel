@@ -465,12 +465,12 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 [7]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\leavevmode@ifvmode' on input line 414.
+(hyperref)                removing `\leavevmode@ifvmode' on input line 415.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                \kern 1.66702pt
-(hyperref)                removed on input line 414.
+(hyperref)                removed on input line 415.
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
@@ -557,4 +557,4 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: A75424A3F1DCA23F3390DD7CF6700C45;4992.
  )
-Output written on main.xdv (24 pages, 185388 bytes).
+Output written on main.xdv (24 pages, 185440 bytes).

@@ -259,7 +259,8 @@ without the new sprites and \textbf{v7r} is the same architecture on the origina
 \label{sec:palette}
 
 A 16\,px sprite is defined as much by how few colours it uses as by its shape: in the native reference set the median
-sprite has six opaque colours (12\,px: 5; 20 and 24\,px: 7) and 22.6\% use at most four. A continuous diffusion model in
+sprite has six opaque colours (12\,px: 5; 20 and 24\,px: 7) and 24.6\% use at most four, over all 2{,}675
+sprites natively $\le 16$\,px. A continuous diffusion model in
 RGB has no mechanism that snaps a region to a single value, and none of our samplers does: plain CFG emits a median of
 52 opaque colours and the best guidance rule 49, against six for real sprites, and the fraction of adjacent opaque
 pixel pairs with identical RGB is 0.08 for both against 0.46 for real sprites. Allowing a tolerance of 16 on summed
