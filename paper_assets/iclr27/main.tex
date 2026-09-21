@@ -71,6 +71,20 @@ external pipelines often produce the more attractive picture while being $2.6\ti
 \end{figure}
 
 \section{Introduction}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_teaser.png}
+\caption{All four rows are 16\,px RGBA sprites on the same checkerboard, nearest-neighbour magnified. \textbf{Row 1}:
+real sprites that were drawn at this size --- a median of six opaque colours and hard alpha edges. \textbf{Row 2}: what
+the corpus feeds into its 16\,px bucket, which is 25--64\,px artwork box-downscaled, at 49 colours; 92.9\% of the
+conventional evaluation reference looks like this. \textbf{Rows 3--4} share the caption of their column: gpt-image-2
+rendered at 1024\,px and reduced (111 colours), and our model with palette-projected sampling (4 colours). Row 3 is the
+easiest on the eye and the furthest from the medium; the paper is about that gap and about the reference set that hides
+it.}
+\label{fig:teaser}
+\end{figure}
+
 \label{sec:intro}
 
 Game sprites are among the smallest images anyone draws on purpose: an item or a character on a 12--24\,px RGBA canvas,
