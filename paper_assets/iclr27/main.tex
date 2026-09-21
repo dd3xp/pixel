@@ -483,9 +483,15 @@ $3\times3$ median filter (de-dither, no palette)     & 112.2 & 92.8 \\
 
 \paragraph{Palette size.}
 Sweeping $k$ at 16\,px gives 38.1 / 31.8 / 33.7 / 36.9 / 50.6 for $k = 3 / 4 / 5 / 6 / 8$, and 39.9 when $k$ is drawn per
-sprite from the corpus histogram. The optimum sits at the median palette size of the real data (six colours, 22.6\% of
-real sprites use four or fewer), not below it, which is the sanity check that the projection is matching the medium
-rather than exploiting the metric.
+sprite from the corpus histogram. The FD optimum is $k{=}4$, which is below the median palette of the real data, and it
+is worth being precise about what that means. Measured on the samples themselves, $k{=}6$ is the setting that
+reproduces the medium: six opaque colours and a flat-neighbour ratio of 0.429 against six and 0.460 for real sprites,
+where $k{=}4$ gives four colours and 0.544 --- flatter than the real thing. Plain CFG and ICG sit at 52 and 49 colours
+with a flat ratio of 0.083, and gpt-image-2's reduced renders at 93 colours and 0.005. The projection therefore moves
+the samples from far outside the medium to inside it, and the last step from $k{=}6$ to $k{=}4$ buys 5 FD by
+overshooting. We report $k{=}4$ as the best-FD setting because that is what it is, and $k{=}6$ as the one a
+practitioner should use; the disagreement between them is small but it is real, and it is the metric's, not the
+method's.
 
 \paragraph{Is it the network?}
 Every number so far comes from one convolutional network, so the projection could in principle be repairing a
