@@ -892,20 +892,46 @@ Requested font "ntxexa" at 7.3pt
  -> ntxexa
 Requested font "ntxexa" at 5.5pt
  -> ntxexa
-Requested font "[lmsans12-regular]:mapping=tex-text;" at 12.0pt
- -> lmsans12-regular
+Requested font "[lmsans10-regular]:mapping=tex-text;" at 10.0pt
+ -> lmsans10-regular
 Requested font "[lmsans9-regular]:mapping=tex-text;" at 9.0pt
  -> lmsans9-regular
  [1
 
 
 ]
-Requested font "[lmsans10-regular]:mapping=tex-text;" at 10.0pt
- -> lmsans10-regular
- [2
-
-] (supp.aux)
+LaTeX Font Info:    Font shape `TU/TeXGyreTermesX(0)/m/n' will be
+(Font)              scaled to size 9.0pt on input line 113.
+Requested font "[TeXGyreTermesX-Regular.otf]/OT:script=latn;language=dflt;-ss05
+;+tnum;+lnum;mapping=tex-text;" at 9.0pt
+ -> TeXGyreTermesX-Regular.otf
+Requested font "ntx-Regular-tlf-ot1" at 9.0pt
+ -> ntx-Regular-tlf-ot1
+Requested font "ntxmi" at 9.0pt
+ -> ntxmi
+Requested font "ntxsy" at 9.0pt
+ -> ntxsy
+Requested font "ntxexx" at 9.0pt
+ -> ntxexx
+Requested font "msam10" at 9.0pt
+ -> msam10
+Requested font "msbm10" at 9.0pt
+ -> msbm10
+Requested font "ntxmia" at 9.0pt
+ -> ntxmia
+Requested font "ntxsym" at 9.0pt
+ -> ntxsym
+Requested font "ntxsyc" at 9.0pt
+ -> ntxsyc
+Requested font "ntxexa" at 9.0pt
+ -> ntxexa
+LaTeX Font Info:    Font shape `TU/TeXGyreTermesX(0)/b/n' will be
+(Font)              scaled to size 9.0pt on input line 121.
+Requested font "[TeXGyreTermesX-Bold.otf]/OT:script=latn;language=dflt;-ss05;+t
+num;+lnum;mapping=tex-text;" at 9.0pt
+ -> TeXGyreTermesX-Bold.otf
+ [2] (supp.aux)
 Package rerunfilecheck Info: File `supp.out' has not changed.
 (rerunfilecheck)             Checksum: 523358955E2E1E9323944F698A80F954;1975.
  )
-Output written on supp.xdv (2 pages, 51016 bytes).
+Output written on supp.xdv (2 pages, 82196 bytes).
