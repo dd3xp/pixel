@@ -1,6 +1,9 @@
 """Second metric family on the SAME saved samples as fd_fair.py: Inception-v3 clean-FID and KID (clean-fid, Parmar 2022).
 
-Reference = runs_out/ref_totensor_s{R} (the fd_fair reference, real -> to_tensor(R)); floor = heldout3000_totensor_s{R}.
+Reference = runs_out/ref_totensor_s{R} (the fd_fair reference, real -> to_tensor(R)); floor =
+heldout3000_totensor_s{R}.  --native switches to fd_fair's native reference (sprites natively <= R px), so the
+same claim can be checked in a second feature space: if the ranking only holds under DINOv2 it is a property
+of that encoder rather than of the sprites.
 Every RGBA png is composited on white and NEAREST-upscaled to --up (64) into runs_out/_incep_s{R}/<tag>/ so the Inception
 resize (to 299, clean mode) sees identical inputs for real and generated.  Reference features are extracted once per R.
 
@@ -38,6 +41,8 @@ def main():
     ap.add_argument("--floor", action="store_true")
     ap.add_argument("--up", type=int, default=64)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--native", action="store_true", help="score against the native reference, not the corpus sample")
+    ap.add_argument("--pool", default="old", choices=["old", "union"])
     args = ap.parse_args()
     R = args.size
     from cleanfid import fid
@@ -50,10 +55,26 @@ def main():
         return fid.get_folder_features(str(d), feat_model, num_workers=4, batch_size=128, device=device, mode="clean",
                                        description=f"{Path(d).name}: ")
 
-    ref_dir, n_ref = prep_dir(f"runs_out/ref_totensor_s{R}", R, args.up)
+    if args.native:
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        from fd_fair import real_split, dump_totensor
+        ref, held = real_split(native_R=R, pool=args.pool)
+        suffix = "_union" if args.pool == "union" else ""
+        src_ref = f"runs_out/ref_native{R}{suffix}"
+        src_held = f"runs_out/held_native{R}{suffix}"
+        dump_totensor(ref, src_ref, R)
+        dump_totensor(held, src_held, R)
+        ref_dir, n_ref = prep_dir(src_ref, R, args.up)
+    else:
+        ref_dir, n_ref = prep_dir(f"runs_out/ref_totensor_s{R}", R, args.up)
     fr = feats(ref_dir)
     mu_r, sig_r = np.mean(fr, axis=0), np.cov(fr, rowvar=False)
-    todo = ([f"runs_out/heldout3000_totensor_s{R}"] if args.floor else []) + args.gen
+    if args.native:
+        floor_dir = f"runs_out/held_native{R}" + ("_union" if args.pool == "union" else "")
+    else:
+        floor_dir = f"runs_out/heldout3000_totensor_s{R}"
+    todo = ([floor_dir] if args.floor else []) + args.gen
     res = []
     for g in todo:
         d, n = prep_dir(g, R, args.up)
