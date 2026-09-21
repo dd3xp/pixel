@@ -485,10 +485,7 @@ File: figures/fig_refine.png Graphic file (type bmp)
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[12] [13] [14] (main.bbl
-Underfull \vbox (badness 2970) has occurred while \output is active []
-
- [15]
+[12] [13] [14] (main.bbl [15]
 Underfull \hbox (badness 10000) in paragraph at lines 22--29
 []\T1/ptm/m/n/10 Anlatan (Nov-e-lAI).  Nov-e-lAI im-prove-ments on Sta-ble Dif-
 
@@ -557,4 +554,4 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: A75424A3F1DCA23F3390DD7CF6700C45;4992.
  )
-Output written on main.xdv (24 pages, 185440 bytes).
+Output written on main.xdv (24 pages, 185912 bytes).

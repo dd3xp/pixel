@@ -511,8 +511,10 @@ entirely something the decoder can repair.
 
 \paragraph{The cost in prompt alignment.}
 Palette projection trades a little text faithfulness for a large distributional gain: CLIP $100\cos$ / R@1 are
-27.60 / 22.3\% for ICG $w{=}2$ alone, 27.38 / 21.0\% at $k{=}6$ and 27.07 / 17.9\% at $k{=}4$ (real sprites: 19.68 /
-1.1\%). We therefore report $k{=}4$ as the best-FD setting and $k{=}6$ as the balanced one. The cost shrinks as the
+27.60 / 22.8\% for ICG $w{=}2$ alone, 27.38 / 22.0\% at $k{=}6$ and 27.07 / 19.2\% at $k{=}4$, against 27.66 / 22.6\%
+for the real held-out sprites the captions were written from. At $k{=}6$ the samples are therefore as retrievable
+from their captions as the real sprites are, and $k{=}4$ gives up about three points for five points of FD. We
+report $k{=}4$ as the best-FD setting and $k{=}6$ as the balanced one. The cost shrinks as the
 canvas grows and the quantisation error with it: at 20\,px the projection costs 0.4 points of retrieval (25.3\% to
 24.9\%) and at 24\,px 0.9 points (26.2\% to 25.3\%).
 
@@ -653,8 +655,9 @@ on top of a generator we did not train, with $\sigma$ as an explicit dial betwee
 medium. It does not close the gap to generating natively (86.5 against 50.8 for gpt-image-2), which is the honest limit
 of a post-process: it can fix how a sprite is drawn, not what was drawn (Figure~\ref{fig:refine}). Text
 alignment makes the same point from the other side: caption retrieval is 22.0\% for gpt-image-2's own sprite,
-18.5\% after refinement at $\sigma{=}0.6$ and 15.0\% for our model generating the caption itself, with real held-out
-sprites lowest at 12.5\%. Refinement keeps most of a large generator's semantic advantage while moving the style
+18.5\% after refinement at $\sigma{=}0.6$ and 15.0\% for our model generating the caption itself; the real sprites of
+that table, which carry the same four-colour post-process as every other row, fall to 12.5\%, so the quantisation
+itself costs retrieval whatever produced the image. Refinement keeps most of a large generator's semantic advantage while moving the style
 towards the medium, and at $\sigma{=}1$ it lands on our own numbers in all three measurements --- FD 53.6 against
 50.8, retention 0.518 against 0.513, retrieval 16.0\% against 15.0\% --- which is the self-consistency check for
 the whole procedure. The effect is not particular to 16\,px: on gpt-image-2 at 20 and 24\,px, $\sigma{=}0.6$ takes

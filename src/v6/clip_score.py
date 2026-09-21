@@ -7,7 +7,8 @@ sampled from (runs_out/heldout3000_prompts.txt, line = prompt_idx).  Real held-o
 
 R px RGBA is composited on mid-grey and nearest-upsampled to 224 before the CLIP preprocessor, identical for
 every set, so only relative values matter.  Reports mean/sd of 100*cos and the fraction of samples whose own
-caption is the best match among 100 random captions (retrieval@1/100, chance 1 %).
+caption is the best match among 100 random captions (retrieval@1/100, chance 1 %). The distractor draw is
+re-seeded for every directory so a set's score does not depend on what it was scored with.
 
 Usage:
   python src/v6/clip_score.py --size 16 --dirs real=runs_out/heldout3000_totensor_s16 \
@@ -65,9 +66,11 @@ def main():
         T.append(torch.nn.functional.normalize(model.get_text_features(**t), dim=-1))
     T = torch.cat(T)
 
-    rng = np.random.default_rng(0)
     res = {}
     for spec in args.dirs:
+        # re-seed per directory: a single stream made a run's R@1 depend on which other sets were
+        # scored alongside it in the same invocation, which is not a property of the samples (09-21)
+        rng = np.random.default_rng(0)
         name, d = spec.split("=", 1)
         files, idx = load_set(d, len(prompts))
         I = []
