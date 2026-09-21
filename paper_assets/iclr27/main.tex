@@ -484,8 +484,8 @@ canvas grows and the quantisation error with it: at 20\,px the projection costs 
 \label{sec:datablations}
 
 The corpus contains material that is not a sprite, material that is badly drawn, and less real pixel art than we
-would like. We tried to fix all three at training time. Only the third changes the model that matters, and
-which third of it does so is the useful part of the answer.
+would like. We tried to fix all three at training time; none of the three earns a place in the final model.
+The third attempt is worth reporting at length anyway, because of how it failed.
 
 \paragraph{Content filtering.}
 A vision--language model labels every sprite as object / effect / fragment / glyph / junk (Section~\ref{sec:data}).
@@ -493,32 +493,36 @@ Dropping the 8{,}818 sprites it calls fragment, glyph or junk (training rows 86{
 20k-step run from 165.6 to 156.7 native FD at equal steps, a 5.4\% gain. That is real but small next to the effect of
 the sampler, and it costs a full retraining, so we report it as an ablation and keep the unfiltered model.
 
-\paragraph{More clean data.}
-The obvious remedy for a corpus that is only 7.1\% natively small is more natively small sprites, and which sprites
-you add turns out to matter more than how many. We ran two additions as separate 20k-step pilots against the same
-control, changing nothing else.
+\paragraph{More clean data, and why a short pilot cannot tell you whether it helps.}
+The obvious remedy for a corpus that is only 7.1\% natively small is more natively small sprites. We found two
+sources: the Kenney CC0 packs (7{,}546 sprites cut from 19 packs, 6{,}566 usable rows after content filtering, a
+median palette of three colours --- flatter material than anything else we have, but only 41.8\% whole objects) and
+the OpenGameArt CC-BY-3.0 bundle, which our rebuild had never touched (21{,}722 sprites against which exact pixel
+hashing finds 13 duplicates, 11{,}988 usable rows, 82.4\% whole objects). Together they take training from 86{,}290
+rows to 118{,}378.
 
-The first was the Kenney CC0 packs: 7{,}546 sprites cut from 19 packs, content-filtered to 6{,}566 usable rows with a
-median palette of three colours --- flatter, cleaner material than anything else we have, but only 41.8\% of it whole
-objects, the rest floor and wall tiles. It improves plain CFG from 165.6 to 155.9 native FD (5.9\%) and the
-configuration we report from 54.2 to 53.2 (1.9\%, twice the seed spread and no more).
+At 20k steps the addition looks decisive. The Kenney packs alone move the reported configuration from 54.2 to 53.2;
+adding the CC-BY-3.0 bundle moves it to 42.9, a 19.4\% gain and twenty times the seed spread. The natural reading ---
+ours at the time --- is that the projection supplies flatness, which the Kenney packs duplicate, while whole objects
+supply the shape and subject matter it cannot, so data and decoding are complements.
 
-The second was the OpenGameArt CC-BY-3.0 bundle, which the rebuild had never touched: 21{,}722 sprites that exact
-pixel hashing finds 13 duplicates against, 11{,}988 usable rows after captioning and content filtering, 82.4\% of them
-whole objects. Added on top of the Kenney packs it leaves plain CFG where it was (157.4) and takes the reported
-configuration from 53.2 to 42.9, a 19.4\% gain and twenty times the seed spread.
+Trained to the same 80k steps as every other model in this paper, the enlarged corpus is \emph{worse}: 39.3 $\pm$ 0.3
+against 31.8 $\pm$ 0.4 over three seeds each, a 24\% regression, with plain CFG unchanged (119.7 against 117.9). The
+ordering at 20k steps is the reverse of the ordering at 80k, and only the second one is the model anybody would ship.
+We do not offer a mechanism, because the obvious one does not survive measurement: if the new material diluted the
+16\,px bucket with larger art we would expect its natively-small fraction to be much lower, and it is 24.0\% against
+28.6\% for the material already there --- lower, but nowhere near enough to explain a 24\% regression.
 
-The two pilots differ in what they add, not in how much, and the split says what the decoding rule does and does not
-do. Palette projection supplies flatness and a small palette; the Kenney packs supply the same thing, so buying it
-twice buys it once, which is why their gain survives only under plain CFG where colour error still dominates. What
-projection cannot supply is shape and subject matter, and that is what a bundle of whole objects adds --- visible
-only once the colour error is out of the way. Data and decoding are complements here, addressed to different halves
-of the error; a reader who saw only the first pilot would have concluded the opposite, as we did.
+We report this because it is the second time a 20k-step comparison inverted by 80k in this work; the first was model
+capacity, where a 2.2$\times$ larger network led at 20k (46.1 against 54.2), had lost by 40k (38.3 against 35.8) and
+was clearly behind at 80k (38.5 against 31.8). Short pilots are how this area is usually made affordable, and in this
+setting they are safe only for rejecting a change, not for accepting one. Every headline number in this paper is
+measured at full length for that reason.
 
-One negative data result belongs with these. Wanting still more, we processed the one OpenGameArt licence bundle the
+One further negative belongs here. Wanting still more material, we processed the one OpenGameArt licence bundle the
 rebuild had skipped, CC0. It cuts into 54{,}781 sprites, of which 1{,}017 are not already in the corpus and 166 are
-natively 24\,px or smaller: it is the bundle the original corpus was built from. Bulk alone is not the resource;
-unseen whole objects are.
+natively 24\,px or smaller: it is the bundle the original corpus was built from.
+
 
 \paragraph{Quality conditioning, and what it does to FD.}
 The same model rates each sprite's craft from 1 to 5; on the original corpus 25\% of the images are rated 1--2 and 8\%
