@@ -768,9 +768,11 @@ not tested a second domain. (ii) \emph{Metric.} FD with DINOv2 on 12--24\,px ima
 that our projection changes; we report CLIP alignment, both references and a second feature space throughout, but the
 second feature space is much less sensitive at this size and we have no human study, which remains the obvious next
 check for a claim about a medium people look at. (iii) \emph{Palette
-tuning.} $k$ and the projection start $f$ were selected on the same held-out FD we report, with no separate validation
-split; the per-sprite variant drawn from the corpus histogram (39.9) is worse than the tuned constant (31.8), so some of
-the gap is fitted to the metric. (iv) \emph{Where we still lose.} At 24\,px real sprites remain closer to native pixel
+tuning.} $k$ and the projection start $f$ were selected on the same held-out FD we report. Splitting the 3{,}000 captions
+into halves by index and choosing on one of them selects the same $k{=}4$, which on the disjoint half scores 33.36
+against 38.63 / 35.62 / 38.27 / 43.76 for $k = 3/5/6/8$ (values at $n{=}1500$ are not comparable to the $n{=}3000$
+numbers elsewhere, since FD is biased by sample size), so the choice transfers; but the per-sprite variant drawn from
+the corpus histogram (39.9) is still worse than the tuned constant, so some of the gap is fitted to the metric. (iv) \emph{Where we still lose.} At 24\,px real sprites remain closer to native pixel
 art than our samples (150.7 versus 192.2), and on individual prompts a large generator plus downscaling still produces a
 more attractive picture than ours even though it is further from the medium --- our samples inherit the crudeness of the
 data as well as its grammar. (v) \emph{Alignment.} The strongest setting costs 4.4 points of CLIP retrieval; at $k{=}6$
