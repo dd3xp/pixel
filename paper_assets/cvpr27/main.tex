@@ -216,6 +216,15 @@ inside the sampler beats quantising the finished image (31.8 against 41.6 at 16\
 $k$-means on at most 576 pixels is free next to a UNet pass. We use $f = 0.5$; the optimum is flat over $[0.4, 0.5]$
 and running the projection for the whole schedule costs two points, so the timing matters far less than the projection.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_palette.png}
+\caption{Palette-projected sampling at 16\,px, same prompts and seed. Without projection (top) flat regions carry a
+few levels of dither; projecting the predicted $\hat x_0$ onto four or six colours during the late steps (middle,
+bottom) removes it and the remaining steps repair the seams. Native FD 87.2 / 36.9 / 34.1.}
+\label{fig:palette}
+\end{figure}
+
 \section{Experiments}
 \label{sec:exp}
 
@@ -283,6 +292,25 @@ class-conditioning path), leaving corpus, schedule, sampler and evaluation untou
 the weaker model by a wide margin --- 185.6 against 149.1 native FD under plain CFG --- and yet under the reported
 configuration the two land at 42.4 and 43.1 (two seeds each, spread 0.3 and 0.4). The projection absorbs 98\% of the
 difference between the two architectures, so it is a property of the recipe and not of convolutions.
+
+\paragraph{More data, and why a short pilot cannot tell you whether it helps.}
+The corpus is only 7.1\% natively small, so more natively small sprites is the obvious remedy. We found two sources:
+the Kenney CC0 packs (6{,}566 usable rows, a median palette of three colours, but only 41.8\% whole objects) and the
+OpenGameArt CC-BY-3.0 bundle our rebuild had never touched (11{,}988 usable rows against which exact pixel hashing
+finds 13 duplicates, 82.4\% whole objects), together taking training from 86{,}290 rows to 118{,}378. At 20k steps the
+addition looks decisive: the reported configuration moves from 54.2 to 53.2 with the Kenney packs and to 42.9 with the
+CC-BY-3.0 bundle, a 19.4\% gain and twenty times the seed spread. Trained to the same 80k steps as every other model
+here, the enlarged corpus is \emph{worse}: 39.3 $\pm$ 0.3 against 31.8 $\pm$ 0.4 over three seeds each, with plain CFG
+unchanged. The ordering at 20k is the reverse of the ordering at 80k, and only the second is the model anyone would
+ship. We offer no mechanism, because the obvious one does not survive measurement --- the natively-small fraction of
+the added material is 24.0\% against 28.6\% for what was already there, nowhere near enough to explain a 24\%
+regression.
+
+This is the second time in this work that a 20k-step comparison inverted by 80k; the first was capacity, where a
+$2.2\times$ larger network led at 20k (46.1 against 54.2), had lost by 40k (38.3 against 35.8) and was clearly behind
+at 80k (38.5 against 31.8). Short pilots are how this kind of study is made affordable, and in this setting they are
+safe for rejecting a change and not for accepting one. Every headline number here is measured at full length for that
+reason.
 
 \paragraph{Other resolutions.}
 The recipe transfers and the useful palette size grows with the canvas. Native FD with ICG $w{=}2$, three seeds at the
