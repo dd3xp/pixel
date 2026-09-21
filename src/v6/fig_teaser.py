@@ -95,7 +95,9 @@ def main():
         ("ours", [Image.open(ours[c]) for c in cols]),
     ]
 
-    scale, cellpx, pad, lab = 8, 128, 4, 128
+    # 16x instead of 8x: at CVPR two-column width the 8x sheet is about 170 dpi, which
+    # prints visibly soft even though the art is nearest-neighbour and lossless
+    scale, cellpx, pad, lab = 16, 256, 8, 256
     W = lab + a.n * (cellpx + pad)
     H = len(rows) * (cellpx + pad)
     sheet = Image.new("RGB", (W, H), (255, 255, 255))

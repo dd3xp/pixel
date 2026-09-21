@@ -75,7 +75,7 @@ def main():
                 score[k] = float(np.abs(x - y).mean())
         picked = sorted(sorted(score, key=score.get, reverse=True)[:a.n])
 
-    scale, cellpx, pad, lab = 8, 128, 3, 78
+    scale, cellpx, pad, lab = 16, 256, 6, 156
     W = lab + len(picked) * (cellpx + pad)
     H = len(rows) * (cellpx + pad)
     sheet = Image.new("RGB", (W, H), (255, 255, 255))
