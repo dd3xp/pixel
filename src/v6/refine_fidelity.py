@@ -64,10 +64,30 @@ def pixel_stats(ref_dir, gen_dir):
     return iou, l1, len(ious)
 
 
+def collapse(d):
+    """Fraction of opaque pixels holding the single most common colour, averaged over sprites.
+
+    Silhouette IoU cannot see a sprite whose interior has been flattened into one block, and the native
+    reference rewards flatness, so a refinement can improve FD by erasing the subject.  This is the
+    measure that catches it: real sprites sit well below 1.0, a collapsed one approaches it.
+    """
+    from collections import Counter
+    from PIL import Image
+    vals = []
+    for f in sorted(Path(d).glob("*.png")):
+        x = np.array(Image.open(f).convert("RGBA"))
+        op = x[:, :, 3] >= 128
+        if op.sum() < 4:
+            continue
+        cols = Counter(map(tuple, x[:, :, :3][op]))
+        vals.append(cols.most_common(1)[0][1] / op.sum())
+    return float(np.mean(vals)) if vals else float("nan")
+
+
 def report(init, d, label, size):
-    c, n = cosine_to(init, d, size)
     iou, l1, m = pixel_stats(init, d)
-    print(f"{label:34s} IoU {iou:.3f}  RGB-L1 {l1:6.1f}  (DINO cos {c:.3f}, n={m})", flush=True)
+    print(f"{label:34s} IoU {iou:.3f}  RGB-L1 {l1:6.1f}  modal-colour {collapse(d):.3f}  (n={m})",
+          flush=True)
 
 
 def main():
