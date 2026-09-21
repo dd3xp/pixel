@@ -1,0 +1,120 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage[review]{cvpr}
+\usepackage{newtxtext,newtxmath}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\definecolor{cvprblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=cvprblue]{hyperref}
+
+\def\paperID{*****}
+\def\confName{CVPR}
+\def\confYear{2027}
+
+\begin{document}
+
+\title{Pixel Art Is a Palette, Not a Downscale --- Supplementary Material}
+\author{Anonymous CVPR submission\\Paper ID \paperID}
+\maketitle
+
+\section{What the body left out}
+
+The body reports what a reader needs to use the method. This document carries the rest: the data pipeline in enough
+detail to rebuild the corpus, the results that did not earn a place in the recipe, and the measurements behind claims
+the body states in one sentence. Section numbers here are independent of the body.
+
+\section{Corpus construction}
+\label{sup:data}
+
+\paragraph{From sheets to sprites.}
+Source material arrives as sprite sheets and loose PNGs. Whole images whose longest side is at most 64\,px are kept as
+they are --- these are the natively tiny sprites the low-resolution buckets are starving for. Larger images are treated
+as sheets and cut into alpha-connected components between 8 and 64\,px. Every cut records the archive, the member file
+and the licence it came with.
+
+\paragraph{Filters.}
+A candidate is discarded unless its shorter side is at least 10\,px, its aspect ratio is at most 3:1, the fraction of
+pixels with $\alpha > 16$ lies in $[0.15, 0.97]$, it has at least four distinct colours after quantising each channel
+to 8 levels, and the standard deviation of its opaque RGB is at least 18. These reject background patches, single-colour
+blocks, and the near-empty crops that connected-component cutting produces at sheet margins.
+
+\paragraph{Deduplication.}
+Every surviving sprite is hashed by the exact bytes of its RGBA array together with its shape. Within the original
+corpus this finds 4{,}888 extra copies. Because hold-out sets are defined by path, every copy of a held-out sprite is
+also excluded from training, not only the copy that was drawn. Near-duplicates --- animation frames of the same
+character --- are not removed from training: an ablation that collapsed them by an $8\times8$ luminance-plus-alpha
+average hash lost more data than it gained diversity (training rows 64{,}990 to 49{,}984) and scored worse at equal
+steps, so only the per-source cap below is applied.
+
+\paragraph{Bucket policy.}
+A sprite may feed a resolution bucket only if its native size is at most $1.5\times$ that bucket. This is the change
+that stops 25--64\,px artwork from becoming a 16\,px target. It costs training rows: in the enlarged corpus, the
+one whose training log we still have, it refuses 154{,}312 of 272{,}690 candidate (sprite, bucket) pairs. It is the
+single largest contributor to the data-side gain.
+
+\paragraph{Added material.}
+14{,}999 sprites cut from three permissively licensed OpenGameArt collections (CC-BY-4.0, CC-BY-SA-3.0, OGA-BY-3.0)
+pass the filters and cross-corpus deduplication. A second pass drops sheets whose member name matches a font, UI or
+text pattern (367 sprites), collapses near-identical animation frames within a sheet, and caps any single source sheet
+at 60 sprites so one animation cannot dominate a bucket. The survivors have a median palette of eight colours and
+6{,}028 of them are natively 24\,px or smaller.
+
+\paragraph{Captions.}
+Sprites are captioned by a vision--language model shown numbered grids of 20 sprites on a checkerboard background,
+which is an order of magnitude cheaper than one call per sprite. A text-only classifier then labels each caption
+object / effect / fragment / glyph / junk; on the 2{,}980 sprites that also carry image-based labels the two agree
+82.5\% of the time (90.5\% recall on objects), which is enough to use the labels for an ablation and not enough to
+filter the training corpus with them.
+
+\paragraph{Licences.}
+The sprites added in this work carry per-file records of archive, member and licence. The older material predates that
+bookkeeping; we release the manifests for what we added and the scripts that rebuild everything else from public
+archives.
+
+\section{Data interventions that did not earn a place}
+\label{sup:data-abl}
+
+% TODO: content filtering (5.4% at 20k steps); quality conditioning and what it does to FD (the samples look
+% more finished and both distributional metrics get worse); the enlarged corpus, in full, including the
+% 20k-vs-80k reversal the body summarises.
+
+\section{Cross-resolution self-guidance: the negative result in full}
+\label{sup:crossres}
+
+% TODO: the rule, the internalised one-pass variant, the numbers under both protocols, and the per-image
+% statistics that explain why it wins under one and not the other.
+
+\section{Ablations on the model rather than the decoder}
+\label{sup:model-abl}
+
+% TODO: text encoder (ViT-B/32 vs ViT-L/14), training length (80k vs 100k vs 120k), capacity (72.5M vs
+% 161.2M with the full curve, since the single-point comparison inverts).
+
+\section{Resolutions outside the target range}
+\label{sup:res32}
+
+% TODO: 32 px results -- CFG 1.5 139.2, ICG w=2 97.1, ICG with an eight-colour projection 74.5 (twelve
+% colours 78.7) -- included to show the recipe is not tuned to 12--24 px.
+
+\section{Alternative reference sets}
+\label{sup:refs}
+
+% TODO: the object-only protocol (content-filtered reference, 37.1); the near-duplicate clean subset table
+% (29.0 for the headline configuration); Inception clean-FID and KID on the same samples.
+
+\section{Prompt alignment in full}
+\label{sup:clip}
+
+% TODO: the CLIP table across configurations and resolutions, with the note that the distractor draw is
+% re-seeded per set so a score does not depend on what it was scored alongside.
+
+\section{Licences and release}
+\label{sup:licence}
+
+% TODO: per-file licence records for the added sprites; which scripts reproduce which number.
+
+\end{document}
