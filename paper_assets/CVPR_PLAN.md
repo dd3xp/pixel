@@ -90,3 +90,16 @@ version dropped. Five, all deliberate, and all owed to the supplementary:
 
 Nothing else was lost in the retyping: the other fourteen appear in both drafts and all twenty-nine
 verified entries still match the scoring output (`src/v6/verify_against_json.py`).
+
+## Supplementary, 2026-09-22
+
+`paper_assets/cvpr27/supp.tex` is written end to end (3 pages, no TODOs left) and carries everything the
+body dropped: corpus construction, the three data interventions with the 20k/80k table, the
+cross-resolution negative result with both columns for every sampler, the three network ablations with
+the full capacity curve, 32 px, the three alternative reference sets (object-only 37.1, clean subset
+29.0, Inception), prompt alignment in full with the two cautions the audit produced, and licences.
+
+All five numbers the body dropped now appear here, so nothing verified was lost in the move.
+
+Remaining before submission: the human study, the anonymous code link, SD-piXL on its subset, and a pass
+over the figures at CVPR column width.

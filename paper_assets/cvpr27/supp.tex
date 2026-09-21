@@ -203,24 +203,54 @@ supported either conclusion --- the same trap that the corpus experiment in Sect
 \section{Resolutions outside the target range}
 \label{sup:res32}
 
-% TODO: 32 px results -- CFG 1.5 139.2, ICG w=2 97.1, ICG with an eight-colour projection 74.5 (twelve
-% colours 78.7) -- included to show the recipe is not tuned to 12--24 px.
+The body covers 12--24\,px, the sizes the medium is actually used at. One rung above, at 32\,px, the ordering is the
+same: CFG 1.5 scores 139.2 native FD, ICG $w{=}2$ 97.1, and ICG with an eight-colour projection 74.5 (twelve colours:
+78.7). The best $k$ rises with the canvas --- 8, 4, 8, 6, 8 at 12, 16, 20, 24 and 32\,px --- in the same direction as
+the real median palette without tracking it exactly. Absolute values are not comparable across resolutions: each has
+its own reference set and its own real-versus-real floor.
 
 \section{Alternative reference sets}
 \label{sup:refs}
 
-% TODO: the object-only protocol (content-filtered reference, 37.1); the near-duplicate clean subset table
-% (29.0 for the headline configuration); Inception clean-FID and KID on the same samples.
+\paragraph{Object-only reference.}
+About a fifth of the corpus is not a whole object: effects, fragments of larger drawings, glyphs. Restricting the
+reference to the 825 held-out sprites a classifier calls objects, and the prompts to the matching 2{,}181, gives 37.1
+for the reported configuration. The ordering of methods is unchanged; the absolute value moves because the reference
+population did.
+
+\paragraph{Clean subset.}
+Removing the 41.4\% of held-out prompts that have a near-duplicate twin in training leaves 1{,}759 prompts and moves
+the reported configuration from 31.8 to 29.0, with every other row moving by at most 3.0 and no ordering changing.
+
+\paragraph{A second feature space.}
+Inception-v3 clean-FID and KID on the same samples and the same native reference preserve the ordering, controls
+included: 23.79 for the projection, 23.28 at $k{=}6$, 26.27 without it, 29.37 for CFG, 36.05 for one global palette,
+66.63 for the median filter, 10.54 for the real held-out sprites. The separation shrinks sharply --- a $2.8\times$ gap
+between projecting and not projecting under DINOv2 is $1.10\times$ here, and $k{=}4$ and $k{=}6$ swap --- which is what
+an encoder whose input is resized to 299\,px would do to 16\,px hard edges. We read it as a check on the ranking and
+not as confirmation of the effect size.
 
 \section{Prompt alignment in full}
 \label{sup:clip}
 
-% TODO: the CLIP table across configurations and resolutions, with the note that the distractor draw is
-% re-seeded per set so a score does not depend on what it was scored alongside.
+CLIP ViT-B/32 image--text similarity ($100\cos$) and retrieval of the own caption among 100 distractors, 3{,}000
+held-out captions, 16\,px unless stated. ICG $w{=}2$ alone: 27.60 / 22.8\%. Projection at $k{=}6$: 27.38 / 22.0\%. At
+$k{=}4$: 27.07 / 19.2\%. The real held-out sprites the captions were written from: 27.66 / 22.6\%, so at $k{=}6$ our
+samples are as retrievable from their captions as real sprites are. At 20\,px the projection costs 1.9 points (26.7\%
+to 24.8\%) and at 24\,px 1.9 points (27.6\% to 25.7\%).
+
+Two cautions about this measurement. The distractor draw is re-seeded per directory: with a single shared stream, a
+set's retrieval score depended on which other sets were scored in the same invocation, which cost us about a point in
+an earlier version of these numbers. And a real-sprite baseline is only meaningful if the sprites are paired with the
+captions that describe them --- an unpaired reference scores 19.68 / 1.1\%, chance by construction, and reading that
+as evidence that real pixel art is hard to retrieve would be a mistake.
 
 \section{Licences and release}
 \label{sup:licence}
 
-% TODO: per-file licence records for the added sprites; which scripts reproduce which number.
+The sprites added in this work carry per-file records of archive, member file and licence (CC-BY-4.0, CC-BY-SA-3.0,
+OGA-BY-3.0 for the OpenGameArt material; CC0-1.0 for the Kenney packs used in the data ablation). The older material
+predates that bookkeeping; we release the manifests for what we added, together with the scripts that rebuild the rest
+from public archives and a table mapping every number in the paper to the script that produces it.
 
 \end{document}
