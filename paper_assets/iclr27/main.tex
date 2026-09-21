@@ -607,7 +607,12 @@ the DINOv2 cosine is saturated at this size: two unrelated sprites for the same 
 0.94 for a refinement, so it cannot separate the two cases at all.
 
 At $\sigma{=}0.6$ the silhouette is about 80\% preserved, well above the 0.46--0.53 floor of a freshly generated sprite
-for the same caption, and native FD improves by 36--41\% for all three systems. The decoding rule is therefore usable
+for the same caption, and native FD improves by 36--41\% for all three systems. Sweeping $\sigma$ on gpt-image-2 gives a
+monotone trade-off with no knee --- 134.4 / 130.2 / 124.2 / 115.9 / 98.7 / 86.5 / 68.0 / 53.6 native FD against
+retention 1.00 / 1.00 / 0.98 / 0.93 / 0.86 / 0.79 / 0.64 / 0.52 at $\sigma = 0$ to $1$ --- and the endpoint is a
+self-check: at $\sigma{=}1$ the input is discarded entirely and the run reproduces our own samples (53.6 against 50.8,
+retention 0.518 against 0.513). The modal-colour fraction stays between 0.433 and 0.453 across the whole sweep,
+against 0.448 for real sprites, so no setting flattens the subject away. The decoding rule is therefore usable
 on top of a generator we did not train, with $\sigma$ as an explicit dial between keeping the input and matching the
 medium. It does not close the gap to generating natively (86.5 against 50.8 for gpt-image-2), which is the honest limit
 of a post-process: it can fix how a sprite is drawn, not what was drawn (Figure~\ref{fig:refine}).
