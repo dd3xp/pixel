@@ -539,19 +539,23 @@ Underfull \hbox (badness 5741) in paragraph at lines 380--387
 22.  Micro-conditioning doc-u-men-
  []
 
-[18]) (appendix.tex [19]
+[18]) (appendix.tex [19] [20]
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[20] [21]
+[21]
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[22]
+
+Underfull \vbox (badness 2253) has occurred while \output is active []
+
+ [22]
 File: figures/fig_external16.pdf Graphic file (type pdf)
 <use figures/fig_external16.pdf>
- [23]) [24] (main.aux)
+
+[23]) [24] (main.aux)
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: A75424A3F1DCA23F3390DD7CF6700C45;4992.
  )
-Output written on main.xdv (24 pages, 183352 bytes).
+Output written on main.xdv (24 pages, 183892 bytes).
