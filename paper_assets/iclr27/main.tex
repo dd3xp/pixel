@@ -595,6 +595,45 @@ are also closer to native pixel art than the mixed-provenance sprites that the c
 truth, which is a statement about that corpus rather than about our model. At 24\,px the real sprites are still ahead of
 us (150.7 versus 192.2).
 
+\paragraph{The rule as a post-process on other systems.}
+Quantising a finished external sample helps but cannot repair the seams quantisation leaves, the same limitation we
+measured on our own samples (41.6 post-hoc against 31.8 in-sampler). The projection can nevertheless be applied to
+another system's output, by re-noising its sprite to a fraction $\sigma$ of the schedule and denoising it with our
+model under the reported configuration. Table~\ref{tab:refine} reports both halves of what that does: how much closer
+to real pixel art the result gets, and how much of the original sprite is still there. The second half matters because
+at $\sigma{=}1$ the procedure is simply our own model, and a distributional score alone cannot tell repair from
+replacement. We measure retention in pixel space --- alpha-mask IoU and mean RGB distance against the input --- because
+the DINOv2 cosine is saturated at this size: two unrelated sprites for the same caption already score 0.918, against
+0.94 for a refinement, so it cannot separate the two cases at all.
+
+At $\sigma{=}0.6$ the silhouette is about 80\% preserved, well above the 0.46--0.53 floor of a freshly generated sprite
+for the same caption, and native FD improves by 36--41\% for all three systems. The decoding rule is therefore usable
+on top of a generator we did not train, with $\sigma$ as an explicit dial between keeping the input and matching the
+medium. It does not close the gap to generating natively (86.5 against 50.8 for gpt-image-2), which is the honest limit
+of a post-process: it can fix how a sprite is drawn, not what was drawn.
+
+\begin{table}[h]
+\caption{The decoding rule applied to external sprites, 200 captions, 16\,px. $\sigma$ is the fraction of the schedule
+re-run. Retention is measured against the system's own output; the floor column is our model generating the same
+captions from noise, i.e.~what ``no retention'' looks like.}
+\label{tab:refine}
+\centering
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+& \multicolumn{3}{c}{Native FD $\downarrow$} & \multicolumn{2}{c}{Retention at $\sigma{=}0.6$} & Floor \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-6} \cmidrule(lr){7-7}
+System & post-hoc & $\sigma{=}0.4$ & $\sigma{=}0.6$ & IoU & RGB-L1 & IoU \\
+\midrule
+gpt-image-2            & 134.4 & 115.9 & \textbf{86.5}  & 0.788 & 45.7 & 0.513 \\
+FLUX.2-klein + LoRA    & 150.1 & 116.1 & \textbf{88.2}  & 0.803 & 44.3 & 0.530 \\
+SDXL + Pixel Art XL    & 244.2 & 197.2 & \textbf{155.0} & 0.813 & 52.5 & 0.464 \\
+\midrule
+Ours, generated natively & \multicolumn{3}{c}{50.8} & \multicolumn{3}{c}{---} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 % ================================================================================================================
 \section{Why the two protocols disagree}
 \label{sec:why}
