@@ -260,10 +260,12 @@ without the new sprites and \textbf{v7r} is the same architecture on the origina
 
 A 16\,px sprite is defined as much by how few colours it uses as by its shape: in the native reference set the median
 sprite has six opaque colours (12\,px: 5; 20 and 24\,px: 7) and 22.6\% use at most four. A continuous diffusion model in
-RGB has no mechanism that snaps a region to a single value, and none of our samplers does: measured on 600 samples,
-plain CFG emits 56.2 colours and the best guidance rule 50.9, with the fraction of adjacent opaque pixel pairs that are
-exactly equal at 0.36--0.38 against 0.46 for real sprites. The extra colours are dither of a few levels inside regions
-that the model has, in effect, already decided are flat.
+RGB has no mechanism that snaps a region to a single value, and none of our samplers does: plain CFG emits a median of
+52 opaque colours and the best guidance rule 49, against six for real sprites, and the fraction of adjacent opaque
+pixel pairs with identical RGB is 0.08 for both against 0.46 for real sprites. Allowing a tolerance of 16 on summed
+$|\Delta \text{RGB}|$ raises the generated figures to 0.37--0.39 and the real one only to 0.47, which is the same fact
+stated twice: the extra colours are dither of a few levels inside regions the model has, in effect, already decided
+are flat.
 
 We remove that dither inside the sampler. At a step with $t/T \le f$ we form the current estimate
 $\hat x_0 = (x_t - \sqrt{1-\bar\alpha_t}\,\tilde e)/\sqrt{\bar\alpha_t}$, cluster its \emph{opaque} RGB pixels into $k$
