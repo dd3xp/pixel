@@ -400,3 +400,7 @@ v8m(+CC-BY-3.0) 20k 主配置 **42.87**, 对 v8n 54.23 是 **-21%**, 对 v8k 53.
 VLM 在 fidelity 上把 flux/gpt 排在**真实 sprite 之上**(72%/70%), 说明它测的是好看不是真实 → 其 fidelity 结论不可用。
 **ours 与真实 sprite 打成 50:50**(独立于 FD 的一个正面证据)。
 ⇒ 人评设计必须包含"真实 sprite vs 外部基线"对照题, 并预先声明: 真值若在 fidelity 上落败, 该问测的是精致度。
+
+## [09-22] CVPR 骨架已建起来并能编译
+`paper_assets/cvpr27/`: 官方 author-kit 的 `cvpr.sty` + `ieeenat_fullname.bst`(年份无关, 选项是 review/final/rebuttal, 2027 kit 出来只换 .sty), 双栏 10pt 骨架 + 新摘要(已含跨骨干与后处理两条新证据, 泄漏率按更正后的 16.2%), 六个 section 各留 TODO 说明要搬什么。tectonic 编译通过。
+下一步按 `paper_assets/CVPR_PLAN.md` 逐节搬运与压缩。
