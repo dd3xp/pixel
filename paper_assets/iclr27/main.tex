@@ -357,8 +357,8 @@ training run actually excluded: building it from the evaluation split instead pu
 and the model then reconstructs them almost pixel for pixel. Second, exact-duplicate removal is not enough --- sprite
 sheets contain animation frames, so a held-out sprite can have a near-identical twin in training. Hashing every sprite
 by an $8\times8$ luminance-plus-alpha average hash, 1{,}241 of the 3{,}000 held-out prompts (41.4\%) have such a twin.
-Rescoring on the 1{,}759 prompts that do not (Table~\ref{tab:leak}) moves every number by less than 3 FD and changes no
-ordering, so we report the full set in the main tables and the clean subset here.
+Rescoring on the 1{,}759 prompts that do not (Table~\ref{tab:leak}) moves every number by at most 3.0 FD --- the
+largest single change, 167.2 to 164.2 --- and changes no ordering, so we report the full set in the main tables and the clean subset here.
 
 \begin{table}[h]
 \caption{Removing every prompt whose sprite has a near-duplicate twin in training. Native protocol, 16\,px.}
