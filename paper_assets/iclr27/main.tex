@@ -610,7 +610,7 @@ At $\sigma{=}0.6$ the silhouette is about 80\% preserved, well above the 0.46--0
 for the same caption, and native FD improves by 36--41\% for all three systems. The decoding rule is therefore usable
 on top of a generator we did not train, with $\sigma$ as an explicit dial between keeping the input and matching the
 medium. It does not close the gap to generating natively (86.5 against 50.8 for gpt-image-2), which is the honest limit
-of a post-process: it can fix how a sprite is drawn, not what was drawn.
+of a post-process: it can fix how a sprite is drawn, not what was drawn (Figure~\ref{fig:refine}).
 
 \begin{table}[h]
 \caption{The decoding rule applied to external sprites, 200 captions, 16\,px. $\sigma$ is the fraction of the schedule
@@ -633,6 +633,20 @@ Ours, generated natively & \multicolumn{3}{c}{50.8} & \multicolumn{3}{c}{---} \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_refine.png}
+\caption{Eight captions drawn at random from the 200. Top: gpt-image-2 rendered large and reduced, with the same
+palette post-process as every other row. Middle: the same sprite re-noised to $\sigma$ of the schedule and denoised by
+our model with ICG and the four-colour projection. Bottom two: our model generating the caption from noise, and the
+held-out sprite. The refined sprites keep the subject --- the aggregate agrees, with a modal-colour fraction of 0.453
+against 0.448 for real sprites --- while the colours and edges move towards the medium. They also look better than our
+own samples for the same captions, which score 86.5 and 50.8 native FD respectively: what our model still lacks is not
+the decoding rule but the ability to draw the subject.}
+\label{fig:refine}
+\end{figure}
+
 
 % ================================================================================================================
 \section{Why the two protocols disagree}
