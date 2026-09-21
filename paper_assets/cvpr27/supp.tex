@@ -179,8 +179,26 @@ have been the contribution, and it is the single worst sampler in the column tha
 \section{Ablations on the model rather than the decoder}
 \label{sup:model-abl}
 
-% TODO: text encoder (ViT-B/32 vs ViT-L/14), training length (80k vs 100k vs 120k), capacity (72.5M vs
-% 161.2M with the full curve, since the single-point comparison inverts).
+Before concluding that the remaining error is in the data and the decoder, we checked the three obvious properties of
+the network. None of them explains it.
+
+\paragraph{Text encoder.}
+Swapping the frozen CLIP ViT-B/32 for ViT-L/14 (512 to 768 channels of cross-attention), same data, recipe and step
+count: 164.0 against 165.6 native FD at 20k steps, a difference far inside what we can attribute, and caption
+retrieval goes slightly \emph{down}, 20.6\% to 19.6\%. Whatever makes our samples draw the wrong object, it is not the
+text tower, and a full retraining with the larger encoder is not worth 30 GPU-hours.
+
+\paragraph{Training length.}
+Continuing the main model past 80k steps flattens: 31.8 at 80k, 30.8 at 100k, 32.3 at 120k on the reported
+configuration, all within a band of 1.5. We report 80k.
+
+\paragraph{Capacity, and why we give the whole curve.}
+A $2.2\times$ larger network (161.2M against 72.5M) leads early and loses late: 46.1 against 54.2 at 20k steps, 38.3
+against 35.8 at 40k, and 38.5 against 31.8 at 80k. Read at 20k it is a clear win; read at 80k it is a clear loss. On
+plain CFG the larger model is marginally better throughout (114.5 against 117.9), so the reversal is specific to the
+configuration we report. The explanation we find plausible is that 2.2 times the parameters overfit a 50k-sprite corpus
+sooner, but we did not test it, and the reason we show three points rather than one is that a single point would have
+supported either conclusion --- the same trap that the corpus experiment in Section~\ref{sup:data-abl} fell into.
 
 \section{Resolutions outside the target range}
 \label{sup:res32}
