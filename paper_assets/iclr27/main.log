@@ -458,15 +458,22 @@ File: figures/fig_palette.png Graphic file (type bmp)
  [6]
 File: figures/fig_native_gt.png Graphic file (type bmp)
 <figures/fig_native_gt.png>
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+
+Underfull \vbox (badness 6300) has occurred while \output is active []
+
  [7]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\leavevmode@ifvmode' on input line 410.
+(hyperref)                removing `\leavevmode@ifvmode' on input line 412.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                \kern 1.66702pt
-(hyperref)                removed on input line 410.
+(hyperref)                removed on input line 412.
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
@@ -509,13 +516,13 @@ Underfull \hbox (badness 4492) in paragraph at lines 22--29
 le-men-ta-tion at []$\T1/pcr/m/n/10 https :
  []
 
-[15]
+[15] [16]
 Underfull \hbox (badness 4132) in paragraph at lines 161--166
 []\T1/ptm/m/n/10 Jonathan Ho and Tim Sal-i-mans.  Classifier-free dif-fu-sion g
 uid-ance.  \T1/ptm/m/it/10 arXiv preprint
  []
 
-[16] [17]
+[17]
 Underfull \hbox (badness 1755) in paragraph at lines 380--387
 []\T1/ptm/m/n/10 Patrick von Platen, Suraj Patil, An-ton Lozhkov, Pe-dro Cuenca
 , Nathan Lam-bert, Kashif
@@ -558,4 +565,4 @@ File: figures/fig_external16.pdf Graphic file (type pdf)
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: A75424A3F1DCA23F3390DD7CF6700C45;4992.
  )
-Output written on main.xdv (24 pages, 183892 bytes).
+Output written on main.xdv (24 pages, 184284 bytes).

@@ -280,7 +280,9 @@ constraint applied to the model's own belief, not a
 post-process: the steps that follow see the quantised state and repair the seams it creates, which is why doing this
 inside the sampler beats quantising the finished image (31.8 vs.\ 41.6 at 16\,px, Section~\ref{sec:main16}). It adds no
 network evaluations; $k$-means on $R^2 \le 576$ pixels is negligible next to a UNet pass. We use $f = 0.5$ throughout and
-report $k$ per resolution; $k$ can also be drawn per sprite from the corpus histogram, which we ablate.
+report $k$ per resolution; $k$ can also be drawn per sprite from the corpus histogram, which we ablate. The restriction
+to late steps matters less than the projection does: running it for the whole schedule ($f = 1$) costs two points
+(33.7 against 31.6), so a reader who wants the simplest possible version can drop $f$ and lose little.
 
 % ----------------------------------------------------------------------------------------------------------------
 \begin{figure}[t]
