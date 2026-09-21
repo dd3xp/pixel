@@ -5,6 +5,10 @@
 %\usepackage{cvpr}             % to produce the CAMERA-READY version
 %\usepackage[pagenumbers]{cvpr} % to force page numbers, e.g. for an arXiv version
 
+% tectonic drives XeTeX, where the template's implicit Times is unavailable and every glyph is
+% substituted with a font warning; newtx supplies a Unicode Times clone so the built PDF matches
+% what a pdfLaTeX build of the same source would look like.
+\usepackage{newtxtext,newtxmath}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
