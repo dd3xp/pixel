@@ -60,3 +60,19 @@ the current draft is 21 pages of ICLR format, so roughly 60% of the body has to 
 CVPR 2027 author kit is not released yet (checked 2026-09-21). Draft against `cvpr-org/author-kit`
 for 2026 and swap the `.sty` when 2027 appears; the class options are stable across years
 (`\usepackage[review]{cvpr}` for submission).
+
+## Status 2026-09-22
+
+The draft is written end to end and compiles: 7 pages including references, so roughly 6 of the 8
+allowed body pages are used. Sections: abstract, intro + teaser, medium and protocol, related work,
+method, experiments (main table, two controls, k with a validation split, alignment, backbone swap,
+other resolutions, external table), the rule on other systems, discussion and limitations.
+
+**Two pages of slack.** The first things to bring back, in order:
+1. The data interventions that did not earn a place, above all the 20k-vs-80k reversal — a short
+   version is a real methodological contribution and warns readers off the pilot-sized comparison
+   that misled us twice.
+2. A qualitative figure for the projection itself (fig_palette.png exists in the ICLR draft).
+3. The per-image statistics behind "why the protocols disagree".
+
+Still missing and blocked: the human study, the anonymous code link, SD-piXL on its subset.

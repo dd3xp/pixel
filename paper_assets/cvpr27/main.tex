@@ -321,12 +321,89 @@ is a statement about that corpus rather than about our model. At 24\,px the real
 \section{The rule on other systems}
 \label{sec:refine}
 
-% TODO: refinement table and qualitative figure.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_refine.png}
+\caption{Eight captions drawn at random. Rows: gpt-image-2 rendered large and reduced with the same palette
+post-process as every other row; the same sprite re-noised to $\sigma$ of the schedule and denoised by our model; our
+model generating the caption from noise; and the held-out sprite. The refined sprites keep the subject and also look
+better than our own samples for the same captions, which score 86.5 and 50.8 native FD respectively: what our model
+still lacks is not the decoding rule but the ability to draw the subject.}
+\label{fig:refine}
+\end{figure}
+
+\begin{table}[t]
+\caption{The decoding rule applied to external sprites, 200 captions, 16\,px. $\sigma$ is the fraction of the schedule
+re-run. Retention is measured against the system's own output; the floor is our model generating the same captions
+from noise, i.e.~what ``no retention'' looks like.}
+\label{tab:refine}
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+& \multicolumn{3}{c}{Native FD $\downarrow$} & Retention \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-5}
+System & post-hoc & $\sigma{=}0.4$ & $\sigma{=}0.6$ & IoU @ 0.6 \\
+\midrule
+gpt-image-2         & 134.4 & 115.9 & \textbf{86.5}  & 0.788 \\
+FLUX.2 + LoRA       & 150.1 & 116.1 & \textbf{88.2}  & 0.803 \\
+SDXL + Pixel Art XL & 244.2 & 197.2 & \textbf{155.0} & 0.813 \\
+\midrule
+Ours, from noise    & \multicolumn{3}{c}{50.8} & 0.513 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Quantising a finished external sample helps but cannot repair the seams quantisation leaves, the same limit we measured
+on our own samples. The projection can nevertheless be applied to another system's output: re-noise its sprite to a
+fraction $\sigma$ of the schedule and denoise it under our configuration. Table~\ref{tab:refine} reports both halves ---
+how much closer to real pixel art the result gets, and how much of the original survives --- because at $\sigma{=}1$
+the procedure is simply our own model, and a distributional score alone cannot tell repair from replacement. Retention
+is measured in pixel space, as the DINOv2 cosine is saturated at this size: two unrelated sprites for the same caption
+already score 0.918.
+
+At $\sigma{=}0.6$ about 80\% of the silhouette survives, well above the 0.46--0.53 floor of a freshly generated sprite,
+and native FD improves by 36--41\% for all three systems; the same holds at 20 and 24\,px (448.6 to 265.7 and 478.0 to
+299.0). Sweeping $\sigma$ on gpt-image-2 gives a monotone trade-off with no knee, and the endpoint is a self-check: at
+$\sigma{=}1$ the run reproduces our own samples on all three measurements --- FD 53.6 against 50.8, retention 0.518
+against 0.513, retrieval 16.0\% against 15.0\%. Caption retrieval falls from 22.0\% for gpt-image-2's own sprite to
+18.5\% after refinement and 15.0\% when our model draws the caption itself, so refinement keeps most of a large
+generator's semantic advantage while moving the style towards the medium. It does not close the gap to generating
+natively, and the gap widens with resolution: a post-process fixes how a sprite is drawn, and the larger the canvas the
+more of the remaining distance is structure it cannot touch.
 
 \section{Discussion and limitations}
 \label{sec:disc}
 
-% TODO: why the protocols disagree (compressed), the model judge that failed its control, limitations.
+\paragraph{Why the two protocols disagree.}
+The biased reference is 92.9\% downscaled artwork, so it is a reference for \emph{blurred illustrations}, and the
+sampler that scores best against it is the one that produces them. That is why heavy guidance wins there and loses
+here, why cross-resolution self-guidance --- which makes samples look like a lower-resolution version of themselves,
+i.e.~like downscaled art --- wins by 44\% there and gives nothing here, and why palette projection, which moves samples
+from 52 colours to four, improves the native score by a factor of 2.7 while making the biased score five times worse.
+Neither number is wrong; they measure distance to different populations, and only one of those populations is pixel
+art.
+
+\paragraph{Can a model be asked instead of people?}
+We put the same pairs to a vision--language model: 560 forced choices over 40 captions, with the real held-out sprites
+in the pool as a control. The control fails. Asked which sprite looks more like real low-resolution pixel art, the
+judge puts FLUX.2 and gpt-image-2 above the real sprites themselves (72\% and 70\% head to head); replacing the
+question with the concrete distinction --- drawn pixel by pixel at this size, or a larger picture shrunk down --- moves
+the real sprites from 40.6\% to 48.8\% and the blurriest baseline from 41.2\% to 27.5\%, but FLUX.2 still beats the
+real sprites 68\% of the time. Our own samples tie with real sprites at 50\% under both wordings. We report this as a
+negative result about the instrument: whether an image was authored at sprite resolution is not something a
+general-purpose vision model recovers from the image, which is the work the native reference set is doing.
+
+\paragraph{Limitations.}
+\emph{Scope.} Everything is measured on models we trained, on one family of sprite corpora; the transformer run rules
+out convolutions as the explanation but not a shared bias of pixel-space diffusion, and we have not tested a second
+domain. \emph{Metric.} FD with DINOv2 on 12--24\,px images upsampled to 224\,px is sensitive to exactly the colour and
+contrast statistics the projection changes. Inception clean-FID on the same samples and reference preserves the
+ordering, including both controls, but compresses it --- a $2.8\times$ gap becomes $1.10\times$ --- because an encoder
+that resizes to 299\,px cannot see hard edges at 16\,px. We have no human study, and it remains the obvious next check.
+\emph{Tuning.} $k$ transfers across a validation split; for $f$ the honest statement is that the optimum is flat over
+$[0.4, 0.5]$ rather than validated. \emph{Where we still lose.} At 24\,px real sprites remain closer to native pixel
+art than our samples, and a large generator plus our post-process still draws subjects better than we generate them.
 
 {\small
 \bibliographystyle{ieeenat_fullname}
