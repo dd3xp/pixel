@@ -35,6 +35,16 @@ CHECKS = {
     "88.2":  ("runs_out/fair_fd16_native.json", "refine_flux2_s0p6"),
     "155.0": ("runs_out/fair_fd16_native.json", "refine_lora_s0p6"),
     "53.6":  ("runs_out/fair_fd16_native.json", "refine_gpt_s1p0"),
+    # the external table and the no-post-process row, from the ext200 scoring files
+    "50.8":  ("runs_out/ext200/fd_native_v8n.json", "icg2_pal4"),
+    "134.4": ("runs_out/ext200/fd_native_q.json", "gpt_q4"),
+    "150.1": ("runs_out/ext200/fd_native_q.json", "flux2_q4"),
+    "244.2": ("runs_out/ext200/fd_native_q.json", "lora_q4"),
+    "77.0":  ("runs_out/ext200/fd_native_q.json", "real_q4"),
+    "284.4": ("runs_out/ext200/fd_native_s16.json", "ext_recap_gpt"),
+    "318.9": ("runs_out/ext200/fd_native_s16.json", "ext_flux2"),
+    "436.4": ("runs_out/ext200/fd_native_s16.json", "ext_lora"),
+    "4.47":  ("runs_out/ext200/fd_native_s16.json", "floor_heldout3000"),
 }
 TOL = 0.06   # the paper rounds to one decimal
 
