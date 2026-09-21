@@ -775,14 +775,31 @@ mixture, which is the correct behaviour under our own protocol and also the reas
 for producing attractive sprites. The path we would take next is more and better data --- curated sprite collections,
 or a much larger corpus with the craft rating used for filtering rather than conditioning --- not a larger network.
 
+\paragraph{Can a model be asked instead?}
+An obvious cheap substitute for a human study is to put the pairs to a vision--language model, so we tried it: 560
+forced choices over 40 captions, each pair judged once for fidelity to the medium and once for preference, with the
+real held-out sprites in the pool as a control. The control fails. Asked which of two sprites looks more like real
+low-resolution pixel art, the judge puts FLUX.2 and gpt-image-2 above the real sprites themselves, 72\% and 70\% head
+to head; replacing the question with the concrete distinction --- drawn pixel by pixel at this size, or a larger
+picture shrunk down --- moves the real sprites from 40.6\% to 48.8\% and the blurriest baseline from 41.2\% to 27.5\%,
+but FLUX.2 still beats the real sprites 68\% of the time. Our own samples tie with the real sprites at 50\% under both
+wordings, which is the one thing the study does establish.
+
+We report this as a negative result about the instrument rather than evidence about the systems. It says that the
+property this paper is about --- whether an image was authored at sprite resolution --- is not one a general-purpose
+vision model recovers from the image, even when asked for it directly, which is precisely why a reference set of real
+low-resolution sprites is doing work that a generic judge cannot. It also sets the design of the human study we have
+not yet run: the same control has to be in it, and if human raters also rank the real sprites below a large
+generator's downscaled output, the question is measuring polish and must be reported as such.
+
 \paragraph{Limitations.}
 (i) \emph{Scope.} Everything is measured on models we trained, on one family of game-sprite corpora; the transformer
 run rules out convolutions as the explanation but not a shared inductive bias of pixel-space diffusion, and we have
 not tested a second domain. (ii) \emph{Metric.} FD with DINOv2 on 12--24\,px images upsampled to
 224\,px assigns one sprite pixel to one or a few patches, and is sensitive to exactly the colour and contrast statistics
 that our projection changes; we report CLIP alignment, both references and a second feature space throughout, but the
-second feature space is much less sensitive at this size and we have no human study, which remains the obvious next
-check for a claim about a medium people look at. (iii) \emph{Palette
+second feature space is much less sensitive at this size, the model judge we tried fails its own control, and we have
+no human study, which remains the obvious next check for a claim about a medium people look at. (iii) \emph{Palette
 tuning.} $k$ and the projection start $f$ were selected on the same held-out FD we report. Splitting the 3{,}000 captions
 into halves by index and choosing on one of them selects the same $k{=}4$, which on the disjoint half scores 33.36
 against 38.63 / 35.62 / 38.27 / 43.76 for $k = 3/5/6/8$ (values at $n{=}1500$ are not comparable to the $n{=}3000$
