@@ -309,6 +309,17 @@ an independent re-training of the same recipe lands within 2.5 FD of the first (
 steps, biased/native), so we do not interpret differences below that scale. We also report CLIP ViT-B/32 image--text
 similarity ($100\cos$) and retrieval R@1 of the own caption among 100.
 
+\paragraph{Does the ranking depend on the encoder?}
+A reference set we defined and a feature space we chose could between them manufacture the result, so we recomputed the
+main comparison with Inception-v3 clean-FID and KID \citep{Parmar2022} on the same saved samples and the same native
+reference. The ordering is unchanged --- projection 23.79, $k{=}6$ 23.28, no projection 26.27, CFG 29.37, one global
+palette 36.05, median filter 66.63, real held-out 10.54 --- so the controls still fail and the conclusion is not a
+property of DINOv2. The separation, however, collapses: what is a $2.8\times$ gap between projecting and not projecting
+under DINOv2 is $1.10\times$ under Inception, and $k{=}4$ and $k{=}6$ swap places. This is what we would expect from an
+encoder whose input is resized to 299\,px: at 16\,px the hard edges and four-colour interiors that the projection
+creates are mostly destroyed by that resampling. We therefore read Inception as a check on the ranking only, and not as
+independent confirmation of the size of the effect.
+
 % ----------------------------------------------------------------------------------------------------------------
 \begin{figure}[t]
 \centering
@@ -725,11 +736,13 @@ for producing attractive sprites. The path we would take next is more and better
 or a much larger corpus with the craft rating used for filtering rather than conditioning --- not a larger network.
 
 \paragraph{Limitations.}
-(i) \emph{Scope.} Everything is measured on models we trained, from one architecture family, on one family of game-sprite
-corpora. We have not tested a second domain. (ii) \emph{Metric.} FD with DINOv2 on 12--24\,px images upsampled to
+(i) \emph{Scope.} Everything is measured on models we trained, on one family of game-sprite corpora; the transformer
+run rules out convolutions as the explanation but not a shared inductive bias of pixel-space diffusion, and we have
+not tested a second domain. (ii) \emph{Metric.} FD with DINOv2 on 12--24\,px images upsampled to
 224\,px assigns one sprite pixel to one or a few patches, and is sensitive to exactly the colour and contrast statistics
-that our projection changes; we report CLIP alignment alongside it and both references throughout, but we have no human
-study, and a human study is the obvious next check for a claim about a medium people look at. (iii) \emph{Palette
+that our projection changes; we report CLIP alignment, both references and a second feature space throughout, but the
+second feature space is much less sensitive at this size and we have no human study, which remains the obvious next
+check for a claim about a medium people look at. (iii) \emph{Palette
 tuning.} $k$ and the projection start $f$ were selected on the same held-out FD we report, with no separate validation
 split; the per-sprite variant drawn from the corpus histogram (39.9) is worse than the tuned constant (31.8), so some of
 the gap is fitted to the metric. (iv) \emph{Where we still lose.} At 24\,px real sprites remain closer to native pixel
