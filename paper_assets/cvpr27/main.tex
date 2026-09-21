@@ -219,7 +219,104 @@ and running the projection for the whole schedule costs two points, so the timin
 \section{Experiments}
 \label{sec:exp}
 
-% TODO: main 16 px table, controls, k sweep with the validation split, other resolutions, external table.
+\begin{table}[t]
+\caption{16\,px, 3{,}000 held-out captions. \emph{Native}: reference of sprites natively $\le 16$\,px (floor 4.47).
+\emph{Biased}: the conventional corpus-sample reference (floor 3.45), 92.9\% of it downscaled artwork. The two columns
+rank the same methods in opposite orders.}
+\label{tab:main16}
+\centering
+\small
+\begin{tabular}{@{}llcc@{}}
+\toprule
+Targets & Sampler & Native $\downarrow$ & Biased \\
+\midrule
+original          & CFG 1.5 (best)   & 167.2 & 11.1 \\
+policy fixed      & CFG 1.5          & 123.1 & 14.8 \\
+{+ new sprites}   & CFG 1.5          & 117.9 & 13.6 \\
+\midrule
+{+ new sprites}   & cross-res.\ ref., $w{=}1.5$ & 114.9 & 14.2 \\
+{+ new sprites}   & internalised, 1 pass        & 170.3 & 10.4 \\
+{+ new sprites}   & ICG $w{=}2$ \cite{Sadat2024icg} & 87.1 & 20.7 \\
+\midrule
+{+ new sprites}   & ICG + post-hoc 4-colour     & 41.6 & 111.0 \\
+{+ new sprites}   & ICG + projection, $k{=}6$   & 36.9 & 71.1 \\
+\textbf{+ new sprites} & \textbf{ICG + projection, $k{=}4$} & \textbf{31.8 $\pm$ 0.5} & 111.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Main result.}
+Table~\ref{tab:main16} separates the three things that changed. Rebuilding the targets moves the model from 167.2 to
+117.9 under the native protocol without touching the sampler. Independent-condition guidance takes it to 87.1, and
+palette projection to $31.8 \pm 0.5$ over three seeds --- a larger step than the entire distance between guidance
+rules. Projecting inside the sampler is what makes that step work: quantising the finished samples to the same four
+colours reaches only 41.6, because nothing repairs the seams quantisation introduces. The biased column moves in the
+opposite direction throughout, which is the disagreement Section~\ref{sec:disc} is about.
+
+\paragraph{Is it the palette, or just fewer colours?}
+Two controls replace $\Pi_k$ at exactly the same steps. One projects onto a \emph{single} four-colour palette shared by
+every sprite, learned by $k$-means over the reference set: the same colour count without the per-sprite structure. The
+other applies a $3\times3$ median filter, which removes the same dither and imposes no palette. Both are \emph{worse}
+than not projecting at all --- 120.1 and 112.2 against 87.1 --- so the gain is neither ``fewer colours'' nor
+``smoother'', but each sprite's own small palette.
+
+\paragraph{Palette size, with a validation split.}
+Sweeping $k$ at 16\,px gives 38.1 / 31.8 / 33.7 / 36.9 / 50.6 for $k = 3/4/5/6/8$, and 39.9 when $k$ is drawn per
+sprite from the corpus histogram. Because that sweep and the reported number share a split, we also split the captions
+in half by index: choosing on one half selects the same $k{=}4$, which scores 33.36 on the disjoint half against
+38.63 / 35.62 / 38.27 / 43.76 for the alternatives (values at $n{=}1500$ are not comparable to $n{=}3000$ ones, as FD
+is biased by sample size). The FD optimum $k{=}4$ is nonetheless \emph{below} the real median palette: measured on the
+samples, $k{=}6$ is the setting that reproduces the medium --- six opaque colours and 43\% exactly-equal neighbours,
+against six and 46\% for real sprites --- while $k{=}4$ gives four colours and 54\%, flatter than the real thing. We
+report $k{=}4$ as the best-FD setting and $k{=}6$ as the one to use.
+
+\paragraph{Prompt alignment.}
+Projection trades a little text faithfulness for a large distributional gain. CLIP $100\cos$ / retrieval@1 among 100
+are 27.60 / 22.8\% for ICG alone, 27.38 / 22.0\% at $k{=}6$ and 27.07 / 19.2\% at $k{=}4$, against 27.66 / 22.6\% for
+the real held-out sprites the captions were written from: at $k{=}6$ our samples are as retrievable as real sprites.
+The cost is smaller on a larger canvas but stops shrinking --- 3.6 points at 16\,px, 1.9 at both 20 and 24\,px.
+
+\paragraph{Is it the network?}
+Every number above comes from one convolutional network. We retrained the 20k-step pilot with the UNet replaced by a
+69.7M-parameter transformer (adaptive-norm DiT; the bucket enters through the text context, as that design has no
+class-conditioning path), leaving corpus, schedule, sampler and evaluation untouched. At 20k steps the transformer is
+the weaker model by a wide margin --- 185.6 against 149.1 native FD under plain CFG --- and yet under the reported
+configuration the two land at 42.4 and 43.1 (two seeds each, spread 0.3 and 0.4). The projection absorbs 98\% of the
+difference between the two architectures, so it is a property of the recipe and not of convolutions.
+
+\paragraph{Other resolutions.}
+The recipe transfers and the useful palette size grows with the canvas. Native FD with ICG $w{=}2$, three seeds at the
+best $k$ of each resolution: 143.2 $\pm$ 0.8 at 12\,px ($k{=}8$), 31.8 $\pm$ 0.5 at 16\,px ($k{=}4$), 96.7 at 20\,px
+($k{=}8$) and 124.2 at 24\,px ($k{=}6$). The absolute values are not comparable across resolutions --- each has its own
+reference set and floor.
+
+\begin{table}[t]
+\caption{External comparison, 200 held-out captions, native protocol. Every row is scored after the same $k$-colour
+post-process ($k = 4/8/6$ at 16/20/24\,px); ours applies it inside the sampler instead. ``Real'' are held-out sprites
+of the original, mostly downscaled corpus.}
+\label{tab:external}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+System & 16\,px & 20\,px & 24\,px \\
+\midrule
+\textbf{Ours} & \textbf{50.8} & \textbf{152.5} & 192.2 \\
+Real sprites (mixed provenance) & 77.0 & 165.5 & \textbf{150.7} \\
+gpt-image-2 + downscale & 134.4 & 448.6 & 478.0 \\
+FLUX.2-klein + pixel-art LoRA & 150.1 & 473.9 & 472.4 \\
+SDXL + Pixel Art XL & 244.2 & 526.3 & 527.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{External systems.}
+Table~\ref{tab:external} compares three publicly available pipelines on 200 held-out captions, each generating at its
+native size and reduced to the sprite canvas by the same code we use for real data, with the same palette
+post-process. Without that post-process they score 284.4 / 318.9 / 436.4 at 16\,px, so the palette step helps them too;
+they remain 2.6--4.8$\times$ further from real pixel art than our model at every resolution. At 16 and 20\,px we are
+also closer to native pixel art than the mixed-provenance sprites the conventional protocol calls ground truth, which
+is a statement about that corpus rather than about our model. At 24\,px the real sprites are still ahead of us.
 
 \section{The rule on other systems}
 \label{sec:refine}
