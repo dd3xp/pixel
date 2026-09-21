@@ -78,7 +78,7 @@ def cads_anneal(cond, t, T, g, tau1=0.6, tau2=0.9, s=0.1, psi=1.0):
 def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, seed=0, guide=None,
            cads=None, gi=(0.0, 1.0), guide_mode=None, cfg_alpha=None, apg=None, gi_snap=None, fdg=None, cfg_text=None,
            pal=0, pal_from=0.5, pal_dist=False, pal_mode='kmeans', pal_cent=None,
-           cond_deg=None):
+           cond_deg=None, init=None, init_strength=0.6):
     scheduler.set_timesteps(steps)
     apg_state = None
     n = cond.shape[0]
@@ -88,6 +88,12 @@ def sample(model, scheduler, cond, uncond, size, device, steps=100, cfg=4.0, see
     # method never changes the initial noise or anything else drawn from g
     g2 = torch.Generator(device=device).manual_seed(seed + 7919)
     x = torch.randn(n, 4, size, size, device=device, generator=g)
+    # SDEdit start: with --init_dir the run refines someone else's sprite instead of generating from noise,
+    # which is how the decoding rule is applied to an external system's output rather than to our own samples
+    if init is not None:
+        k = max(1, int(round(len(scheduler.timesteps) * init_strength)))
+        scheduler.timesteps = scheduler.timesteps[-k:]
+        x = scheduler.add_noise(init.to(device), x, scheduler.timesteps[:1].to(device))
     pal_ks = palette_sizes(n, device, g2) if pal_dist else None
     last = scheduler.timesteps[-1]
     sc = None
@@ -469,6 +475,11 @@ def main():
     p.add_argument("--pal_dist", action="store_true",
                    help="draw the palette size per sprite from the corpus distribution instead of a fixed --pal")
     p.add_argument("--pal_from", type=float, default=0.5, help="start the palette projection once t/T <= this")
+    p.add_argument("--init_dir", default=None,
+                   help="refine the sprites in this directory (SDEdit) instead of sampling from noise; files are "
+                        "matched to prompts by the leading integer in their name")
+    p.add_argument("--init_strength", type=float, default=0.6,
+                   help="fraction of the schedule to re-run from; 1.0 discards the input entirely")
     p.add_argument("--guide_ckpt", default=None, help="plain 4ch ckpt of a WEAKER model -> autoguidance instead of CFG")
     p.add_argument("--cfg_alpha", type=float, default=None, help="separate guidance weight for the alpha channel")
     p.add_argument("--guide_mode", default=None, help="zero-training bad model from the same net: bucket:<px> | bucketu:<px> | blur:<k> | shift | "
@@ -624,7 +635,26 @@ def main():
         full = (m.sum(1) >= 77).float().mean().item()
         print(f"CDG: mean content tokens {m.sum(1).float().mean():.1f}/77; {full:.1%} of prompts have no padding "
               f"(for those CDG == CFG)", flush=True)
+    INIT = None
+    if args.init_dir:
+        import re as _re
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent))
+        from train_cond import to_tensor as _to_tensor
+        byidx = {}
+        for f in Path(args.init_dir).glob('*.png'):
+            m = _re.match(r'0*(\d+)', f.stem)
+            if m:
+                byidx.setdefault(int(m.group(1)), f)
+        missing = [i for i in range(len(prompts)) if i not in byidx]
+        if missing:
+            raise SystemExit(f'--init_dir is missing {len(missing)} of {len(prompts)} prompts, first {missing[:5]}')
+        print(f'refining {len(prompts)} sprites from {args.init_dir} at strength {args.init_strength}', flush=True)
+
     for size in args.sizes:
+        if args.init_dir:
+            INIT = torch.stack([_to_tensor(Image.open(byidx[i]).convert('RGBA'), size)
+                                for i in range(len(prompts))]).repeat_interleave(args.n, 0)
         # chunked so 3000-prompt matched evals fit next to other jobs (one 3000 batch needs ~70GB);
         # chunk i uses seed+i, so results are seed-reproducible per chunk size
         imgs = torch.cat([sample(model, scheduler, cond[i:i + args.chunk], uncond[i:i + args.chunk], size, device,
@@ -632,7 +662,9 @@ def main():
                                  guide_mode=args.guide_mode, cfg_alpha=args.cfg_alpha, apg=apg, gi_snap=args.gi_snap, fdg=args.fdg, cfg_text=args.cfg_text,
                                  pal=args.pal, pal_from=args.pal_from, pal_dist=args.pal_dist,
                                  pal_mode=args.pal_mode, pal_cent=PAL_CENT,
-                                 cond_deg=None if cond_deg is None else cond_deg[i:i + args.chunk])
+                                 cond_deg=None if cond_deg is None else cond_deg[i:i + args.chunk],
+                                 init=None if INIT is None else INIT[i:i + args.chunk],
+                                 init_strength=args.init_strength)
                           for i in range(0, cond.shape[0], args.chunk)])
         rgba = [to_rgba(im) for im in imgs]
         for i, im in enumerate(rgba):
