@@ -160,10 +160,61 @@ of the 3{,}000 held-out prompts (41.4\%) still have a twin in training. Rescorin
 prompts that do not moves each number by at most 3.0 FD --- the largest single change is 167.2 to 164.2 --- and changes
 no ordering, so the main tables use the full set.
 
+\section{Related work}
+\label{sec:related}
+
+\paragraph{Pixel art.}
+Most work on pixel art converts an existing image rather than generating one: joint palette-and-pixel optimisation
+\cite{Gerstner2012}, contrast-aware downscaling \cite{Kopf2013}, learned pixelization \cite{Wu2022}, and
+optimisation-based stylisation with a diffusion prior \cite{Binninger2024}. Text-to-sprite generation in practice is
+served by community LoRAs on large models \cite{PixelArtXL,PixelArtLoRAFlux}, which have no published description of
+their data or training. Palette-conditioned generation has been proposed \cite{PixDiffPIG}, with the palette supplied
+as an input; we estimate it per sprite from the model's own prediction and need no extra conditioning.
+
+\paragraph{Guidance.}
+CFG \cite{HoSalimans2022} extrapolates away from an unconditional prediction; a long line of work reshapes that update
+\cite{Kynkaanniemi2024,Sadat2024apg,Sadat2025fdg,Chung2024} or replaces the reference with a weaker prediction from the
+same network --- a smaller model \cite{Karras2024}, perturbed attention \cite{Ahn2024,Hong2023}, or a random condition
+\cite{Sadat2024icg}. We use independent-condition guidance, which needs no unconditional training, and show it is the
+rule that survives our change of reference set.
+
+\paragraph{Constraints inside the sampler.}
+Projecting the predicted $\hat x_0$ at every step is the standard way to impose a hard constraint on a diffusion model
+\cite{Venkatakrishnan2013,Chung2023dps}; discrete-state formulations impose quantisation by construction instead
+\cite{Austin2021,Gu2022vqdiffusion}. Our projection is that device applied to the property that defines this medium,
+and it changes nothing about training.
+
+\paragraph{Reference sets decide rankings.}
+That a benchmark's reference set can decide an ordering is known in generative evaluation, from FID's sensitivity to
+the feature extractor and preprocessing \cite{Parmar2022,Stein2023} to duplicate contamination in image corpora
+\cite{Barz2020,Webster2023}. Our instance is concrete: for tiny sprites the conventional reference is 92.9\% downscaled
+artwork, and that single fact reverses the ranking of the guidance methods we would otherwise report.
+
 \section{Palette-projected sampling}
 \label{sec:method}
 
-% TODO: model in three sentences; the projection with its equation; the controls it has to beat.
+\paragraph{The model.}
+A pixel-space diffusion model over RGBA sprites: a 72.5M UNet with cross-attention on a frozen CLIP ViT-B/32 text
+encoder and a learned embedding of the \emph{resolution bucket} $b_R \in \{12,16,20,24,32,48,64\}$, trained with the
+usual $\epsilon$-objective on a squared-cosine schedule. A sprite is centred on an $R \times R$ canvas with hard alpha.
+Nothing here is novel; it is the smallest model that lets us study the targets and the decoding rule.
+
+\paragraph{The rule.}
+A 16\,px sprite is defined as much by how few colours it uses as by its shape, and a continuous denoiser in RGB has no
+mechanism that snaps a region to one value. At every step with $t/T \le f$ we form the current estimate
+$\hat x_0 = (x_t - \sqrt{1-\bar\alpha_t}\,\tilde e)/\sqrt{\bar\alpha_t}$, cluster its \emph{opaque} RGB pixels into $k$
+groups with a batched $k$-means (8 iterations, initialised at evenly spaced luminance quantiles), replace each pixel by
+its centroid, leave the alpha channel and transparent pixels untouched, and map the result back to a noise prediction:
+\begin{equation}
+  \hat x_0^{\text{pal}} = \Pi_k(\hat x_0), \quad
+  \tilde e \leftarrow \bigl(x_t - \sqrt{\bar\alpha_t}\,\hat x_0^{\text{pal}}\bigr) / \sqrt{1-\bar\alpha_t},
+  \label{eq:palette}
+\end{equation}
+before taking the scheduler step. The projection is a hard constraint on the model's own belief rather than a
+post-process: the steps that follow see the quantised state and repair the seams it creates, which is why doing it
+inside the sampler beats quantising the finished image (31.8 against 41.6 at 16\,px). It adds no network evaluations;
+$k$-means on at most 576 pixels is free next to a UNet pass. We use $f = 0.5$; the optimum is flat over $[0.4, 0.5]$
+and running the projection for the whole schedule costs two points, so the timing matters far less than the projection.
 
 \section{Experiments}
 \label{sec:exp}
