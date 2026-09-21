@@ -404,3 +404,9 @@ VLM 在 fidelity 上把 flux/gpt 排在**真实 sprite 之上**(72%/70%), 说明
 ## [09-22] CVPR 骨架已建起来并能编译
 `paper_assets/cvpr27/`: 官方 author-kit 的 `cvpr.sty` + `ieeenat_fullname.bst`(年份无关, 选项是 review/final/rebuttal, 2027 kit 出来只换 .sty), 双栏 10pt 骨架 + 新摘要(已含跨骨干与后处理两条新证据, 泄漏率按更正后的 16.2%), 六个 section 各留 TODO 说明要搬什么。tectonic 编译通过。
 下一步按 `paper_assets/CVPR_PLAN.md` 逐节搬运与压缩。
+
+## [09-22] CVPR 正文 + 补充材料均已完整
+- 正文 8 页(含 1 页参考文献 → 正文 7 页, 上限 8 页不含参考文献, **还余 1 页**)。
+- 补充材料 3 页, 无 TODO; 正文丢掉的 5 个数字全部落在补充里。
+- 两张宽网格图(teaser / refine)改为跨栏 `figure*`, 单栏下每格只有 6mm 不可读。
+- 提交前仍缺: 人评(等用户定平台) / 匿名代码链接 / SD-piXL 子集(23/50, GPU7 在跑)。

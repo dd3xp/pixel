@@ -50,7 +50,7 @@ FD by 36--41\% while preserving 80\% of the silhouette. Against external systems
 reach 50.8 versus 134.4 for gpt-image-2 with downscaling.
 \end{abstract}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_teaser.png}
 \caption{Four rows of 16\,px RGBA sprites, nearest-neighbour magnified, with the median number of opaque colours
@@ -58,7 +58,7 @@ per row. Real sprites drawn at this size use six; the corpus's own 16\,px target
 box-downscaled, use 49; gpt-image-2 rendered large and reduced uses 111; ours uses four. The third row is the
 easiest on the eye and the furthest from the medium.}
 \label{fig:teaser}
-\end{figure}
+\end{figure*}
 
 \section{Introduction}
 \label{sec:intro}
@@ -349,7 +349,7 @@ is a statement about that corpus rather than about our model. At 24\,px the real
 \section{The rule on other systems}
 \label{sec:refine}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_refine.png}
 \caption{Eight captions drawn at random. Rows: gpt-image-2 rendered large and reduced with the same palette
@@ -358,7 +358,7 @@ model generating the caption from noise; and the held-out sprite. The refined sp
 better than our own samples for the same captions, which score 86.5 and 50.8 native FD respectively: what our model
 still lacks is not the decoding rule but the ability to draw the subject.}
 \label{fig:refine}
-\end{figure}
+\end{figure*}
 
 \begin{table}[t]
 \caption{The decoding rule applied to external sprites, 200 captions, 16\,px. $\sigma$ is the fraction of the schedule
