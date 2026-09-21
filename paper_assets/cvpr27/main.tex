@@ -403,8 +403,33 @@ more of the remaining distance is structure it cannot touch.
 \section{Discussion and limitations}
 \label{sec:disc}
 
+\begin{table}[t]
+\caption{Per-image statistics at 16\,px: median opaque colours and the fraction of adjacent opaque pixel pairs with
+identical RGB. The two reference sets are different populations, and each sampler sits next to the one it scores well
+against.}
+\label{tab:stats}
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+& Colours & Flat pairs \\
+\midrule
+Native reference (real, drawn at 16\,px) & 6 & 0.46 \\
+Biased reference (corpus sample)         & 34 & 0.20 \\
+\midrule
+CFG 1.5                                  & 52 & 0.08 \\
+ICG $w{=}2$                              & 49 & 0.08 \\
+Ours, projection $k{=}6$                 & 6 & 0.43 \\
+Ours, projection $k{=}4$                 & 4 & 0.54 \\
+gpt-image-2, reduced                     & 93 & 0.01 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{Why the two protocols disagree.}
-The biased reference is 92.9\% downscaled artwork, so it is a reference for \emph{blurred illustrations}, and the
+Table~\ref{tab:stats} makes the disagreement concrete. The biased reference is 92.9\% downscaled artwork ---
+34 colours and a fifth of its neighbouring pixels equal, against six and a half for real sprites --- so it is a
+reference for \emph{blurred illustrations}, and the
 sampler that scores best against it is the one that produces them. That is why heavy guidance wins there and loses
 here, why cross-resolution self-guidance --- which makes samples look like a lower-resolution version of themselves,
 i.e.~like downscaled art --- wins by 44\% there and gives nothing here, and why palette projection, which moves samples
