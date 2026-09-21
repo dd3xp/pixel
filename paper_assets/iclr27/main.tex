@@ -632,7 +632,12 @@ alignment makes the same point from the other side: caption retrieval is 22.0\% 
 sprites lowest at 12.5\%. Refinement keeps most of a large generator's semantic advantage while moving the style
 towards the medium, and at $\sigma{=}1$ it lands on our own numbers in all three measurements --- FD 53.6 against
 50.8, retention 0.518 against 0.513, retrieval 16.0\% against 15.0\% --- which is the self-consistency check for
-the whole procedure.
+the whole procedure. The effect is not particular to 16\,px: on gpt-image-2 at 20 and 24\,px, $\sigma{=}0.6$ takes
+native FD from 448.6 to 265.7 and from 478.0 to 299.0 (41\% and 37\%), with retention rising to 0.840 and 0.875 as
+there are more pixels for the same $\sigma$ to leave alone. The gap to generating natively widens with resolution,
+though --- 265.7 against our 152.5 at 20\,px and 299.0 against 192.2 at 24\,px, where at 16\,px it was 86.5 against
+50.8 --- which is the same limit seen from further away: a post-process repairs how a sprite is drawn, and the
+larger the canvas the more of the distance is structure it cannot touch.
 
 \begin{table}[h]
 \caption{The decoding rule applied to external sprites, 200 captions, 16\,px. $\sigma$ is the fraction of the schedule
