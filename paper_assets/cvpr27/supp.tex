@@ -128,8 +128,53 @@ Base (86{,}290 rows)              & 54.2 & \textbf{31.8 $\pm$ 0.4} \\
 \section{Cross-resolution self-guidance: the negative result in full}
 \label{sup:crossres}
 
-% TODO: the rule, the internalised one-pass variant, the numbers under both protocols, and the per-image
-% statistics that explain why it wins under one and not the other.
+A bucketed model offers a guidance reference with no extra weights: query the same network under a \emph{lower}
+resolution label and extrapolate away from that prediction, $\tilde e = e_{\text{low}} + w\,(e_R - e_{\text{low}})$
+with $e_{\text{low}} = \epsilon_\theta(x_t, t, c, b_{12})$. The reference is a prediction of what the same sprite would
+look like drawn smaller, so the update pushes away from ``too coarse'' rather than away from ``unconditional''. We also
+trained a one-pass version, which internalises the rule into the weights with a guidance-free objective so that a
+single forward pass produces the guided prediction.
+
+Under the conventional reference this was our strongest result. Under the native reference it is worth nothing, and
+the internalised version is actively harmful (Table~\ref{tab:supcross}). The two columns disagree on every row and
+they disagree in a consistent direction: the biased reference prefers more guidance, the native one prefers less.
+
+\begin{table}[h]
+\caption{16\,px, main model, 3{,}000 captions. Both references, same samples. The biased column orders the rows almost
+exactly opposite to the native one.}
+\label{tab:supcross}
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Sampler & Biased $\downarrow$ & Native $\downarrow$ \\
+\midrule
+CFG 1.0 (no guidance)          & 19.0 & 113.2 \\
+CFG 1.25                       & 15.2 & 113.2 \\
+CFG 1.5                        & 13.6 & 117.9 \\
+CFG 2                          & 12.2 & 131.1 \\
+\midrule
+cross-resolution, $w{=}1.5$    & 14.2 & 114.9 \\
+composed reference, $w{=}1.5$  & 12.8 & 117.0 \\
+internalised, one pass         & 10.4 & 170.3 \\
+\midrule
+ICG $w{=}1.25$                 & 15.5 & 94.2 \\
+ICG $w{=}1.5$                  & 16.2 & 87.2 \\
+ICG $w{=}2$                    & 20.7 & 87.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The mechanism is visible in the per-image statistics. Guidance away from a lower-resolution prediction makes a sample
+look like a sharpened version of a downscaled image, which is exactly what the biased reference is made of, so the
+biased score improves monotonically with guidance weight. It does not reduce the colour count or increase flatness,
+which is what separates the native reference from everything else, so the native score does not move. Independent-condition
+guidance, which we did not invent, does help under both --- and it composes with palette projection, which is why the
+final recipe uses it.
+
+We report this at length because the two references would have led us to publish different papers. Had we scored only
+against the conventional reference, the internalised one-pass rule --- 10.4, the best number in the table --- would
+have been the contribution, and it is the single worst sampler in the column that measures distance to real pixel art.
 
 \section{Ablations on the model rather than the decoder}
 \label{sup:model-abl}
