@@ -474,20 +474,19 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 File: figures/fig_quality_tag.png Graphic file (type bmp)
 <figures/fig_quality_tag.png>
  [10]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
 File: figures/fig_refine.png Graphic file (type bmp)
 <figures/fig_refine.png>
-
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Underfull \vbox (badness 4954) has occurred while \output is active []
 
  [11]
-[12] [13] (main.bbl
-Underfull \vbox (badness 2970) has occurred while \output is active []
-
- [14]
+[12] [13] (main.bbl [14]
 Underfull \hbox (badness 10000) in paragraph at lines 22--29
 []\T1/ptm/m/n/10 Anlatan (Nov-e-lAI).  Nov-e-lAI im-prove-ments on Sta-ble Dif-
 
@@ -556,4 +555,4 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: A75424A3F1DCA23F3390DD7CF6700C45;4992.
  )
-Output written on main.xdv (23 pages, 179076 bytes).
+Output written on main.xdv (23 pages, 179924 bytes).

@@ -626,7 +626,13 @@ retention 0.518 against 0.513). The modal-colour fraction stays between 0.433 an
 against 0.448 for real sprites, so no setting flattens the subject away. The decoding rule is therefore usable
 on top of a generator we did not train, with $\sigma$ as an explicit dial between keeping the input and matching the
 medium. It does not close the gap to generating natively (86.5 against 50.8 for gpt-image-2), which is the honest limit
-of a post-process: it can fix how a sprite is drawn, not what was drawn (Figure~\ref{fig:refine}).
+of a post-process: it can fix how a sprite is drawn, not what was drawn (Figure~\ref{fig:refine}). Text
+alignment makes the same point from the other side: caption retrieval is 22.0\% for gpt-image-2's own sprite,
+18.5\% after refinement at $\sigma{=}0.6$ and 15.0\% for our model generating the caption itself, with real held-out
+sprites lowest at 12.5\%. Refinement keeps most of a large generator's semantic advantage while moving the style
+towards the medium, and at $\sigma{=}1$ it lands on our own numbers in all three measurements --- FD 53.6 against
+50.8, retention 0.518 against 0.513, retrieval 16.0\% against 15.0\% --- which is the self-consistency check for
+the whole procedure.
 
 \begin{table}[h]
 \caption{The decoding rule applied to external sprites, 200 captions, 16\,px. $\sigma$ is the fraction of the schedule
