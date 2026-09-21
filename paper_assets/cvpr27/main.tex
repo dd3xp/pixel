@@ -115,7 +115,46 @@ reference set one scores against decides which of these conclusions one publishe
 \section{The medium and the protocol}
 \label{sec:protocol}
 
-% TODO: corpus audit table, native reference definition, leakage control.
+\paragraph{What the corpus actually contains.}
+Our starting corpus is the OpenGameArt-derived sprite collection used in this area: 37{,}489 unique RGBA sprites after
+cutting sheets into connected components and filtering. Its low-resolution buckets are not made of low-resolution art.
+Only 7.1\% of the sprites are natively 16\,px or smaller and 33\% are natively 24\,px or smaller; two thirds are
+25--64\,px artwork that the training pipeline box-downsamples into whatever bucket it is asked for. The consequences
+are measurable in the targets themselves: a real sprite drawn at 16\,px has a median of six opaque colours and 46\% of
+its adjacent opaque pixel pairs are exactly equal, while the corpus's own 16\,px targets have 49 colours and are soft
+(Figure~\ref{fig:teaser}, rows 1--2).
+
+Duplication compounds it. Hashing every sprite by its exact pixel content finds 4{,}888 extra copies, and because
+hold-out sets in this area are defined by path, a pixel-identical twin of a held-out sprite stays in training: 16.2\%
+of the 3{,}000 evaluation sprites have one, counting a twin anywhere training is allowed to see. We drop every extra
+copy and every copy of a held-out sprite.
+
+\paragraph{Rebuilt targets.}
+Three changes: remove the duplicates; forbid feeding a sprite to a bucket more than $1.5\times$ below its native size,
+so a 64\,px illustration can no longer become a 16\,px target; and add 14{,}999 natively small sprites cut from three
+permissively licensed OpenGameArt collections (CC-BY-4.0, CC-BY-SA-3.0, OGA-BY-3.0), captioned with a
+vision--language model and filtered for fonts, UI elements and near-identical animation frames. Per-file licence
+records accompany the added material.
+
+\paragraph{The native protocol.}
+The reference set decides the result, so we define it explicitly. \emph{Native} reference: all real sprites that are
+natively at most $R$\,px, never downscaled --- 2{,}675 of them at 16\,px, split in half so a real-versus-real floor can
+be computed on a disjoint set (4.47 at 16\,px). \emph{Biased} reference: the conventional one, a random 3{,}000 of the
+corpus, of which 92.9\% is downscaled artwork at 16\,px (floor 3.45). We report both throughout, because the two rank
+methods differently and the disagreement is part of the result.
+
+Scores are Fréchet distances of DINOv2-small CLS features \cite{Oquab2023,Stein2023} computed at the native
+resolution: sprites are composited on white and nearest-neighbour upsampled to 224\,px. One sample per caption for
+3{,}000 held-out captions, which are recaptions of the held-out sprites, so the prompt distribution matches the data.
+Seed-to-seed standard deviation of our headline configuration is 0.49 over three seeds, and an independent retraining
+of the same recipe lands within 2.5 FD, so we do not read differences below that scale. We also report CLIP ViT-B/32
+image--text similarity and retrieval of the own caption among 100, with the distractor draw re-seeded per set.
+
+\paragraph{Leakage control.}
+Exact duplicates are removed, but near-duplicates are not: by an $8\times8$ luminance-plus-alpha average hash, 1{,}241
+of the 3{,}000 held-out prompts (41.4\%) still have a twin in training. Rescoring every configuration on the 1{,}759
+prompts that do not moves each number by at most 3.0 FD --- the largest single change is 167.2 to 164.2 --- and changes
+no ordering, so the main tables use the full set.
 
 \section{Palette-projected sampling}
 \label{sec:method}
