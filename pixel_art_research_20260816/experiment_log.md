@@ -2624,3 +2624,10 @@ v8m 训练跑完后 `run_v8full.sh` 报 `UT/.trained: No such file` 与语法错
 | DiT (v8dit) | 42.51 | 42.19 | **42.35**(±0.16) |
 - 20k 处的种子带约 ±0.2, 比 80k 处测的 ±0.5 还小。
 - **口径更正**: 两者的残差不是"落在种子带内", 而是 **0.73 且符号反转**(DiT 略优)。正确说法: 纯 CFG 下相差 36.5, 投影后相差 0.73 —— **投影吸收了两个架构之间 98% 的差距**。论文已按此改写, 不再说"在种子带内"。
+
+### 09-21 SD-piXL 扩量: 成本实测 8.5 小时/张, 只能做子集
+- 想把最接近的学术基线(SD-piXL, Binninger & Sorkine-Hornung, SIGGRAPH Asia 2024)从 30 题扩到 200 题。
+- **先被缓存问题绊了三轮**: 别人清盘删掉的 `~/.cache/huggingface` 波及范围比上次发现的大得多, 依次报缺 `madebyollin/taesdxl` → `diffusers/controlnet-canny-sdxl-1.0-mid` → `Intel/dpt-hybrid-midas` / `Salesforce/blip2-opt-2.7b`。**每次只报一个**, 且 `HF_HUB_OFFLINE=1` 把"缓存没了"伪装成"模型名不对"。最后直接从代码里扫出它加载的全部 repo 一次性拉齐(约 60G)。
+- 另一坑: `hf download` 在镜像上挂死(9/10 个文件不动), 外层 `for try` 循环因为进程永不返回而失效。加 `HF_HUB_DOWNLOAD_TIMEOUT=30` + `timeout` 才能真正重试。
+- **成本**: 每张 sprite 10,001 步 SDS 优化, 实测 **3.08 s/it ≈ 8.5 小时/张**; 2 个 worker 跑满 170 张需要约 **30 天**。不可行。
+- **决定**: 不追 200 题。让它继续跑到 **50~60 张**(约 5 天, 只占 GPU7), 论文里明确写清 SD-piXL 在 n=50 子集上评测 —— 这是一个逐图优化的方法, 原论文本身也只展示少量结果, 子集评测是诚实且合理的。
