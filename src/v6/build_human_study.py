@@ -37,9 +37,18 @@ SYSTEMS = {
     "sdxl": "runs_out/ext200/q/lora_q4/s16",
 }
 QUESTIONS = {
-    "fidelity": "Which one looks more like a real game sprite drawn at this size?",
+    # 09-22: the first wording ("which looks more like a real game sprite") was run past a VLM judge,
+    # which ranked two large generators above the real sprites themselves -- asked about authenticity it
+    # answered about polish. The replacement names the distinction that actually separates the two
+    # populations instead of asking for a holistic judgement.
+    "fidelity": ("Which one looks like it was drawn pixel by pixel at this size, rather than a larger "
+                 "picture shrunk down?"),
     "preference": "Which one would you rather put in a game?",
 }
+# Interpretation rule, fixed before collecting any answers: the real held-out sprites are in the pool and
+# every system is paired against them. If the real sprites do not win the fidelity question against the
+# external systems, that question is measuring polish rather than authenticity for these raters, and its
+# result is reported as such rather than as evidence about the medium.
 SCALE = 8
 CHECK = ((235, 235, 235), (205, 205, 205))
 
