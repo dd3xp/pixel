@@ -446,3 +446,19 @@ VLM 在 fidelity 上把 flux/gpt 排在**真实 sprite 之上**(72%/70%), 说明
 - **独立复现了 20k/80k 翻转**(20k: 74.4 vs 69.0; 80k: 70.2 vs 73.5) 与 refine 的单调曲线(33.0 → 70.0), 且 σ=1 再次落回我们自己(70.0 vs 67.5)。
 - 已写明局限: 与 FD 同特征空间、很可能主要看调色板与硬边; 与 FD 的一处分歧(DiT 高 5 点而 FD 持平)正是该局限的实证, 论文里照写。
 - 全部数字纳入 `verify_against_json.py`, **41/41**。
+
+## 🛑 [09-22 用户指令] 暂停推进: "不用继续推了, 先这样吧"
+**不再开任何新任务。** 两个后台作业留着跑完(无人值守, 结果自动落盘), 要停随时 `tmux kill-session`:
+- `v8g` (GPU6): margin=0.8 的 20k 对照, 约 5.8k/20k, 完成后 `v8gafter` 自动出主配置数, 对照 v8n@20k 的 54.23。
+- `sdpixl` (GPU7): SD-piXL 外部基线, 25/50 张, 每张约 8.5h。
+
+### 交付物现状
+- **CVPR 2027 稿(截稿 11-16)**: `paper_assets/cvpr27/` 正文 9 页(含参考文献, 正文约 7 页, 上限 8 页不含参考)+ 补充材料 3 页, 均可编译、无 TODO。
+- **核验**: `verify_against_json.py` 47/47 对打分输出; `verify_paper_numbers.py` 对日志与两稿; `check_prose_numbers.py` 查正文孤立数字; `check_release.py` 55/55 文件在匿名包内。
+- **匿名代码包**: `scripts/make_anon_release.py` → 1,699 文件, 0 残留标识串; `release_data/` 含许可证清单与留出清单。
+- **ICLR 稿**: `paper_assets/ICLR27_SUPERSEDED.md` 逐条标注了哪些问题还在。
+
+### 等用户决定的三件事
+1. **人评** —— 材料就绪(560 trial, 含真值对照与预先写死的解释规则), 卡在平台与预算。这是论文最大的缺口。
+2. 匿名代码链接(anonymous.4open.science 之类)。
+3. margin=0.8 若 20k 不变差, 是否值得 30 小时跑 80k。
