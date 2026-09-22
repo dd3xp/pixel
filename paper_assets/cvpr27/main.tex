@@ -102,9 +102,10 @@ generate --- re-noising the output of gpt-image-2, FLUX.2 with a pixel-art LoRA,
 denoising it under our recipe improves native FD by 36--41\% at every resolution while keeping about 80\% of the input
 silhouette.
 
-We also report a negative result we consider as informative as the positive one. Cross-resolution self-guidance was,
-under the downscale-biased reference, our strongest method by 44\%; under the native protocol it gives nothing. Which
-reference set one scores against decides which of these conclusions one publishes.
+We also report a negative result we consider as informative as the positive one. Guiding a bucketed model away from
+its own lower-resolution prediction, and a one-pass variant that internalises the rule into the weights, are the best
+samplers we have under the downscale-biased reference and among the worst under the native one. Which reference set
+one scores against decides which of these conclusions one publishes.
 
 \paragraph{Contributions.}
 \begin{itemize}[leftmargin=1.2em,itemsep=1pt,topsep=2pt]
@@ -437,12 +438,13 @@ gpt-image-2, reduced                     & 93 & 0.01 \\
 
 \paragraph{Why the two protocols disagree.}
 Table~\ref{tab:stats} makes the disagreement concrete. The biased reference is 92.9\% downscaled artwork ---
-34 colours and a fifth of its neighbouring pixels equal, against six and a half for real sprites --- so it is a
+34 colours and a fifth of its neighbouring pixels equal, against six colours and nearly half for real sprites --- so it is a
 reference for \emph{blurred illustrations}, and the
 sampler that scores best against it is the one that produces them. That is why heavy guidance wins there and loses
-here, why cross-resolution self-guidance --- which makes samples look like a lower-resolution version of themselves,
-i.e.~like downscaled art --- wins by 44\% there and gives nothing here, and why palette projection, which moves samples
-from 52 colours to four, improves the native score by a factor of 2.7 while making the biased score five times worse.
+here; why the internalised cross-resolution rule --- which makes samples look like a lower-resolution version of
+themselves, i.e.~like downscaled art --- is the best row of the biased column (10.4 against 13.6 for the best CFG)
+and the worst of the native one (170.3 against 117.9); and why palette projection, which moves samples from 52
+colours to four, improves the native score by a factor of 2.7 while making the biased score five times worse.
 Neither number is wrong; they measure distance to different populations, and only one of those populations is pixel
 art.
 
