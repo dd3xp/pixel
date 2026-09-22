@@ -472,8 +472,14 @@ The provenance classifier picks the same thing out without being told to look fo
 it declines to call natively drawn cover 45\% of the canvas against 34\% for the 2{,}166 it accepts, while their
 palettes are indistinguishable (3.9 against 3.8 colours). What is left of the gap to real pixel art is not colour and
 not dither; it is that our sprites are drawn too large for the frame, with too little of the transparent margin that a
-sprite authored at this size is surrounded by. That is a property of the targets --- the same contamination this paper
-is about, surviving one level down --- and not something a sampler can repair.
+sprite authored at this size is surrounded by. The mechanism is in the bucketing. A sprite natively smaller than its bucket is centred and keeps a margin: the
+natively-16\,px group covers 26\% of the canvas after preprocessing. A sprite larger than its bucket is resized to
+fill the frame: the 17--24\,px group, which our $1.5\times$ policy admits, covers 40\%. Four in five sprites in the
+16\,px bucket come from the second group, so the bucket averages about 37\% and the model reproduces it at 34\%.
+Even a policy that forbids more than $1.5\times$ downscaling still teaches the model to fill the frame. That is a
+property of the targets --- the same contamination this paper is about, surviving one level down --- and not
+something a sampler can repair; the fix is to preserve a sprite's native margin rather than fit it to the canvas,
+which we have not tried.
 
 \paragraph{A second question put to the same features.}
 Whether an image was authored at sprite resolution is a fact about the file, not a matter of taste, so it can be
