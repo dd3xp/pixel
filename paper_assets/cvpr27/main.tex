@@ -128,8 +128,9 @@ assembled before we knew what was wrong with it and kept here as the object of s
 Only 7.1\% of the sprites are natively 16\,px or smaller and 33\% are natively 24\,px or smaller; two thirds are
 25--64\,px artwork that the training pipeline box-downsamples into whatever bucket it is asked for. The consequences
 are measurable in the targets themselves: a real sprite drawn at 16\,px has a median of six opaque colours and 46\% of
-its adjacent opaque pixel pairs are exactly equal, while the corpus's own 16\,px targets have 49 colours and are soft
-(Figure~\ref{fig:teaser}, rows 1--2).
+its adjacent opaque pixel pairs are exactly equal, while the 25--64\,px artwork that feeds the same bucket renders to
+49 colours and a fifth of that (Figure~\ref{fig:teaser}, rows 1--2). A random sample of the whole corpus sits between
+them at 34 colours, since 7.1\% of it really is small.
 
 Duplication compounds it. Hashing every sprite by its exact pixel content finds 4{,}888 extra copies, and because a
 hold-out set defined by file path cannot see that two paths hold the same image, a twin of a held-out sprite stays in
@@ -147,8 +148,8 @@ records accompany the added material.
 \paragraph{The native protocol.}
 The reference set decides the result, so we define it explicitly. \emph{Native} reference: all real sprites that are
 natively at most $R$\,px, never downscaled --- 2{,}675 of them at 16\,px, split in half so a real-versus-real floor can
-be computed on a disjoint set (4.47 at 16\,px). \emph{Biased} reference: the conventional one, a random 3{,}000 of the
-corpus, of which 92.9\% is downscaled artwork at 16\,px (floor 3.45). We report both throughout, because the two rank
+be computed on a disjoint set (4.47 at 16\,px). \emph{Biased} reference: what one gets by default, a random 3{,}000 of
+the corpus, of which 92.9\% is downscaled artwork at 16\,px (floor 3.45). We report both throughout, because the two rank
 methods differently and the disagreement is part of the result.
 
 Scores are Fréchet distances of DINOv2-small CLS features \cite{Oquab2023,Stein2023} computed at the native
