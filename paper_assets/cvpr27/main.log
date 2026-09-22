@@ -957,22 +957,20 @@ num;+lnum;mapping=tex-text;" at 9.0pt
  [4]
 File: figures/fig_refine.png Graphic file (type bmp)
 <figures/fig_refine.png>
-
-Overfull \hbox (6.07408pt too wide) in paragraph at lines 386--399
- [][] 
- []
-
-[5] [6] (main.bbl (main.brf)
+ [5] [6] (main.bbl
+(main.brf)
 \tf@brf=\write4
 \openout4 = `main.brf'.
 
  [7]
 Requested font "[lmmono9-regular]:" at 9.0pt
  -> lmmono9-regular
-) [8] (main.aux)
+ [8]) [9
+
+] (main.aux)
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 7AD68513AD9F9C495F07785F9476C1A5;1032.
 Package rerunfilecheck Info: File `main.brf' has not changed.
 (rerunfilecheck)             Checksum: 5E893DF818F277AA2AC10418EBADC366;1245.
  )
-Output written on main.xdv (8 pages, 438912 bytes).
+Output written on main.xdv (9 pages, 444368 bytes).

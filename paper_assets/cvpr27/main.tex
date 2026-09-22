@@ -385,9 +385,9 @@ from noise, i.e.~what ``no retention'' looks like.}
 \small
 \begin{tabular}{@{}lcccc@{}}
 \toprule
-& \multicolumn{3}{c}{Native FD $\downarrow$} & Retention \\
+& \multicolumn{3}{c}{Native FD $\downarrow$ at $\sigma$} & Ret.\ @ 0.6 \\
 \cmidrule(lr){2-4} \cmidrule(lr){5-5}
-System & post-hoc & $\sigma{=}0.4$ & $\sigma{=}0.6$ & IoU @ 0.6 \\
+System & post-hoc & $0.4$ & $0.6$ & IoU \\
 \midrule
 gpt-image-2         & 134.4 & 115.9 & \textbf{86.5}  & 0.788 \\
 FLUX.2 + LoRA       & 150.1 & 116.1 & \textbf{88.2}  & 0.803 \\
@@ -415,6 +415,11 @@ retention 0.518 against 0.513, retrieval 16.0\% against 15.0\%. Caption retrieva
 generator's semantic advantage while moving the style towards the medium. It does not close the gap to generating
 natively, and the gap widens with resolution: a post-process fixes how a sprite is drawn, and the larger the canvas the
 more of the remaining distance is structure it cannot touch.
+
+The provenance classifier of Table~\ref{tab:probe} agrees, having been asked nothing about FD: it calls 33.0\% of
+gpt-image-2's post-processed sprites natively drawn, and 40.5 / 50.0 / 53.0 / 61.5 / 70.0\% of the same sprites
+refined at $\sigma = 0.2$ to $1$. FLUX.2 rises from 30.5\% to 58.5\% at $\sigma{=}0.6$. The endpoint again lands on our
+own samples (70.0\% against 67.5\%), which is the same self-check in a second instrument.
 
 \section{Discussion and limitations}
 \label{sec:disc}
