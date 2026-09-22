@@ -45,6 +45,11 @@ CHECKS = {
     "318.9": ("runs_out/ext200/fd_native_s16.json", "ext_flux2"),
     "436.4": ("runs_out/ext200/fd_native_s16.json", "ext_lora"),
     "4.47":  ("runs_out/ext200/fd_native_s16.json", "floor_heldout3000"),
+    # the provenance probe stores fractions under "sets", so these are checked as percentages
+    "94.9":  ("runs_out/native_probe.json", "probe:real_held"),
+    "67.5":  ("runs_out/native_probe.json", "probe:ours"),
+    "36.8":  ("runs_out/native_probe.json", "probe:noproj"),
+    "4.5":   ("runs_out/native_probe.json", "probe:gpt_raw"),
 }
 TOL = 0.06   # the paper rounds to one decimal
 
@@ -59,6 +64,18 @@ def main():
         d = cache[f]
         if d is None:
             bad.append((want, f, "json missing"))
+            continue
+        if key.startswith("probe:"):
+            name = key.split(":", 1)[1]
+            sets = d.get("sets", {})
+            if name not in sets:
+                bad.append((want, key, "no such set"))
+                continue
+            got = 100 * sets[name]["frac_called_native"]
+            if abs(got - float(want)) > 0.06:
+                bad.append((want, key, f"json says {got:.1f}"))
+            else:
+                ok += 1
             continue
         base = key.replace("_matched_eval", "")
         if len(CHECKS[want]) > 2 and CHECKS[want][2] == "mean":
