@@ -48,7 +48,7 @@ finished samples (41.6), than one corpus-wide palette (120.1) and than a median 
 (112.2). The rule is a property of the recipe rather than of the network: a transformer backbone that trails the UNet
 by 36.5 FD without it lands within 0.7 with it. Applied to sprites from generators we did not train, it improves native
 FD by 36--41\% while preserving 80\% of the silhouette. Against external systems given the same palette post-process we
-reach 50.8 versus 134.4 for gpt-image-2 with downscaling.
+reach 53.1 versus 134.4 for gpt-image-2 with downscaling.
 \end{abstract}
 
 \begin{figure*}[t]
@@ -116,8 +116,9 @@ one scores against decides which of these conclusions one publishes.
   caption retrieval at $k{=}6$, where the samples match the colour statistics of real sprites.
   \item Evidence that the rule belongs to the recipe rather than the network: it absorbs 98\% of the gap between two
   architectures, and it improves the sprites of three systems we did not train.
-  \item An external comparison in which every system receives the same palette post-process: at 16\,px we reach 50.8
-  against 134.4 for gpt-image-2 with downscaling, 150.1 for FLUX.2 with a pixel-art LoRA and 244.2 for SDXL.
+  \item An external comparison in which every system receives the same palette post-process: at 16\,px we reach
+  53.1 $\pm$ 2.3 against 134.4 for gpt-image-2 with downscaling, 150.1 for FLUX.2 with a pixel-art LoRA and 244.2
+  for SDXL.
 \end{itemize}
 
 \section{The medium and the protocol}
@@ -228,7 +229,8 @@ and running the projection for the whole schedule costs two points, so the timin
 \caption{Palette-projected sampling at 16\,px, same prompts and seed. Without projection (top) flat regions carry a
 few levels of dither; projecting the predicted $\hat x_0$ onto four or six colours during the late steps (middle,
 bottom) removes it and the remaining steps repair the seams. The three rows correspond to rows of
-Table~ef{tab:main16}; we give the numbers there rather than in this caption, since the panels were rendered at
+Table~
+ef{tab:main16}; we give the numbers there rather than in this caption, since the panels were rendered at
 two different guidance weights.}
 \label{fig:palette}
 \end{figure}
@@ -341,7 +343,7 @@ of the original, mostly downscaled corpus.}
 \toprule
 System & 16\,px & 20\,px & 24\,px \\
 \midrule
-\textbf{Ours} & \textbf{50.8} & \textbf{152.5} & 192.2 \\
+\textbf{Ours} & \textbf{53.1 $\pm$ 2.3} & \textbf{152.5} & 192.2 \\
 Real sprites (mixed provenance) & 77.0 & 165.5 & \textbf{150.7} \\
 gpt-image-2 + downscale & 134.4 & 448.6 & 478.0 \\
 FLUX.2-klein + pixel-art LoRA & 150.1 & 473.9 & 472.4 \\
@@ -353,8 +355,10 @@ SDXL + Pixel Art XL & 244.2 & 526.3 & 527.2 \\
 \paragraph{External systems.}
 Table~\ref{tab:external} compares three publicly available pipelines on 200 held-out captions, each generating at its
 native size and reduced to the sprite canvas by the same code we use for real data, with the same palette
-post-process. Without that post-process they score 284.4 / 318.9 / 436.4 at 16\,px, so the palette step helps them too;
-they remain 2.5--4.8$\times$ further from real pixel art than our model at every resolution. At 16 and 20\,px we are
+post-process. Our row is the mean of three seeds at 16\,px (50.8 / 52.9 / 55.4); the 20 and 24\,px columns are single
+seeds, and on 200 prompts a seed is worth about 2 FD, so they should be read with that. Without the post-process the
+external systems score 284.4 / 318.9 / 436.4 at 16\,px, so the palette step helps them too; they remain
+2.5--4.6$\times$ further from real pixel art than our model at every resolution. At 16 and 20\,px we are
 also closer to native pixel art than the mixed-provenance sprites a corpus-sample protocol calls ground truth, which
 is a statement about that corpus rather than about our model. At 24\,px the real sprites are still ahead of us.
 
@@ -367,7 +371,7 @@ is a statement about that corpus rather than about our model. At 24\,px the real
 \caption{Eight captions drawn at random. Rows: gpt-image-2 rendered large and reduced with the same palette
 post-process as every other row; the same sprite re-noised to $\sigma$ of the schedule and denoised by our model; our
 model generating the caption from noise; and the held-out sprite. The refined sprites keep the subject and also look
-better than our own samples for the same captions, which score 86.5 and 50.8 native FD respectively: what our model
+better than our own samples for the same captions, which score 86.5 and 53.1 native FD respectively: what our model
 still lacks is not the decoding rule but the ability to draw the subject.}
 \label{fig:refine}
 \end{figure*}
@@ -389,7 +393,7 @@ gpt-image-2         & 134.4 & 115.9 & \textbf{86.5}  & 0.788 \\
 FLUX.2 + LoRA       & 150.1 & 116.1 & \textbf{88.2}  & 0.803 \\
 SDXL + Pixel Art XL & 244.2 & 197.2 & \textbf{155.0} & 0.813 \\
 \midrule
-Ours, from noise    & \multicolumn{3}{c}{50.8} & 0.513 \\
+Ours, from noise    & \multicolumn{3}{c}{53.1 $\pm$ 2.3} & 0.513 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -405,8 +409,8 @@ already score 0.918.
 At $\sigma{=}0.6$ about 80\% of the silhouette survives, well above the 0.46--0.53 floor of a freshly generated sprite,
 and native FD improves by 36--41\% for all three systems; the same holds at 20 and 24\,px (448.6 to 265.7 and 478.0 to
 299.0). Sweeping $\sigma$ on gpt-image-2 gives a monotone trade-off with no knee, and the endpoint is a self-check: at
-$\sigma{=}1$ the run reproduces our own samples on all three measurements --- FD 53.6 against 50.8, retention 0.518
-against 0.513, retrieval 16.0\% against 15.0\%. Caption retrieval falls from 22.0\% for gpt-image-2's own sprite to
+$\sigma{=}1$ the run reproduces our own samples on all three measurements --- FD 53.6 against 53.1 $\pm$ 2.3,
+retention 0.518 against 0.513, retrieval 16.0\% against 15.0\%. Caption retrieval falls from 22.0\% for gpt-image-2's own sprite to
 18.5\% after refinement and 15.0\% when our model draws the caption itself, so refinement keeps most of a large
 generator's semantic advantage while moving the style towards the medium. It does not close the gap to generating
 natively, and the gap widens with resolution: a post-process fixes how a sprite is drawn, and the larger the canvas the
