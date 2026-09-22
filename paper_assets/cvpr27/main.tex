@@ -322,7 +322,9 @@ This is the second time in this work that a 20k-step comparison inverted by 80k;
 $2.2\times$ larger network led at 20k (46.1 against 54.2), had lost by 40k (38.3 against 35.8) and was clearly behind
 at 80k (38.5 against 31.8). Short pilots are how this kind of study is made affordable, and in this setting they are
 safe for rejecting a change and not for accepting one. Every headline number here is measured at full length for that
-reason.
+reason. The reversal is not an artefact of the metric: the provenance classifier of Table~\ref{tab:probe}, which is
+asked a different question, reproduces it --- at 20k steps it calls 74.4\% of the enlarged corpus's samples natively
+drawn against 69.0\% for the base corpus, and at 80k steps 70.2\% against 73.5\%.
 
 \paragraph{Other resolutions.}
 The recipe transfers, though the best palette size does not track the canvas: native FD with ICG $w{=}2$, three seeds
@@ -495,6 +497,9 @@ This is a different question, not an independent second opinion, and we would ra
 one. It uses the same features as the FD, and a classifier separating these two populations can be expected to key on
 palette size and edge hardness --- which is exactly what our method changes. It therefore supports the claim that our
 samples match the statistics of natively drawn pixel art, and supports nothing about whether they are good sprites.
+Where it and the FD disagree, that limit is visible: at 20k steps the classifier calls 79.6\% of the transformer's
+samples natively drawn against 74.4\% for the UNet's, while their FD under the same configuration is within half a
+point. The classifier sees the palette; the FD also sees what was drawn.
 
 \paragraph{Can a model be asked instead of people?}
 We put the same pairs to a vision--language model: 560 forced choices over 40 captions, with the real held-out sprites
