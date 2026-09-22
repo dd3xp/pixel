@@ -960,11 +960,8 @@ File: figures/fig_refine.png Graphic file (type bmp)
  [5]
 Requested font "[lmsans12-regular]:mapping=tex-text;" at 12.0pt
  -> lmsans12-regular
- [6]
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[7] (main.bbl (main.brf)
+ [6] [7] (main.bbl
+(main.brf)
 \tf@brf=\write4
 \openout4 = `main.brf'.
 
@@ -978,4 +975,4 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 Package rerunfilecheck Info: File `main.brf' has not changed.
 (rerunfilecheck)             Checksum: 5E893DF818F277AA2AC10418EBADC366;1245.
  )
-Output written on main.xdv (9 pages, 455532 bytes).
+Output written on main.xdv (9 pages, 469380 bytes).

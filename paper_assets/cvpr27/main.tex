@@ -461,6 +461,20 @@ colours to four, improves the native score by a factor of 2.7 while making the b
 Neither number is wrong; they measure distance to different populations, and only one of those populations is pixel
 art.
 
+\paragraph{Where the remaining error lives.}
+The projection fixes the colour statistics and leaves one visible difference untouched. Real sprites drawn at 16\,px
+cover 26\% of their canvas; the corpus-sample reference covers 37\%, because artwork reduced to fit a frame fills it;
+and our samples cover 34\% with the projection and 35\% without it. On the property the decoding rule does not touch,
+our model sits beside the reference we argue is wrong, not beside the one we argue is right --- and the enlarged
+corpus, which is worse on every other measure, is further still at 38\%.
+
+The provenance classifier picks the same thing out without being told to look for it: of our 3{,}000 samples, the 834
+it declines to call natively drawn cover 45\% of the canvas against 34\% for the 2{,}166 it accepts, while their
+palettes are indistinguishable (3.9 against 3.8 colours). What is left of the gap to real pixel art is not colour and
+not dither; it is that our sprites are drawn too large for the frame, with too little of the transparent margin that a
+sprite authored at this size is surrounded by. That is a property of the targets --- the same contamination this paper
+is about, surviving one level down --- and not something a sampler can repair.
+
 \paragraph{A second question put to the same features.}
 Whether an image was authored at sprite resolution is a fact about the file, not a matter of taste, so it can be
 learned. We fit a logistic regression on DINOv2 features to separate real sprites drawn at 16\,px from 25--64\,px
