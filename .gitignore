@@ -1,22 +1,23 @@
-__pycache__/
-*.pyc
-.venv/
-workdir/
+
+# large local archives (never push)
 *.ckpt
 *.pth
-wandb/
+*.pyc
+*.tar.gz
+*.tgz
 .DS_Store
-runs_out/
-logs/
-baseline/sdpixl_db32_*/
+.venv/
+__pycache__/
 baseline/locks/
+baseline/sdpixl_db32_*/
+build/
 data/
-runs/api_*/
+logs/
 runs/*.log
+runs/api_*/
 runs/recap_all/
 runs/recaptions*.jsonl
 runs/recaptions_map.json
-
-# large local archives (never push)
-*.tgz
-*.tar.gz
+runs_out/
+wandb/
+workdir/
