@@ -1,0 +1,21 @@
+{
+  "kept": 22980,
+  "dropped_duplicate": 6062,
+  "dropped_filter": 8184,
+  "old_unique": 38454,
+  "old_duplicate_copies": 4888,
+  "native": {
+    "12": 338,
+    "16": 2555,
+    "20": 7598,
+    "24": 8720,
+    "32": 13064,
+    "64": 22361
+  },
+  "palette_median": 8.0,
+  "licences": {
+    "CC-BY-4.0": 1,
+    "CC-BY-SA-3.0": 1,
+    "OGA-BY-3.0": 1
+  }
+}
