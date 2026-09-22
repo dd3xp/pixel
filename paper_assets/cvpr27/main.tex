@@ -35,7 +35,8 @@ Paper ID \paperID}
 \begin{abstract}
 Text-to-image models fail at the smallest images people draw on purpose: 12--24\,px RGBA game sprites, where a handful
 of colours and hard alpha edges are the medium. We show that the usual failure is not a modelling failure but a target
-failure. In the sprite corpus this area trains on, only 7.1\% of the images are natively 16\,px or smaller; the rest is
+failure. In a sprite corpus assembled the usual way --- cut sheets into components, bucket by size, downscale to fit ---
+only 7.1\% of the images are natively 16\,px or smaller; the rest is
 25--64\,px artwork box-downscaled into the low-resolution buckets, and 4{,}888 pixel-identical duplicates leave a twin
 in training for 16.2\% of the held-out set. A model fitted to those targets learns soft, fifty-colour blobs, and the
 evaluation reference, drawn from the same pool, rewards exactly that. We rebuild the targets and evaluate against
@@ -71,10 +72,12 @@ a sprite: it keeps the soft shading and the hundred-odd colours of an illustrati
 
 This paper is about a failure one level below the model. We train a dedicated generator for this medium --- a 72.5M
 pixel-space diffusion model over RGBA sprites, conditioned on a frozen CLIP text encoder and a resolution-bucket label
---- and find its weaknesses inherited from what it is asked to imitate. In the sprite corpus this area trains on, only
-7.1\% of the images are natively 16\,px or smaller; two thirds are 25--64\,px artwork that the pipeline box-downsamples
-into the low-resolution buckets, and 4{,}888 pixel-identical duplicates leave a twin in training for 16.2\% of the
-held-out set. A model fitted to those targets learns what they are: soft, fifty-colour blobs. Worse, the standard
+--- and find its weaknesses inherited from what it is asked to imitate. We assembled its corpus the way such corpora
+are assembled: cut sprite sheets into connected components, label each sprite with a resolution bucket, downscale to
+fill the bucket asked for, and split train from test by file path. Every defect below follows from that recipe rather
+than from one dataset. Only 7.1\% of the images are natively 16\,px or smaller; two thirds are 25--64\,px artwork the
+pipeline box-downsamples into the low-resolution buckets; and 4{,}888 pixel-identical duplicates leave a twin in
+training for 16.2\% of the held-out set, because a path-based split cannot see that two files are the same image. A model fitted to those targets learns what they are: soft, fifty-colour blobs. Worse, the standard
 evaluation reference is drawn from the same pool, so it rewards the blur it caused, and the ranking of methods under it
 does not survive contact with real pixel art.
 
@@ -120,16 +123,17 @@ reference set one scores against decides which of these conclusions one publishe
 \label{sec:protocol}
 
 \paragraph{What the corpus actually contains.}
-Our starting corpus is the OpenGameArt-derived sprite collection used in this area: 37{,}489 unique RGBA sprites after
-cutting sheets into connected components and filtering. Its low-resolution buckets are not made of low-resolution art.
+Our starting corpus is 37{,}489 unique RGBA sprites cut from OpenGameArt sheets by connected components and filtered,
+assembled before we knew what was wrong with it and kept here as the object of study. Its low-resolution buckets are not made of low-resolution art.
 Only 7.1\% of the sprites are natively 16\,px or smaller and 33\% are natively 24\,px or smaller; two thirds are
 25--64\,px artwork that the training pipeline box-downsamples into whatever bucket it is asked for. The consequences
 are measurable in the targets themselves: a real sprite drawn at 16\,px has a median of six opaque colours and 46\% of
 its adjacent opaque pixel pairs are exactly equal, while the corpus's own 16\,px targets have 49 colours and are soft
 (Figure~\ref{fig:teaser}, rows 1--2).
 
-Duplication compounds it. Hashing every sprite by its exact pixel content finds 4{,}888 extra copies, and because
-hold-out sets in this area are defined by path, a pixel-identical twin of a held-out sprite stays in training: 16.2\%
+Duplication compounds it. Hashing every sprite by its exact pixel content finds 4{,}888 extra copies, and because a
+hold-out set defined by file path cannot see that two paths hold the same image, a twin of a held-out sprite stays in
+training: 16.2\%
 of the 3{,}000 evaluation sprites have one, counting a twin anywhere training is allowed to see. We drop every extra
 copy and every copy of a held-out sprite.
 
@@ -187,7 +191,7 @@ and it changes nothing about training.
 \paragraph{Reference sets decide rankings.}
 That a benchmark's reference set can decide an ordering is known in generative evaluation, from FID's sensitivity to
 the feature extractor and preprocessing \cite{Parmar2022,Stein2023} to duplicate contamination in image corpora
-\cite{Barz2020,Webster2023}. Our instance is concrete: for tiny sprites the conventional reference is 92.9\% downscaled
+\cite{Barz2020,Webster2023}. Our instance is concrete: for tiny sprites a corpus-sample reference is 92.9\% downscaled
 artwork, and that single fact reverses the ranking of the guidance methods we would otherwise report.
 
 \section{Palette-projected sampling}
