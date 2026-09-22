@@ -29,6 +29,7 @@ import train_v7 as T  # noqa: E402
 
 MAX_DOWN = 1.5
 QUANT = 0
+MARGIN = 0.0   # 0 = off; else a downscaled sprite is fitted to MARGIN x the bucket
 
 
 def quantize(im, k):
@@ -45,6 +46,11 @@ _orig_to_tensor = T.to_tensor
 
 
 def to_tensor(im, side):
+    if MARGIN and max(im.size) > side:
+        # a sprite larger than its bucket is otherwise resized to fill the frame, which is where the
+        # model's 34% coverage comes from against 26% for sprites actually drawn at this size; fit it to
+        # a fraction of the bucket instead so it keeps a margin, then let the original centre it
+        im = T.downscale_rgba(im, max(1, int(round(side * MARGIN))))
     if QUANT and max(im.size) <= side:      # quantize before any padding, after any downscale below
         im = quantize(im, QUANT)
     elif QUANT:
@@ -69,7 +75,7 @@ class NativeSpritesV8(T.NativeSprites):
 
 
 def main():
-    global MAX_DOWN, QUANT
+    global MAX_DOWN, QUANT, MARGIN
     argv = []
     it = iter(sys.argv[1:])
     dupdrop = None
@@ -78,6 +84,8 @@ def main():
             MAX_DOWN = float(next(it))
         elif a == "--quant":
             QUANT = int(next(it))
+        elif a == "--margin":
+            MARGIN = float(next(it))
         elif a == "--dupdrop":
             dupdrop = next(it)
         else:
@@ -97,7 +105,7 @@ def main():
     T.to_tensor = to_tensor
     T.NativeSprites = NativeSpritesV8
     sys.argv = [sys.argv[0]] + argv
-    print(f"v8: max_down={MAX_DOWN} quant={QUANT or 'off'}", flush=True)
+    print(f"v8: max_down={MAX_DOWN} quant={QUANT or 'off'} margin={MARGIN or 'off'}", flush=True)
     T.main()
 
 
