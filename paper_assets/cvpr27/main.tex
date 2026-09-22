@@ -320,9 +320,11 @@ safe for rejecting a change and not for accepting one. Every headline number her
 reason.
 
 \paragraph{Other resolutions.}
-The recipe transfers and the useful palette size grows with the canvas. Native FD with ICG $w{=}2$, three seeds at the
-best $k$ of each resolution: 143.2 $\pm$ 0.8 at 12\,px ($k{=}8$), 31.8 $\pm$ 0.5 at 16\,px ($k{=}4$), 96.7 at 20\,px
-($k{=}8$) and 124.2 at 24\,px ($k{=}6$). The absolute values are not comparable across resolutions --- each has its own
+The recipe transfers, though the best palette size does not track the canvas: native FD with ICG $w{=}2$, three seeds
+at the best $k$ of each resolution, is 143.2 $\pm$ 0.8 at 12\,px ($k{=}8$), 31.8 $\pm$ 0.5 at 16\,px ($k{=}4$), 96.7 at
+20\,px ($k{=}8$) and 124.2 at 24\,px ($k{=}6$). The smallest canvas wants the largest palette, which we cannot explain
+and do not dress up: at 12\,px a four-colour projection has so few pixels to work with that it removes structure
+rather than dither. The absolute values are not comparable across resolutions --- each has its own
 reference set and floor.
 
 \begin{table}[t]
@@ -349,8 +351,8 @@ SDXL + Pixel Art XL & 244.2 & 526.3 & 527.2 \\
 Table~\ref{tab:external} compares three publicly available pipelines on 200 held-out captions, each generating at its
 native size and reduced to the sprite canvas by the same code we use for real data, with the same palette
 post-process. Without that post-process they score 284.4 / 318.9 / 436.4 at 16\,px, so the palette step helps them too;
-they remain 2.6--4.8$\times$ further from real pixel art than our model at every resolution. At 16 and 20\,px we are
-also closer to native pixel art than the mixed-provenance sprites the conventional protocol calls ground truth, which
+they remain 2.5--4.8$\times$ further from real pixel art than our model at every resolution. At 16 and 20\,px we are
+also closer to native pixel art than the mixed-provenance sprites a corpus-sample protocol calls ground truth, which
 is a statement about that corpus rather than about our model. At 24\,px the real sprites are still ahead of us.
 
 \section{The rule on other systems}
