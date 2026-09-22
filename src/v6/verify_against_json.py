@@ -50,6 +50,14 @@ CHECKS = {
     "67.5":  ("runs_out/native_probe.json", "probe:ours"),
     "36.8":  ("runs_out/native_probe.json", "probe:noproj"),
     "4.5":   ("runs_out/native_probe.json", "probe:gpt_raw"),
+    "74.4":  ("runs_out/native_probe_models.json", "probe:v8m20k"),
+    "69.0":  ("runs_out/native_probe_models.json", "probe:v8n20k"),
+    "73.5":  ("runs_out/native_probe_models.json", "probe:v8n"),
+    "70.2":  ("runs_out/native_probe_models.json", "probe:v8p"),
+    "79.6":  ("runs_out/native_probe_models.json", "probe:dit20k"),
+    "70.0":  ("runs_out/native_probe_refine.json", "probe:r10"),
+    "58.5":  ("runs_out/native_probe_refine.json", "probe:flux06"),
+    "33.0":  ("runs_out/native_probe_refine.json", "probe:gpt"),
 }
 TOL = 0.06   # the paper rounds to one decimal
 
