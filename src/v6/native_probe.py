@@ -56,8 +56,14 @@ def main():
     real = sorted({p.replace("\\", "/") for p in
                    glob.glob("data/oga_clean/**/*.png", recursive=True) + glob.glob("data/oga_clean/*.png")})
     sz = native_sizes(real)
-    pos = [p for p in real if sz[p] <= R]
+    # the probe is scored on runs_out/held_native{R}, the held half of the native pool, so that half has
+    # to be kept out of its training set -- otherwise the control it passes is a control it has seen
+    from fd_fair import real_split
+    _, held = real_split(native_R=R, pool="old")
+    held = {q.replace("\\", "/") for q in held}
+    pos = [p for p in real if sz[p] <= R and p not in held]
     neg = [p for p in real if 25 <= sz[p] <= 64]
+    print(f"native pool minus the held half: {len(pos)}", flush=True)
     rng = random.Random(0)
     rng.shuffle(pos)
     rng.shuffle(neg)

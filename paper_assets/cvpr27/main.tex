@@ -454,6 +454,43 @@ colours to four, improves the native score by a factor of 2.7 while making the b
 Neither number is wrong; they measure distance to different populations, and only one of those populations is pixel
 art.
 
+\paragraph{A second question put to the same features.}
+Whether an image was authored at sprite resolution is a fact about the file, not a matter of taste, so it can be
+learned. We fit a logistic regression on DINOv2 features to separate real sprites drawn at 16\,px from 25--64\,px
+artwork reduced to 16\,px, holding out the half of the native pool used everywhere else in this paper, and ask it what
+fraction of each set it calls natively drawn. It reaches 93.0\% accuracy on its own held-out split and calls 94.9\% of
+the unseen real sprites native, so unlike the judge below it passes its control before being asked anything.
+
+\begin{table}[h]
+\caption{Fraction of each set a provenance classifier calls natively drawn. It is trained only on real sprites, on the
+question of how they were authored, and never sees a generated image during fitting.}
+\label{tab:probe}
+\centering
+\small
+\begin{tabular}{@{}lc@{}}
+\toprule
+Set & Called natively drawn \\
+\midrule
+Real held-out sprites (control)        & 94.9\% \\
+\textbf{Ours, projection $k{=}4$}      & \textbf{67.5\%} \\
+Ours, projection $k{=}6$               & 63.0\% \\
+Ours, no projection                    & 36.8\% \\
+gpt-image-2, palette post-process      & 33.0\% \\
+FLUX.2 + LoRA, palette post-process    & 30.5\% \\
+gpt-image-2, reduced only              & 4.5\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The projection nearly doubles the fraction, from 36.8\% to 67.5\%, and the external systems stay near a third even
+with the same palette post-process; reduced without it, gpt-image-2 is called natively drawn 4.5\% of the time. The
+table also says plainly how far we still are: 67.5\% against 94.9\% for real sprites.
+
+This is a different question, not an independent second opinion, and we would rather say so than let it be read as
+one. It uses the same features as the FD, and a classifier separating these two populations can be expected to key on
+palette size and edge hardness --- which is exactly what our method changes. It therefore supports the claim that our
+samples match the statistics of natively drawn pixel art, and supports nothing about whether they are good sprites.
+
 \paragraph{Can a model be asked instead of people?}
 We put the same pairs to a vision--language model: 560 forced choices over 40 captions, with the real held-out sprites
 in the pool as a control. The control fails. Asked which sprite looks more like real low-resolution pixel art, the
