@@ -262,10 +262,12 @@ policy fixed      & CFG 1.5          & 123.1 & 14.8 \\
 \paragraph{Main result.}
 Table~\ref{tab:main16} separates the three things that changed. Rebuilding the targets moves the model from 167.2 to
 117.9 under the native protocol without touching the sampler. Independent-condition guidance takes it to 87.1, and
-palette projection to $31.8 \pm 0.5$ over three seeds --- a larger step than the entire distance between guidance
-rules. Projecting inside the sampler is what makes that step work: quantising the finished samples to the same four
-colours reaches only 41.6, because nothing repairs the seams quantisation introduces. The biased column moves in the
-opposite direction throughout, which is the disagreement Section~\ref{sec:disc} is about.
+palette projection to $31.8 \pm 0.5$ over three seeds --- a step of 55.3, against 30.8 for moving from plain
+guidance to the best guidance rule. Projecting inside the sampler is what makes that step work: quantising the finished samples to the same four
+colours reaches only 41.6, because nothing repairs the seams quantisation introduces. The two columns disagree wherever the sampler changes: every guidance and
+projection row that improves the native score makes the biased one worse. The data changes are the exception ---
+adding natively small sprites improves both --- which is what one would expect of a change that makes the targets
+more like pixel art without changing what the sampler does. Section~\ref{sec:disc} takes the disagreement apart.
 
 \paragraph{Is it the palette, or just fewer colours?}
 Two controls replace $\Pi_k$ at exactly the same steps. One projects onto a \emph{single} four-colour palette shared by
