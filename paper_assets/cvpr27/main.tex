@@ -491,7 +491,11 @@ gpt-image-2, reduced only              & 4.5\% \\
 
 The projection nearly doubles the fraction, from 36.8\% to 67.5\%, and the external systems stay near a third even
 with the same palette post-process; reduced without it, gpt-image-2 is called natively drawn 4.5\% of the time. The
-table also says plainly how far we still are: 67.5\% against 94.9\% for real sprites.
+table also says plainly how far we still are: 67.5\% against 94.9\% for real sprites. Fitting the same probe at the
+other resolutions gives the same shape --- 42.4\% to 58.7\% at 20\,px and 28.1\% to 42.7\% at 24\,px, with 91.5\% and
+91.6\% of unseen real sprites called native --- although the classifier itself gets weaker as the canvas grows
+(93.0\%, 90.3\%, 87.7\% held-out accuracy), which is what one would expect when authored and downscaled sprites have
+more pixels in which to resemble each other.
 
 This is a different question, not an independent second opinion, and we would rather say so than let it be read as
 one. It uses the same features as the FD, and a classifier separating these two populations can be expected to key on
