@@ -55,6 +55,8 @@ corpus report. Everything else is rebuilt from public archives by the scripts be
 | Text alignment (distractors re-seeded per set) | `src/v6/clip_score.py --size R --dirs name=<dir> ...` |
 | Palette and flatness statistics | `src/v6/stats_simplicity.py --dirs name=<dir> ...`, `scripts/flat_check.py` |
 | Retention of a refined sprite | `src/v6/refine_fidelity.py --init <dir> --runs <dirs>` |
+| Provenance classifier (drawn at 16 px vs shrunk to it) | `src/v6/native_probe.py --dirs name=<dir> ...` |
+| Forced-choice study material, and a model judge for it | `src/v6/build_human_study.py`, `baseline/vlm_pref.py`, `scripts/vlm_summary.py` |
 | End-to-end matched run | `baseline/eval_matched_r.sh <tag> <R> <gpu>` |
 | Palette size on a validation split | `baseline/k_split.sh`, `baseline/f_sweep.sh` |
 
