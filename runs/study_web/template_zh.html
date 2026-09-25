@@ -1,0 +1,242 @@
+<title>像素精灵评审</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#f2f3f6; --panel:#ffffff; --ink:#15161d; --ink-2:#5a6070; --line:#c9ccd6;
+  --line-strong:#8b90a0; --accent:#2f5fe0; --accent-ink:#ffffff; --good:#1d7a4c; --warn:#b4471a;
+  --board-a:#e9eaee; --board-b:#d8dae1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#101118; --panel:#181a23; --ink:#e9eaf0; --ink-2:#9aa0b2; --line:#2e3140;
+    --line-strong:#4a4f63; --accent:#6b93ff; --accent-ink:#0d0f16; --good:#49c98a; --warn:#ff9059;
+    --board-a:#22242e; --board-b:#1a1c25;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#101118; --panel:#181a23; --ink:#e9eaf0; --ink-2:#9aa0b2; --line:#2e3140;
+  --line-strong:#4a4f63; --accent:#6b93ff; --accent-ink:#0d0f16; --good:#49c98a; --warn:#ff9059;
+  --board-a:#22242e; --board-b:#1a1c25;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.7;
+}
+.wrap{max-width:900px; margin:0 auto; padding-inline:16px; padding-block:0 48px}
+header{
+  border-bottom:1px solid var(--line); background:var(--panel);
+  position:sticky; top:0; z-index:5;
+}
+.bar{max-width:900px; margin:0 auto; padding-inline:16px; padding-block:12px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+.mark{font-family:"Silkscreen",monospace; font-size:13px; letter-spacing:.02em}
+.mark span{color:var(--accent)}
+.count{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink-2);
+  font-variant-numeric:tabular-nums; margin-left:auto}
+.pips{display:flex; gap:3px; flex-wrap:wrap}
+.pip{width:10px; height:10px; background:var(--line); border:1px solid var(--line)}
+.pip.done{background:var(--accent); border-color:var(--accent)}
+.pip.now{background:var(--panel); border-color:var(--accent-strong,var(--accent))}
+h1{font-weight:600; font-size:27px; line-height:1.35; text-wrap:balance; margin:32px 0 8px}
+h2{font-size:19px; font-weight:600; margin:28px 0 8px; text-wrap:balance}
+p{margin:0 0 14px; max-width:38em}
+.lede{color:var(--ink-2)}
+.panel{background:var(--panel); border:1px solid var(--line); padding:20px; margin:20px 0}
+.kicker{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-2); margin-bottom:6px}
+.q{font-size:20px; font-weight:600; line-height:1.45; text-wrap:balance; margin:0 0 4px}
+.cap{font-size:13px; color:var(--ink-2); margin:0 0 18px}
+.cap code{font-family:"IBM Plex Mono",monospace; font-size:12px}
+.pair{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+.pick{
+  appearance:none; background:var(--panel); border:1px solid var(--line-strong);
+  padding:12px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:10px;
+  font:inherit; color:inherit; transition:border-color .08s linear, background .08s linear;
+}
+.pick:hover{border-color:var(--accent)}
+.pick:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.pick img{
+  width:100%; max-width:256px; height:auto; display:block;
+  image-rendering:pixelated; border:1px solid var(--line);
+  background:repeating-conic-gradient(var(--board-a) 0% 25%, var(--board-b) 0% 50%) 50%/16px 16px;
+}
+.key{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2)}
+.row{display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:16px}
+button.go{
+  appearance:none; font:inherit; font-weight:600; cursor:pointer;
+  background:var(--accent); color:var(--accent-ink); border:1px solid var(--accent);
+  padding:10px 20px;
+}
+button.go:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+button.ghost{background:transparent; color:var(--ink); border:1px solid var(--line-strong)}
+ul{margin:0 0 14px; padding-left:20px; max-width:38em}
+li{margin-bottom:6px}
+.note{font-size:14px; color:var(--ink-2)}
+textarea{
+  width:100%; min-height:120px; font-family:"IBM Plex Mono",monospace; font-size:12px;
+  background:var(--paper); color:var(--ink); border:1px solid var(--line-strong); padding:10px;
+  resize:vertical; line-height:1.4;
+}
+.stat{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+.saved{color:var(--good); font-weight:500}
+.hint{border-left:3px solid var(--accent); padding-left:12px; margin:18px 0; color:var(--ink-2); font-size:14px}
+@media (max-width:560px){
+  .pair{grid-template-columns:1fr}
+  h1{font-size:23px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header>
+  <div class="bar">
+    <div class="mark">PIXEL<span>/</span>JUDGE</div>
+    <div class="pips" id="pips" hidden></div>
+    <div class="count" id="count"></div>
+  </div>
+</header>
+
+<main class="wrap" id="main"></main>
+
+<script>
+/*__STUDY_DATA__*/
+
+const QT = {
+  fidelity: "哪一张更像是在这个尺寸上一格一格画出来的，而不是把一张大图缩小得到的？",
+  preference: "哪一张你更愿意放进游戏里用？",
+};
+
+const $ = (s) => document.querySelector(s);
+const main = $("#main"), pips = $("#pips"), count = $("#count");
+const RID = "R" + Math.random().toString(36).slice(2, 8).toUpperCase();
+const N_SCREEN = 6, N_JUDGE = 18;
+let plan = [], at = 0, answers = [], t0 = 0;
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function buildPlan(){
+  const judge = shuffle(STUDY.judge.slice()).slice(0, N_JUDGE);
+  const screen = shuffle(STUDY.screen.slice()).slice(0, N_SCREEN);
+  const items = shuffle(judge.concat(screen));
+  return items.map(t => {
+    const flip = Math.random() < 0.5;
+    return {...t, flip,
+      lImg: flip ? t.right_img : t.left_img,
+      rImg: flip ? t.left_img : t.right_img,
+      lSys: t.kind === "judge" ? (flip ? t.right : t.left) : null,
+      rSys: t.kind === "judge" ? (flip ? t.left : t.right) : null,
+      answerSide: t.kind === "screen" ? (flip ? (t.answer === "left" ? "right" : "left") : t.answer) : null};
+  });
+}
+
+function chrome(){
+  pips.hidden = false;
+  pips.innerHTML = plan.map((_, i) =>
+    `<i class="pip${i < at ? " done" : i === at ? " now" : ""}"></i>`).join("");
+  count.textContent = `${Math.min(at + 1, plan.length)} / ${plan.length}`;
+}
+
+function intro(){
+  count.textContent = "";
+  main.innerHTML = `
+    <h1>哪一张是真正的像素图？</h1>
+    <p class="lede">你会看到一对一对放大后的 16&times;16 游戏精灵图，每一对里选一张。
+    共 ${N_SCREEN + N_JUDGE} 对，大约五分钟。不记录任何个人信息。</p>
+    <div class="panel">
+      <div class="kicker">你看到的是什么</div>
+      <p>这么小的精灵图是一个像素一个像素画出来的：颜色很少、边缘干脆、背景透明（这里用灰色棋盘格表示）。
+      你看到的图里，有一些就是这样画出来的；另一些是较大的画作被缩小到这个尺寸的，缩小会留下发虚的边缘和
+      几十种几乎一样的颜色。</p>
+      <p style="margin-bottom:0">两个问题会交替出现：一个问哪张是<em>在这个尺寸上画</em>的，另一个问你更愿意把哪张用进游戏。
+      这两个问题的答案可以不一样，那很正常 &mdash; 按各自问的来答就好。</p>
+    </div>
+    <div class="hint">可以用 <span class="key">&larr;</span> 和 <span class="key">&rarr;</span> 键作答，直接点图片也行。</div>
+    <div class="row"><button class="go" id="start">开始</button></div>`;
+  $("#start").onclick = () => { plan = buildPlan(); at = 0; answers = []; show(); };
+}
+
+function show(){
+  if (at >= plan.length) return done();
+  const t = plan[at];
+  chrome();
+  main.innerHTML = `
+    <div class="kicker">第 ${at + 1} 对 / 共 ${plan.length} 对</div>
+    <p class="q">${QT[t.question] || t.text}</p>
+    <p class="cap">${t.kind === "judge" && t.prompt
+      ? "两张图都是按同一句英文描述生成的：<code>" + esc(t.prompt) + "</code>"
+      : "两张图都取自真实的游戏素材库。"}</p>
+    <div class="pair">
+      <button class="pick" data-side="left">
+        <img src="${t.lImg}" alt="左边的精灵图">
+        <span class="key">&larr; 左</span>
+      </button>
+      <button class="pick" data-side="right">
+        <img src="${t.rImg}" alt="右边的精灵图">
+        <span class="key">右 &rarr;</span>
+      </button>
+    </div>`;
+  document.querySelectorAll(".pick").forEach(b => b.onclick = () => answer(b.dataset.side));
+  t0 = performance.now();
+}
+
+function esc(s){ const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+function answer(side){
+  const t = plan[at];
+  const rec = {id: t.id, kind: t.kind, question: t.question, side, ms: Math.round(performance.now() - t0)};
+  if (t.kind === "judge"){ rec.chose = side === "left" ? t.lSys : t.rSys; rec.over = side === "left" ? t.rSys : t.lSys; }
+  else { rec.correct = side === t.answerSide; }
+  answers.push(rec);
+  at++;
+  show();
+}
+
+document.addEventListener("keydown", (e) => {
+  if (at >= plan.length || !plan.length) return;
+  if (e.key === "ArrowLeft") { e.preventDefault(); answer("left"); }
+  if (e.key === "ArrowRight") { e.preventDefault(); answer("right"); }
+});
+
+function payload(){
+  const scr = answers.filter(a => a.kind === "screen");
+  return {v: 1, lang: "zh", rater: RID, at: new Date().toISOString(),
+          screenPassed: scr.filter(a => a.correct).length, screenTotal: scr.length,
+          answers};
+}
+
+async function done(){
+  pips.hidden = true; count.textContent = "";
+  const p = payload();
+  const code = "PXS1:" + btoa(unescape(encodeURIComponent(JSON.stringify(p))));
+  main.innerHTML = `
+    <h1>做完了 &mdash; 谢谢</h1>
+    <p class="lede">你一共答了 ${p.answers.length} 对，你的编号是 <span class="stat">${p.rater}</span>。</p>
+    <div class="panel">
+      <div class="kicker">把结果发回去</div>
+      <p class="note" id="savedLine">把下面这段复制下来，发给请你做这份评审的人。</p>
+      <textarea id="code" readonly>${code}</textarea>
+      <div class="row">
+        <button class="go" id="copy">复制</button>
+        <span class="note" id="copied"></span>
+      </div>
+    </div>
+    <p class="note">其中有几对是有标准答案的 &mdash; 两张都是真实精灵图，一张画于这个尺寸，另一张是缩小来的。
+    你答对了 <span class="stat">${p.screenPassed}/${p.screenTotal}</span>。这个数只用来给你其余的回答定权重，不是给你打分。</p>`;
+  $("#copy").onclick = async () => {
+    const ta = $("#code");
+    try { await navigator.clipboard.writeText(ta.value); }
+    catch { ta.select(); document.execCommand("copy"); }
+    $("#copied").textContent = "已复制。";
+  };
+  try {
+    const db = await window.claude?.use?.("db");
+    if (db) {
+      await db.doc("responses/" + p.rater).set(p);
+      $("#savedLine").innerHTML = '<span class="saved">已自动保存。</span> 下面这段也可以复制下来作为备份。';
+    }
+  } catch (e) { /* 通过链接访问的人没有写入权限，复制这条路始终可用 */ }
+}
+
+intro();
+</script>
