@@ -1,0 +1,2214 @@
+{
+ "raters": {
+  "M000100": {
+   "v": 1,
+   "lang": "model",
+   "model": "gpt-5.6-sol",
+   "rater": "M000100",
+   "at": "2026-09-25T14:13:38.087811+00:00",
+   "screenPassed": 2,
+   "screenTotal": 6,
+   "answers": [
+    {
+     "id": "screen09",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 19076,
+     "correct": false
+    },
+    {
+     "id": "preference-00066-gpt-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 9780,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00037-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 6643,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "screen01",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 19932,
+     "correct": false
+    },
+    {
+     "id": "fidelity-00098-ours-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 9890,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00151-ours-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 4823,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00035-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 11961,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00037-gpt-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 9092,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "preference-00103-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 6437,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "preference-00098-ours-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 12578,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "fidelity-00098-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 5618,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "fidelity-00137-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 5687,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "screen07",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 15754,
+     "correct": true
+    },
+    {
+     "id": "preference-00077-ours-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 6302,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00137-gpt-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 7993,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "fidelity-00035-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 2465,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "screen10",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6225,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00107-gpt-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 15011,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "screen06",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 14362,
+     "correct": false
+    },
+    {
+     "id": "fidelity-00156-flux-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 5029,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "screen13",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 7235,
+     "correct": false
+    },
+    {
+     "id": "fidelity-00055-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 17747,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00137-ours-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 8055,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00091-ours-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 7548,
+     "chose": "real",
+     "over": "ours"
+    }
+   ]
+  },
+  "M000101": {
+   "v": 1,
+   "lang": "model",
+   "model": "gpt-5.6-sol",
+   "rater": "M000101",
+   "at": "2026-09-25T14:13:38.087811+00:00",
+   "screenPassed": 5,
+   "screenTotal": 6,
+   "answers": [
+    {
+     "id": "fidelity-00107-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6354,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "screen03",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 10544,
+     "correct": false
+    },
+    {
+     "id": "screen02",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 8330,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00024-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6774,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00123-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 27889,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "preference-00130-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 5964,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "screen08",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 13443,
+     "correct": true
+    },
+    {
+     "id": "screen14",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 58896,
+     "correct": true
+    },
+    {
+     "id": "screen10",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 5543,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00160-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 18427,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "fidelity-00197-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 11912,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00064-gpt-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6875,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "screen06",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 13928,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00125-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 8796,
+     "chose": "real",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00103-flux-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 4779,
+     "chose": "real",
+     "over": "flux"
+    },
+    {
+     "id": "preference-00098-ours-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 4493,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00103-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 8227,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "preference-00072-real-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 13444,
+     "chose": "real",
+     "over": "gpt"
+    },
+    {
+     "id": "preference-00079-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 3028,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00064-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 18685,
+     "chose": "real",
+     "over": "flux"
+    },
+    {
+     "id": "preference-00131-ours-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 5586,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00197-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 18780,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "preference-00055-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 16571,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00197-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 41013,
+     "chose": "gpt",
+     "over": "ours"
+    }
+   ]
+  },
+  "M000102": {
+   "v": 1,
+   "lang": "model",
+   "model": "gpt-5.6-sol",
+   "rater": "M000102",
+   "at": "2026-09-25T14:13:38.087811+00:00",
+   "screenPassed": 5,
+   "screenTotal": 6,
+   "answers": [
+    {
+     "id": "preference-00079-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 4144,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00137-flux-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 61000,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "screen05",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 4500,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00125-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 3645,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "screen17",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 5764,
+     "correct": true
+    },
+    {
+     "id": "preference-00037-gpt-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 13557,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "screen16",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 40315,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00079-ours-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 4729,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00137-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 34114,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00055-gpt-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 44251,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00123-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 9294,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "screen19",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 4801,
+     "correct": true
+    },
+    {
+     "id": "preference-00091-ours-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 22307,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "preference-00125-real-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 3052,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00072-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 36412,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "screen07",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 9642,
+     "correct": true
+    },
+    {
+     "id": "screen12",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 109993,
+     "correct": false
+    },
+    {
+     "id": "fidelity-00123-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 15732,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "preference-00123-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 6777,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00131-real-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 3259,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "preference-00125-ours-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 15958,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00055-gpt-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 10536,
+     "chose": "real",
+     "over": "gpt"
+    },
+    {
+     "id": "preference-00024-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 24559,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00130-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 6536,
+     "chose": "flux",
+     "over": "ours"
+    }
+   ]
+  },
+  "M000103": {
+   "v": 1,
+   "lang": "model",
+   "model": "gpt-5.6-sol",
+   "rater": "M000103",
+   "at": "2026-09-25T14:13:38.087811+00:00",
+   "screenPassed": 6,
+   "screenTotal": 6,
+   "answers": [
+    {
+     "id": "preference-00137-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 20376,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "screen15",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 4759,
+     "correct": true
+    },
+    {
+     "id": "preference-00079-ours-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 10892,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "screen18",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 12418,
+     "correct": true
+    },
+    {
+     "id": "screen02",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6470,
+     "correct": true
+    },
+    {
+     "id": "preference-00197-ours-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 12524,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "screen04",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 5854,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00131-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 16264,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "screen03",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 7971,
+     "correct": true
+    },
+    {
+     "id": "preference-00037-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 7595,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00197-real-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 8126,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "preference-00184-gpt-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 14542,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00130-ours-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 11801,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00156-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 7615,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00125-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 7382,
+     "chose": "real",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00137-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6114,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "preference-00024-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 15779,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00098-ours-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 9265,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00131-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 7982,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00137-flux-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 16582,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "preference-00064-real-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 7363,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00098-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 83925,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "fidelity-00137-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6486,
+     "chose": "real",
+     "over": "gpt"
+    },
+    {
+     "id": "screen10",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 9440,
+     "correct": true
+    }
+   ]
+  },
+  "M000104": {
+   "v": 1,
+   "lang": "model",
+   "model": "gpt-5.6-sol",
+   "rater": "M000104",
+   "at": "2026-09-25T14:13:38.087811+00:00",
+   "screenPassed": 6,
+   "screenTotal": 6,
+   "answers": [
+    {
+     "id": "fidelity-00156-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 15219,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "screen16",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 13813,
+     "correct": true
+    },
+    {
+     "id": "screen10",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 14204,
+     "correct": true
+    },
+    {
+     "id": "preference-00184-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 14883,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00035-gpt-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 4772,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "screen11",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 46483,
+     "correct": true
+    },
+    {
+     "id": "screen03",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 9247,
+     "correct": true
+    },
+    {
+     "id": "preference-00197-real-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 78298,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00064-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 3384,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00151-ours-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 5175,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00137-gpt-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 4901,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "screen02",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6298,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00055-gpt-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 3210,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00077-flux-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 137145,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "preference-00010-flux-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 4196,
+     "chose": "real",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00010-flux-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 3365,
+     "chose": "real",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00137-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 7683,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00064-ours-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 10104,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00037-gpt-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 4345,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "preference-00156-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 6218,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00010-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 7390,
+     "chose": "real",
+     "over": "ours"
+    },
+    {
+     "id": "screen04",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 7676,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00091-ours-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 29990,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00184-gpt-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 17100,
+     "chose": "gpt",
+     "over": "real"
+    }
+   ]
+  },
+  "M000105": {
+   "v": 1,
+   "lang": "model",
+   "model": "gpt-5.6-sol",
+   "rater": "M000105",
+   "at": "2026-09-25T14:13:38.088815+00:00",
+   "screenPassed": 4,
+   "screenTotal": 6,
+   "answers": [
+    {
+     "id": "screen12",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6596,
+     "correct": false
+    },
+    {
+     "id": "preference-00077-flux-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 55484,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "screen11",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6995,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00123-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 9499,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00123-gpt-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 10624,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "fidelity-00156-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6043,
+     "chose": "real",
+     "over": "gpt"
+    },
+    {
+     "id": "screen05",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6933,
+     "correct": true
+    },
+    {
+     "id": "screen04",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 37193,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00010-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 15535,
+     "chose": "real",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00077-ours-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 34819,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "screen13",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 10304,
+     "correct": false
+    },
+    {
+     "id": "preference-00125-ours-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 6576,
+     "chose": "real",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00151-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6400,
+     "chose": "real",
+     "over": "gpt"
+    },
+    {
+     "id": "preference-00184-gpt-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 3832,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00184-flux-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6839,
+     "chose": "real",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00107-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6485,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00151-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 10401,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "preference-00035-gpt-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 4970,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00072-ours-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 7866,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00055-gpt-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 4523,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "preference-00160-ours-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 13535,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00072-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 11331,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "screen03",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 21442,
+     "correct": true
+    },
+    {
+     "id": "preference-00055-ours-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 4628,
+     "chose": "real",
+     "over": "ours"
+    }
+   ]
+  },
+  "M000106": {
+   "v": 1,
+   "lang": "model",
+   "model": "gpt-5.6-sol",
+   "rater": "M000106",
+   "at": "2026-09-25T14:13:38.088815+00:00",
+   "screenPassed": 5,
+   "screenTotal": 6,
+   "answers": [
+    {
+     "id": "screen09",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 2761,
+     "correct": false
+    },
+    {
+     "id": "fidelity-00010-flux-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 10322,
+     "chose": "real",
+     "over": "flux"
+    },
+    {
+     "id": "preference-00156-ours-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 3499,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00156-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 5985,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "fidelity-00066-gpt-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 2079,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00024-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 20527,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "preference-00103-ours-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 5434,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00137-ours-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 12269,
+     "chose": "real",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00197-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 8927,
+     "chose": "real",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00160-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 8741,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00079-gpt-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 10143,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "preference-00098-ours-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 4533,
+     "chose": "real",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00055-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 30194,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "screen08",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 3113,
+     "correct": true
+    },
+    {
+     "id": "screen19",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 35147,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00103-gpt-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 3827,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "screen14",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 9487,
+     "correct": true
+    },
+    {
+     "id": "screen11",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 7868,
+     "correct": true
+    },
+    {
+     "id": "preference-00156-flux-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 35596,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00024-flux-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 4487,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00107-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 26390,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00123-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6925,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "screen07",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 9417,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00103-gpt-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 11313,
+     "chose": "gpt",
+     "over": "ours"
+    }
+   ]
+  },
+  "M000107": {
+   "v": 1,
+   "lang": "model",
+   "model": "gpt-5.6-sol",
+   "rater": "M000107",
+   "at": "2026-09-25T14:13:38.088815+00:00",
+   "screenPassed": 5,
+   "screenTotal": 6,
+   "answers": [
+    {
+     "id": "fidelity-00125-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 25558,
+     "chose": "real",
+     "over": "gpt"
+    },
+    {
+     "id": "screen10",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6849,
+     "correct": true
+    },
+    {
+     "id": "preference-00151-real-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 46666,
+     "chose": "real",
+     "over": "gpt"
+    },
+    {
+     "id": "preference-00066-real-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 4658,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "preference-00072-ours-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 6424,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00091-ours-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 17751,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00151-real-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 15843,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "preference-00037-flux-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 39146,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "preference-00037-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 10610,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00125-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6522,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "screen05",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 48088,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00066-flux-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 8536,
+     "chose": "real",
+     "over": "flux"
+    },
+    {
+     "id": "preference-00072-real-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 13728,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "screen08",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 13017,
+     "correct": true
+    },
+    {
+     "id": "screen06",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 11340,
+     "correct": true
+    },
+    {
+     "id": "screen17",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 10028,
+     "correct": false
+    },
+    {
+     "id": "fidelity-00130-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 14801,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00123-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 3812,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00151-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 42499,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "preference-00107-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 6924,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00103-gpt-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 13713,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "screen14",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 10931,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00010-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 16610,
+     "chose": "ours",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00137-gpt-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6323,
+     "chose": "ours",
+     "over": "gpt"
+    }
+   ]
+  },
+  "M000108": {
+   "v": 1,
+   "lang": "model",
+   "model": "gpt-5.6-sol",
+   "rater": "M000108",
+   "at": "2026-09-25T14:13:38.088815+00:00",
+   "screenPassed": 6,
+   "screenTotal": 6,
+   "answers": [
+    {
+     "id": "screen03",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 6256,
+     "correct": true
+    },
+    {
+     "id": "preference-00184-flux-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 50909,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00156-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 8466,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00072-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6416,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "screen06",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 9868,
+     "correct": true
+    },
+    {
+     "id": "preference-00064-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 7562,
+     "chose": "real",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00137-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 21855,
+     "chose": "real",
+     "over": "gpt"
+    },
+    {
+     "id": "fidelity-00137-gpt-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 13224,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "fidelity-00079-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 4199,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "screen18",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 14656,
+     "correct": true
+    },
+    {
+     "id": "screen02",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 12313,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00035-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 2624,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "screen10",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 17156,
+     "correct": true
+    },
+    {
+     "id": "preference-00130-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 12042,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00037-gpt-real",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 5008,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00055-gpt-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6945,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00137-real-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 11956,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00079-ours-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 29159,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00072-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 3751,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00064-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 5010,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "screen14",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 5149,
+     "correct": true
+    },
+    {
+     "id": "preference-00035-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 6083,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00064-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 24856,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00160-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 9823,
+     "chose": "flux",
+     "over": "ours"
+    }
+   ]
+  },
+  "M000109": {
+   "v": 1,
+   "lang": "model",
+   "model": "gpt-5.6-sol",
+   "rater": "M000109",
+   "at": "2026-09-25T14:13:38.088815+00:00",
+   "screenPassed": 4,
+   "screenTotal": 6,
+   "answers": [
+    {
+     "id": "fidelity-00072-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 22056,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00197-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 12409,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00072-ours-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 9632,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "preference-00098-real-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 4074,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "preference-00103-gpt-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 10052,
+     "chose": "gpt",
+     "over": "ours"
+    },
+    {
+     "id": "screen16",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 3326,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00064-ours-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 9295,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00066-ours-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 8455,
+     "chose": "real",
+     "over": "ours"
+    },
+    {
+     "id": "screen01",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 14686,
+     "correct": true
+    },
+    {
+     "id": "screen13",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 139831,
+     "correct": false
+    },
+    {
+     "id": "preference-00098-ours-gpt",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 16685,
+     "chose": "ours",
+     "over": "gpt"
+    },
+    {
+     "id": "fidelity-00103-flux-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 4511,
+     "chose": "flux",
+     "over": "ours"
+    },
+    {
+     "id": "fidelity-00156-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 21990,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "screen05",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 4737,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00035-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 7330,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "fidelity-00107-real-gpt",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 8439,
+     "chose": "gpt",
+     "over": "real"
+    },
+    {
+     "id": "screen10",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 14787,
+     "correct": true
+    },
+    {
+     "id": "fidelity-00123-real-ours",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 11905,
+     "chose": "ours",
+     "over": "real"
+    },
+    {
+     "id": "preference-00035-real-flux",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 3253,
+     "chose": "real",
+     "over": "flux"
+    },
+    {
+     "id": "fidelity-00123-real-flux",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 6511,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "preference-00072-real-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "right",
+     "ms": 4430,
+     "chose": "real",
+     "over": "ours"
+    },
+    {
+     "id": "screen09",
+     "kind": "screen",
+     "question": "fidelity",
+     "side": "left",
+     "ms": 137219,
+     "correct": false
+    },
+    {
+     "id": "fidelity-00024-flux-real",
+     "kind": "judge",
+     "question": "fidelity",
+     "side": "right",
+     "ms": 2983,
+     "chose": "flux",
+     "over": "real"
+    },
+    {
+     "id": "preference-00103-flux-ours",
+     "kind": "judge",
+     "question": "preference",
+     "side": "left",
+     "ms": 26677,
+     "chose": "ours",
+     "over": "flux"
+    }
+   ]
+  }
+ }
+}
