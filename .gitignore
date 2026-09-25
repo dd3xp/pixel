@@ -18,6 +18,10 @@ runs/api_*/
 runs/recap_all/
 runs/recaptions*.jsonl
 runs/recaptions_map.json
+runs/study/
+runs/study_web/*.tgz
+runs/study_web/img/
+runs/study_web/index.html
 runs_out/
 wandb/
 workdir/
