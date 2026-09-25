@@ -16,7 +16,19 @@ Prompts are drawn with a fixed seed and nothing is hand-picked: the point of the
 objection that our reference set is our own, and a curated sample would answer it in the wrong
 direction.
 
-Usage: python src/v6/build_study_web.py --n 24 --out runs_out/study_web
+09-25: two faults in the first package, both found by measuring the images that actually shipped.
+  * the palettes were not matched. ours was icg2_pal6 while real, gpt and flux all came from the _q4
+    directories, so our samples carried 5.3 colours on average against 3.5 for the real sprites and
+    3.3 / 3.7 for the two baselines -- a 50% larger palette for our own system than for everything it
+    was compared against, the real reference included. --systems now sets the directories, and the
+    rerun puts every arm on the same k=6 projection;
+  * prompt 00122 rendered fully transparent for both real and ours, so any pair against gpt or flux on
+    that prompt was decided by one side being blank. --drop-blank rejects a prompt when any arm has no
+    opaque pixel.
+
+Usage:
+  python src/v6/build_study_web.py --n 24 --out runs_out/study_web
+  python src/v6/build_study_web.py --n 24 --drop-blank       --systems real=runs_out/ext200/q/real_q6/s16 ours=runs_out/ext200/v8n/icg2_pal6/s16                 gpt=runs_out/ext200/q/gpt_q6/s16 flux=runs_out/ext200/q/flux2_q6/s16
 """
 import argparse
 import itertools
@@ -26,6 +38,7 @@ import re
 import shutil
 from pathlib import Path
 
+import numpy as np
 from PIL import Image
 
 SYSTEMS = {
@@ -70,18 +83,29 @@ def main():
     ap.add_argument("--prompts", default="runs_out/ext200/v8n/icg2_pal4/prompts.txt")
     ap.add_argument("--screening", default="runs_out/human_study2")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--systems", nargs="*", default=[], help="name=dir, overriding SYSTEMS")
+    ap.add_argument("--drop-blank", action="store_true",
+                    help="reject a prompt when any arm renders with no opaque pixel")
     a = ap.parse_args()
+    systems = dict(s.split("=", 1) for s in a.systems) if a.systems else dict(SYSTEMS)
     out = Path(a.out)
     (out / "img").mkdir(parents=True, exist_ok=True)
 
     by_sys = {}
-    for k, d in SYSTEMS.items():
+    for k, d in systems.items():
         got = by_index(d)
         if not got:
             raise SystemExit(f"{k}: no indexable images under {d}")
         print(f"{k:5s} {len(got):4d} prompts  {d}")
         by_sys[k] = got
     idxs = sorted(set.intersection(*(set(v) for v in by_sys.values())))
+    if a.drop_blank:
+        def blank(p):
+            im = Image.open(p).convert("RGBA")
+            return not (np.array(im)[:, :, 3] > 127).any()
+        bad = sorted(i for i in idxs if any(blank(by_sys[k][i]) for k in by_sys))
+        idxs = [i for i in idxs if i not in bad]
+        print(f"dropped {len(bad)} prompts with a blank arm: {bad}")
     prompts = [l.strip() for l in open(a.prompts, encoding="utf-8") if l.strip()]
     rng = random.Random(a.seed)
     picked = sorted(rng.sample(idxs, a.n))
@@ -92,7 +116,7 @@ def main():
 
     trials = []
     for i in picked:
-        for x, y in itertools.combinations(SYSTEMS, 2):
+        for x, y in itertools.combinations(systems, 2):
             if "real" not in (x, y) and "ours" not in (x, y):
                 continue          # external vs external decides nothing in the paper
             left, right = (x, y) if rng.random() < 0.5 else (y, x)
@@ -116,7 +140,7 @@ def main():
                           "answer": p["answer"]})
 
     (out / "study.json").write_text(json.dumps({
-        "systems": list(SYSTEMS), "questions": QUESTIONS, "scale": SCALE, "cell": CELL,
+        "systems": list(systems), "dirs": systems, "questions": QUESTIONS, "scale": SCALE, "cell": CELL,
         "n_prompts": a.n, "seed": a.seed, "judge": trials, "screen": screening}, indent=1),
         encoding="utf-8")
     print(f"{len(trials)} judgement trials ({a.n} prompts x {len(trials) // (a.n * len(QUESTIONS))} pairs "
