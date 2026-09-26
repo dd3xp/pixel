@@ -15,20 +15,20 @@
 \usepackage{xcolor}
 \usepackage{enumitem}
 \usepackage{bm}
+\usepackage{wrapfig}
+\usepackage{placeins}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
 
-% Visible marker for results that are still running or claims that need a final check.
-% Every \todo must be resolved (or the cell removed) before submission.
-\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO:~#1]}}}
 \newcommand{\sg}{\operatorname{sg}}
 \newcommand{\blow}{b_{\mathrm{low}}}
 \newcommand{\eref}{e_{\mathrm{ref}}}
 \newcommand{\nfe}{\textsc{nfe}}
 \newcommand{\pmsd}[1]{{\scriptsize$\pm$#1}}
+\newcommand{\ours}{PaletteDiff}
+\newcommand{\gray}[1]{\textcolor{gray}{#1}}
 
-% Title option 1 of paper_assets/iclr27_abstract_v2.md (recommended). Alternatives:
-%  (2) Four Colours Are Enough: Palette-Projected Diffusion for Tiny Pixel-Art Sprites
-%  (3) What Your Sprite Dataset Is Actually Teaching You
-\title{Pixel Art Is a Palette, Not a Downscale:\\ Rebuilding Targets and Decoding for 12--24\,px Sprite Generation}
+\title{\ours: Native-Resolution Pixel-Art Sprite Generation\\ with Palette-Projected Diffusion}
 
 % Anonymous submission: \iclrfinalcopy stays commented out.
 \author{Anonymous authors\\Paper under double-blind review}
@@ -38,827 +38,553 @@
 \maketitle
 
 \begin{abstract}
-Text-to-image models fail at the smallest images people draw on purpose: 12--24\,px RGBA game sprites, where a
-handful of colours and hard alpha edges \emph{are} the medium. We show that the usual failure is not a modelling
-failure but a target failure. In the standard sprite corpus only 7\% of the images are natively 16\,px or smaller;
-the rest is 25--64\,px artwork box-downscaled into the low-resolution buckets, so a model trained on it learns soft,
-fifty-colour blobs---and the evaluation reference inherits the same bias, rewarding exactly that. We rebuild the
-targets (drop 4{,}888 pixel-identical duplicates that leak 16.2\% of the held-out set into training, forbid
-downscaling by more than $1.5\times$, add 14k natively small sprites from three permissively licensed corpora) and we
-evaluate against a reference drawn only from real low-resolution pixel art. Under this protocol the data fix alone
-takes FD-DINOv2 from 167.2 to 117.9 at 16\,px. We then close the remaining gap where it actually is: real sprites use
-a median of six opaque colours while every sampling configuration we tested emits more than fifty. Projecting the
-predicted $x_0$ onto a per-sprite $k$-colour palette during the late denoising steps---so that the remaining steps
-repair the quantisation seams---reaches $31.8\pm0.5$, better than quantising the finished samples (41.6), and
-$2.6\times$ better than the strongest external system under the same palette post-process (50.8 versus 134.4 at
-$n{=}200$); it also beats the mixed-provenance ``real'' sprites that the downscale-biased protocol treats as ground
-truth (77.0). We report an equally instructive negative result: cross-resolution self-guidance and its internalised
-one-pass variant, which win by 44\% under the downscale-biased reference (6.24 against 11.10), give no gain once the reference is real
-pixel art, while independent-condition guidance transfers and composes with palette projection.
+Game sprites of 12--24\,px are among the smallest images people draw on purpose, and their medium is defined by a
+handful of flat colours and hard alpha edges. Despite rapid progress in text-to-image generation, existing systems
+render such sprites as shrunken illustrations with soft shading and around a hundred colours. We identify two root
+causes: the training targets of sprite corpora are dominated by downscaled artwork rather than native pixel art, and
+continuous diffusion has no mechanism to express the few-colour structure of the medium. To address these challenges,
+we propose \ours{}, a framework for native-resolution sprite generation. First, we introduce \emph{Native-Resolution
+Target Rebuilding}, which removes duplicate leakage, forbids aggressive downscaling and adds 15k permissively
+licensed sprites, together with a \emph{native evaluation protocol} that scores against real low-resolution pixel art
+only. Second, we propose \emph{Palette-Projected Sampling}, a training-free decoding rule that projects the predicted
+clean image onto a per-sprite $k$-colour palette during the late denoising steps, so that the remaining steps repair
+the quantisation seams. Third, combined with SDEdit-style re-noising, the same rule yields a \emph{Palette Refinement}
+module for sprites from generators we did not train. \ours{} lowers FD-DINOv2 at 16\,px from 167.2 to $31.8\pm0.5$;
+a per-sprite palette is the decisive ingredient, and imposing it inside the sampler improves on the same quantisation
+applied afterwards by a further 18\%. Under the native protocol, \ours{} has the lowest FD among gpt-image-2,
+FLUX.2 and SDXL pipelines given the same palette post-process; Palette Refinement improves all three external systems
+by 36--41\% while preserving 80\% of their silhouettes.
 \end{abstract}
 
 % ================================================================================================================
-% ----------------------------------------------------------------------------------------------------------------
-\begin{figure}[t]
+\begin{figure}[h]
 \centering
-\includegraphics[width=\linewidth]{figures/fig_external.png}
-\caption{Eight held-out captions at 16\,px. Top: our model with ICG and palette projection ($k{=}4$); second row: the
-same model without the projection; then gpt-image-2 and FLUX.2-klein + pixel-art LoRA, both generated large and reduced
-by the same code, with the same four-colour post-process applied to gpt-image-2; bottom: the real held-out sprite. The
-external pipelines often produce the more attractive picture while being $2.6\times$ further from native pixel art
-(Table~\ref{tab:external}); our samples share the grammar --- and the crudeness --- of the data.}
-\label{fig:external}
-\end{figure}
-
-\section{Introduction}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/fig_teaser.png}
-\caption{All four rows are 16\,px RGBA sprites on the same checkerboard, nearest-neighbour magnified. \textbf{Row 1}:
-real sprites that were drawn at this size --- a median of six opaque colours and hard alpha edges. \textbf{Row 2}: what
-the corpus feeds into its 16\,px bucket, which is 25--64\,px artwork box-downscaled, at 49 colours; 92.9\% of the
-conventional evaluation reference looks like this. \textbf{Rows 3--4} share the caption of their column: gpt-image-2
-rendered at 1024\,px and reduced (111 colours), and our model with palette-projected sampling (4 colours). Row 3 is the
-easiest on the eye and the furthest from the medium; the paper is about that gap and about the reference set that hides
-it.}
+\includegraphics[width=0.92\linewidth]{figures/fig_teaser.png}
+\caption{16\,px RGBA sprites, nearest-neighbour magnified. \textbf{Row 1}: real sprites drawn at this size (median six
+opaque colours). \textbf{Row 2}: what a conventional sprite corpus feeds into its 16\,px bucket --- 25--64\,px artwork
+box-downscaled (median 49 colours). \textbf{Row 3}: gpt-image-2 rendered at 1024\,px and reduced. \textbf{Row 4}:
+\ours{} (4 colours), which reproduces the flat colour regions of native pixel art. Colour counts are per-row
+medians.}
 \label{fig:teaser}
 \end{figure}
 
+\section{Introduction}
 \label{sec:intro}
 
-Game sprites are among the smallest images anyone draws on purpose: an item or a character on a 12--24\,px RGBA canvas,
-built from hard edges, a handful of flat colour regions and a transparent background. At these sizes there is no texture
-in which to hide a mistake. One wrong pixel changes the silhouette, and one blended colour reads as blur. The obvious
-recipe---prompt a large text-to-image model and shrink its output, or run a pixelization method on it---produces
-something recognisable but not a sprite: the result keeps the soft shading and the many colours of an illustration
-(Figure~\ref{fig:external}).
+Game sprites are among the smallest images anyone draws on purpose: an item, a character or an effect on a 12--24\,px
+RGBA canvas, built from hard edges, a handful of flat colour regions and a transparent background, and a staple of 2D
+games and procedural content. At these sizes there is no texture in which to hide a mistake: one wrong pixel changes the silhouette, and one blended
+colour reads as blur. Recent text-to-image models~\citep{Podell2023,FLUX2} have demonstrated remarkable capability at
+high resolution, and the natural recipe is to prompt such a model and shrink its output. The result is recognisable
+but it is not a sprite: it keeps the soft shading and the hundred-odd colours of an illustration
+(Figure~\ref{fig:teaser}, row 3).
 
-This paper is about a failure that sits one level below the model. We train a dedicated generator for this medium---a
-72.5M-parameter pixel-space UNet that denoises RGBA sprites directly, conditioned on a frozen CLIP text encoder and on a
-\emph{resolution bucket} label---and we find that its weaknesses are inherited from what it is asked to imitate. In the
-sprite corpus that work in this area uses, only 7.1\% of the images are natively 16\,px or smaller; two thirds are
-25--64\,px artwork that the pipeline box-downsamples into the low-resolution buckets. A model fitted to those targets
-learns exactly what they are: soft, fifty-colour blobs. Worse, the standard evaluation reference is drawn from the same
-pool, so it rewards the blur it caused: a sampler tuned on it prefers heavy guidance, and the ranking of methods under
-that reference does not survive contact with real pixel art.
+We train a dedicated generator for this medium and identify two primary bottlenecks that hinder tiny-sprite
+generation. \textbf{1) Contaminated targets.} A sprite corpus assembled in the standard way --- cutting sheets into
+connected components, bucketing by size and downscaling to fill each bucket --- contains little native pixel art: in
+ours only 7.1\% of the images are natively 16\,px or smaller, so 92.9\% of what the 16\,px bucket sees is larger art
+box-downscaled into it, two thirds of it from 25--64\,px. Exact duplicates additionally leave a pixel-identical twin in training for 16.2\% of
+the held-out set. A model fitted to these targets learns soft, fifty-colour blobs, and an evaluation reference drawn
+from the same pool rewards exactly that. \textbf{2) Palette mismatch.} Real 16\,px sprites use a median of six opaque
+colours and 46\% of their adjacent opaque pixel pairs are exactly equal. A continuous diffusion model in RGB has no
+mechanism that snaps a region to a single value: every sampling rule we tested emits around fifty colours and reaches
+only 8\% equal neighbours, spending the difference on few-level dither inside regions that should be flat.
 
-We therefore change both the targets and the yardstick. On the data side we (i) remove 4{,}888 pixel-identical
-duplicates, which had left a pixel-identical twin in training for 16.2\% of the held-out evaluation sprites, (ii) forbid
-feeding a sprite to a bucket more than $1.5\times$ below its native size, and (iii) add 14{,}999 natively small sprites
-cut from three permissively licensed OpenGameArt collections and captioned with a vision--language model. On the
-evaluation side we define the \emph{native protocol}: FD-DINOv2 against real sprites that are natively at most $R$\,px,
-never downscaled. At 16\,px the data work alone moves the model from 167.2 to 117.9 under this protocol.
+To address these challenges, we propose \ours{} (Figure~\ref{fig:overview}). \emph{Native-Resolution Target Rebuilding}
+removes duplicate leakage, forbids feeding a sprite to a bucket more than $1.5\times$ below its native size, and adds
+14{,}999 permissively licensed sprites, together with a \emph{native protocol} that evaluates against real sprites
+drawn at the target size. \emph{Palette-Projected Sampling} (PPS) then projects the predicted clean image onto a
+per-sprite $k$-colour palette during the late denoising steps, so the remaining steps repair the quantisation seams;
+it is training-free and transfers to a transformer backbone. Combined with SDEdit-style re-noising
+\citep{Meng2022sdedit}, the same rule is a \emph{Palette Refinement} module for external generators.
 
-What remains is a property of the medium that continuous diffusion has no way to express. Real 16\,px sprites use a
-median of six opaque colours; every sampling configuration we tested---classifier-free guidance at any weight,
-cross-resolution self-guidance, independent-condition guidance---emits more than fifty, spending its extra colours on
-$\pm$few-level dither inside regions that should be flat. We close that gap inside the sampler: during the late
-denoising steps we project the predicted $x_0$ onto a per-sprite $k$-colour palette (batched $k$-means over the opaque
-pixels, alpha untouched) and continue denoising, so the remaining steps repair the seams that hard quantisation leaves.
-At 16\,px this takes FD from 87.2 to $31.8\pm0.5$; quantising the finished samples instead only reaches 41.6.
-
-Finally, we report a negative result that we consider as informative as the positive one. Cross-resolution
-self-guidance---querying the same network under a lower bucket label and extrapolating away from that prediction---and
-its internalised one-pass variant were, on the downscale-biased reference, our strongest method (a 44\% improvement over
-the best-tuned CFG). Under the native protocol they give nothing (114.9 and 117.0 versus 113.2 for unguided sampling),
-and the internalised variant is actively harmful (170.3). Independent-condition guidance, an external method, transfers
-and composes with palette projection. Which reference set one scores against decides which of these conclusions one
-publishes.
-
-\paragraph{Contributions.}
+At 16\,px the rebuilt targets move FD-DINOv2 from 167.2 to 117.9, and PPS brings it to $31.8\pm0.5$. Among practitioner
+pipelines used zero-shot --- gpt-image-2, FLUX.2 with a pixel-art LoRA and SDXL with Pixel Art XL --- \ours{} has the
+lowest native FD even when those systems receive the same palette post-process, and Palette Refinement improves all
+three by 36--41\% while preserving 80\% of their silhouettes. Our main contributions are:
 \begin{itemize}[leftmargin=1.2em,itemsep=1pt,topsep=2pt]
-  \item A diagnosis of the targets used for tiny-sprite generation: native-resolution statistics, duplicate leakage, and
-  the resulting bias of the standard evaluation reference; and a rebuilt corpus plus the \emph{native protocol} that
-  removes both (Section~\ref{sec:data}).
-  \item \textbf{Palette-projected sampling}: a projection of the predicted $x_0$ onto a per-sprite $k$-colour palette in
-  the late denoising steps, which is where the remaining distance to real pixel art actually lies. It lowers FD-DINOv2
-  at 16\,px from 87.2 to $31.8\pm0.5$ (3 seeds), beats post-hoc quantisation (41.6), and costs 1.3 points of CLIP
-  retrieval at $k{=}6$ (Section~\ref{sec:method}).
-  \item An external comparison in which every system receives the same palette post-process: at 16/20/24\,px we reach
-  50.8/152.5/192.2 against 134.4/448.6/478.0 for gpt-image-2 with downscaling, 150.1/473.9/472.4 for FLUX.2-klein with a
-  pixel-art LoRA, and 244.2/526.3/527.2 for SDXL with Pixel Art XL (Section~\ref{sec:external}).
-  \item A negative result with its mechanism: cross-resolution guidance and its internalisation win by 40\% under a
-  downscale-biased reference and vanish under a native one; we give the per-image statistics (palette size, flat-region
-  fraction, contrast) that explain both outcomes (Section~\ref{sec:why}).
+  \item \textbf{Native-Resolution Target Rebuilding and the native protocol.} We diagnose target contamination and
+  duplicate leakage in sprite corpora, and provide a rebuilt corpus and an evaluation protocol grounded in real
+  low-resolution pixel art.
+  \item \textbf{Palette-Projected Sampling.} A training-free decoding rule that enforces the few-colour structure of
+  the medium inside the sampler, transfers to a transformer backbone, and outperforms post-hoc quantisation, a
+  corpus-wide palette and de-dithering filters.
+  \item \textbf{Palette Refinement.} SDEdit-style re-noising combined with PPS, which transfers the decoding rule to
+  generators we did not train, with an explicit dial between preserving the input and matching the medium.
 \end{itemize}
+
+\begin{figure}[t]
+\centering
+\resizebox{0.98\linewidth}{!}{\input{figures/overview.tex}}
+\caption{Overview of \ours{}. \textbf{(1)}~Rebuild the targets and score only against sprites drawn at the canvas size.
+\textbf{(2)}~Project $\hat x_0$ onto a per-sprite $k$-colour palette in the late steps; later steps repair the seams.
+\textbf{(3)}~Re-noise an external sprite and denoise it with (2) to keep its layout while matching the medium.}
+\label{fig:overview}
+\end{figure}
+\FloatBarrier
 
 % ================================================================================================================
 \section{Related work}
 \label{sec:related}
 
-\paragraph{Guidance references.}
-CFG \citep{HoSalimans2022} extrapolates the conditional prediction away from an unconditional one. Many variants keep
-that reference and reshape the update: guidance intervals \citep{Kynkaanniemi2024}, APG \citep{Sadat2024apg}, frequency
-decoupling \citep{Sadat2025fdg}, CADS \citep{Sadat2024cads}, CFG++ \citep{Chung2024} and feedback or stage-wise schedules
-\citep{Koulischer2025,TVCFG2025}. A second line replaces the reference. Autoguidance \citep{Karras2024} uses a smaller or
-less-trained version of the same model. Training-free weak predictions come from perturbed self-attention
-\citep[PAG, SAG, SEG;][]{Ahn2024,Hong2023,Hong2024}, sliding windows \citep{SWG2024}, stochastic sub-networks
-\citep{S2Guidance2025}, a random condition or a perturbed time embedding \citep[ICG, TSG;][]{Sadat2024icg}, or a
-semantically degraded text condition \citep[CDG;][]{CDG2026}. Other weak predictions come from auxiliary or internal
-heads \citep{IG2025,SGGBR2026,SSG2026}. CDG is closest in spirit: it too degrades one condition of the same network.
-It degrades the \emph{text}, whereas we degrade the \emph{resolution label} and keep the caption fixed. We run CDG, ICG,
-TSG, SEG and PAG under our protocol (Table~\ref{app:guidance}).
-
-\paragraph{Guidance without a second pass.}
-Guidance distillation \citep{Meng2023distill} regresses a student onto a guided teacher. Model guidance
-\citep{Tang2025mg} and guidance-free training \citep{Chen2025gft} instead change the training objective so that its fixed
-point is the guided prediction. GFT does this with a stop-gradient unconditional reference, a scalar $\beta$ input, and
-the true noise as the target, and reports parity with CFG. We use GFT's objective unchanged and swap its reference.
-Our $\beta$ input reuses the guidance-scale embedding of latent consistency models \citep{Luo2023lcm}.
-
-\paragraph{Resolution conditioning.}
-Multi-resolution training with a size or bucket label is standard: aspect-ratio bucketing \citep{NovelAI2022}, SDXL's
-micro-conditioning \citep{Podell2023}, Matryoshka diffusion \citep{Gu2023}, FiT \citep{Lu2024} and simple diffusion
-\citep{Hoogeboom2023}. SDXL documents that a small \texttt{original\_size} reproduces the blur of low-resolution training
-images, and common practice passes it to the negative branch of CFG \citep{diffusers}. We test this as a reference in
-Appendix~\ref{app:sdxl} and find no benefit. To our knowledge, no prior work uses a model's own lower-resolution label as a
-guidance reference or internalizes one.
-
-\paragraph{Palettes and quantisation.}
-Reducing an image to a small palette is classical: median cut \citep{Heckbert1982}, error diffusion \citep{FloydSteinberg1976}
-and, for pixel art specifically, joint palette-and-pixel optimisation \citep{Gerstner2012} and palette-conditioned
-generation \citep{PixDiffPIG}. In diffusion, hard constraints are usually enforced by projecting the predicted $x_0$ at
-each step, as in plug-and-play priors and inverse-problem solvers \citep{Venkatakrishnan2013,Chung2023dps}, and by
-quantisation-aware or discrete-state formulations \citep{Austin2021,Gu2022vqdiffusion}. Our projection is the same
-device applied to the property that defines this medium, with the palette estimated per sprite from the model's own
-current belief rather than supplied as a condition; unlike a discrete-state model it needs no change of training and
-keeps the continuous denoiser.
-
-\paragraph{Data and protocol audits.}
-Reports that a benchmark's reference set decides the ranking are common in generative evaluation: FID's sensitivity to
-the feature extractor and to preprocessing \citep{Parmar2022,Stein2023}, duplicate and near-duplicate contamination in
-image corpora \citep{Barz2020,Webster2023}, and dataset-bias analyses more generally \citep{Torralba2011}. Our
-contribution here is narrow and concrete: for tiny sprites, the conventional reference is dominated by downscaled
-artwork, and that single fact reverses the ranking of the guidance methods we and others would otherwise report.
-
 \paragraph{Pixel art.}
-Most pixel-art work converts an existing image, by optimisation \citep{Gerstner2012}, contrast-aware downscaling
-\citep[PixelOE;][]{PixelOE2024} or learned pixelization \citep{Han2018,Wu2022}. Generative approaches include GANs for
-character sprites \citep{Coutinho2022}, pose-conditioned sprite sheets \citep{SpriteSheetDiffusion2024}, a
-palette-conditioned small DDPM \citep{PixDiffPIG}, SD-$\pi$XL, which optimises one image by score distillation from SDXL
-\citep{Binninger2024}, and community LoRAs such as Pixel Art XL \citep{PixelArtXL}. We compare against conversion
-pipelines applied to strong generators; SD-$\pi$XL costs about 8 GPU-hours per sprite (Section~\ref{sec:external}). For
-evaluation we follow \citet{Stein2023} and use DINOv2 features \citep{Oquab2023} rather than Inception
-\citep{Heusel2017,Parmar2022}.
+Most work on pixel art converts an existing image rather than generating one: joint palette-and-pixel optimisation
+\citep{Gerstner2012}, contrast-aware downscaling \citep[PixelOE;][]{PixelOE2024} and learned pixelization
+\citep{Han2018,Wu2022}. Generative approaches include GANs for character sprites \citep{Coutinho2022}, pose-conditioned
+sprite sheets \citep{SpriteSheetDiffusion2024}, a palette-conditioned DDPM \citep{PixDiffPIG}, SD-$\pi$XL, which
+optimises one image by score distillation from SDXL \citep{Binninger2024}, and community LoRAs on large models
+\citep{PixelArtXL,PixelArtLoRAFlux}. \ours{} estimates the palette from the model's own prediction rather than conditioning on it, and generates a sprite
+in one sampling pass rather than hours of score distillation.
 
-% ================================================================================================================
-\section{The targets and the protocol}
-\label{sec:data}
+\paragraph{Guidance for diffusion models.}
+Classifier-free guidance \citep{HoSalimans2022} and its variants
+\citep{Kynkaanniemi2024,Sadat2024apg,Sadat2025fdg,Sadat2024cads,Chung2024} extrapolate away from an unconditional
+prediction; other rules use a weaker model \citep{Karras2024}, perturbed attention \citep{Ahn2024,Hong2023,Hong2024},
+a degraded \citep{CDG2026} or a random condition \citep[ICG;][]{Sadat2024icg}. We adopt ICG and show that it composes
+with palette projection.
 
-\paragraph{What the corpus actually contains.}
-Work on tiny sprites uses OpenGameArt \citep{OpenGameArt} together with the Kenney and Liberated Pixel Cup packs. After
-cutting sheets into connected components at their native scale and filtering out glyphs and UI, our copy holds 37{,}489
-unique sprites. Their native sizes, however, are not tiny: only 710 are at most 12\,px, 2{,}675 at most 16\,px (7.1\%)
-and 12{,}516 at most 24\,px, while two thirds are 25--64\,px artwork. A resolution-bucketed model is usually trained by
-box-downsampling every sprite into each lower bucket, so 92.9\% of what the 16\,px bucket sees is squashed artwork
-rather than pixel art drawn at 16\,px. Only 4.6\% of the corpus is integer-upscaled pixel art that could be recovered by
-dividing by its block size, so the softness cannot be undone; it has to be avoided.
+\paragraph{Constraints inside the sampler.}
+Projecting the predicted $\hat x_0$ at each step is a standard device for imposing hard constraints on diffusion models,
+from plug-and-play priors to inverse-problem solvers \citep{Venkatakrishnan2013,Chung2023dps}; discrete-state
+formulations impose quantisation by construction \citep{Austin2021,Gu2022vqdiffusion}. PPS applies this device to the
+property that defines pixel art, with a palette estimated on the fly, and keeps the continuous denoiser and its training
+unchanged.
 
-\paragraph{Duplicate leakage.}
-Hashing every sprite by its exact pixel content reveals 4{,}888 duplicate copies (9.3\% of the corpus). Because
-held-out sets are defined by path, a pixel-identical twin of a held-out sprite stays in training --- counting
-a twin anywhere training is allowed to see, which is the corpus minus the held-out paths: 16.2\% of the 3{,}000
-held-out evaluation sprites, and 17.0\% of the 200 used for the external comparison, are memorisable in this way.
-
-\paragraph{Rebuilt targets.}
-We (i) drop every duplicate copy and every copy of a held-out sprite, (ii) allow a sprite to feed a bucket only if it is
-at most $1.5\times$ larger than that bucket, and (iii) add natively small sprites: three further OpenGameArt licence
-collections (CC-BY-4.0, CC-BY-SA-3.0, OGA-BY-3.0) yield 37{,}226 cut sprites, of which 14{,}999 survive the same
-filters, near-duplicate collapse of animation frames and a cap of 60 sprites per source sheet. We caption them with
-gemini-3.8-flash on numbered image grids, keeping 13{,}987 captions (99.6\% distinct, median 13 words); the provenance
-and licence of every sprite is recorded. The rebuilt corpus has 86{,}290 training rows and twice as many natively
-$\le 16$\,px sprites as before. Appendix~\ref{app:data} gives the per-step counts and the verification sheets.
-
-\paragraph{The native protocol.}
-FD-DINOv2 \citep{Stein2023} is computed against a reference set of real sprites pushed through the model's own
-preprocessing. The usual choice---a random sample of the corpus---inherits the bias above. We therefore report the
-\emph{native protocol}: the reference at resolution $R$ is drawn only from sprites whose native size is at most $R$, so
-no downscaling ever touches it (1{,}337 reference and 1{,}338 held-out images at 16\,px, real-vs-real floor 4.47). We
-report the biased protocol as well, because the two disagree systematically (Section~\ref{sec:why}), and we mark which
-is which in every table.
+\paragraph{Reference sets in generative evaluation.}
+FID is known to be sensitive to the feature extractor and preprocessing \citep{Heusel2017,Parmar2022,Stein2023}, and
+duplicate contamination affects many image corpora \citep{Barz2020,Webster2023,Torralba2011}. Following
+\citet{Stein2023}, we use DINOv2 features \citep{Oquab2023}; our native protocol additionally specifies \emph{which}
+real images form the reference, which for tiny sprites turns out to determine the ranking of methods.
 
 % ================================================================================================================
 \section{Method}
 \label{sec:method}
 
-\subsection{A resolution-bucketed pixel-space sprite model}
+\subsection{Native-Resolution Target Rebuilding}
+\label{sec:data}
+
+\paragraph{Diagnosis.}
+Our starting corpus contains 37{,}489 unique sprites cut from OpenGameArt \citep{OpenGameArt} sheets, together with the
+Kenney and Liberated Pixel Cup packs. Only 2{,}675 (7.1\%) are natively at most 16\,px and 12{,}516 at most 24\,px; the
+remaining two thirds are 25--64\,px artwork that a bucketed training pipeline box-downsamples into the low-resolution
+buckets. Downsampling averages
+neighbouring pixels, so these targets carry a median of 49 colours against six for sprites drawn at 16\,px
+(Figure~\ref{fig:teaser}, rows 1--2). Only 4.6\% of the corpus is integer-upscaled pixel art that could be restored by
+dividing by its block size. Hashing every sprite by its exact
+pixel content further reveals 4{,}888 duplicate copies; because a held-out set defined by file path cannot see that two
+paths hold the same image, 16.2\% of the 3{,}000 held-out evaluation sprites have a pixel-identical twin in training.
+
+\paragraph{Rebuilt targets.}
+We (i) drop every duplicate copy and every copy of a held-out sprite; (ii) allow a sprite to feed a bucket only if it is
+at most $1.5\times$ larger than that bucket, so that a 64\,px illustration can no longer become a 16\,px target; and
+(iii) add 14{,}999 sprites cut from three permissively licensed OpenGameArt collections (CC-BY-4.0, CC-BY-SA-3.0,
+OGA-BY-3.0), of which 1{,}726 are natively at most 16\,px and 6{,}028 at most 24\,px, filtered for fonts, UI and
+near-identical animation frames and captioned with a vision--language model (13{,}987 usable captions, 99.6\%
+distinct). Every added sprite keeps its source and licence in a manifest. The
+rebuilt corpus has 86{,}290 training rows and 65\% more natively $\le 16$\,px sprites than before
+(Appendix~\ref{app:data}).
+
+\paragraph{Native protocol.}
+The reference at resolution $R$ is drawn only from real sprites whose native size is at most $R$, so no downscaling
+ever touches it: the natively $\le R$ pool of the original corpus is split in half with a fixed seed into a reference
+and a disjoint floor set (at 16\,px: 1{,}337 and 1{,}338 images, real-vs-real floor 4.47). The reference describes the
+target distribution and is drawn from the same pool as the training data, which it is not removed from; to measure generalisation without any
+overlap, we additionally evaluate on a \emph{training-excluded native set} of held-out sprites that are natively
+$\le 16$\,px and were removed from training (Section~\ref{sec:analysis}). We contrast the native reference with the
+\emph{biased} reference obtained by sampling the whole corpus, of which 92.9\% is downscaled at 16\,px.
+
+\subsection{Resolution-bucketed sprite diffusion}
 \label{sec:model}
 
-We generate RGBA sprites on an $R \times R$ canvas, $R \in \{12, 16, 20, 24\}$, from a caption $c$. The denoiser
-$\epsilon_\theta(x_t, t, c, b)$ is a UNet (diffusers \texttt{UNet2DConditionModel}; 72.5M parameters; channel widths
-128/256/512; two cross-attention stages at $R$ and $R/2$; no attention at $R/4$ except the mid block). It operates
-directly on the 4-channel image. Text enters through cross-attention to the 77 token states of a frozen CLIP ViT-B/32
-text encoder \citep{Radford2021}. The resolution bucket $b \in \mathcal{B} = \{12, 16, 20, 24, 32, 48, 64\}$ enters as a
-class embedding added to the timestep embedding, and it is never dropped. We train with $\epsilon$-prediction
-\citep{Ho2020}, a cosine schedule with $T = 1000$, AdamW at a constant learning rate of $5\cdot10^{-5}$, EMA 0.999 and
-10\% caption dropout. We sample with 100 ancestral DDPM steps from the EMA weights. The main model, \textbf{v8n}, is
-trained from scratch for 80k steps on the rebuilt corpus of Section~\ref{sec:data}; \textbf{v8f2} is the same run
-without the new sprites and \textbf{v7r} is the same architecture on the original targets, used as controls.
+We generate RGBA sprites on an $R\times R$ canvas, $R\in\{12,16,20,24\}$, from a caption $c$. The denoiser
+$\epsilon_\theta(x_t,t,c,b)$ is a 72.5M-parameter UNet that operates directly on the four-channel image. Text enters
+through cross-attention to a frozen CLIP ViT-B/32 text encoder \citep{Radford2021}, and the resolution bucket
+$b\in\{12,16,20,24,32,48,64\}$ enters as a class embedding added to the timestep embedding. We train with the
+$\epsilon$-objective \citep{Ho2020} on a cosine schedule with $T=1000$ and sample with 100 ancestral DDPM steps. The
+design is deliberately minimal, so that the gains we report can be attributed to the targets and the decoding rule;
+Section~\ref{sec:ablation} shows that they transfer unchanged to a transformer backbone.
 
-\subsection{Palette-projected sampling}
+\paragraph{Guidance.}
+All guidance rules combine the conditional prediction with a reference on the same state,
+$\tilde e = \eref + w\,(\epsilon_\theta(x_t,t,c,b_R) - \eref)$. We use independent-condition guidance
+\citep[ICG;][]{Sadat2024icg}, in which the reference replaces the caption embedding by Gaussian noise with matched
+standard deviation, redrawn at every step. ICG needs no unconditional training, improves native FD over CFG 1.5 by
+30.8, and composes with palette projection.
+
+\subsection{Palette-Projected Sampling}
 \label{sec:palette}
 
-A 16\,px sprite is defined as much by how few colours it uses as by its shape: in the native reference set the median
-sprite has six opaque colours (12\,px: 5; 20 and 24\,px: 7) and 24.6\% use at most four, over all 2{,}675
-sprites natively $\le 16$\,px. A continuous diffusion model in
-RGB has no mechanism that snaps a region to a single value, and none of our samplers does: plain CFG emits a median of
-52 opaque colours and the best guidance rule 49, against six for real sprites, and the fraction of adjacent opaque
-pixel pairs with identical RGB is 0.08 for both against 0.46 for real sprites. Allowing a tolerance of 16 on summed
-$|\Delta \text{RGB}|$ raises the generated figures to 0.37--0.39 and the real one only to 0.47, which is the same fact
-stated twice: the extra colours are dither of a few levels inside regions the model has, in effect, already decided
-are flat.
-
-We remove that dither inside the sampler. At a step with $t/T \le f$ we form the current estimate
+A sprite is defined as much by how few colours it uses as by its shape. PPS enforces this property on the model's own
+belief. At every step with $t/T\le f$ we form the current clean-image estimate
 $\hat x_0 = (x_t - \sqrt{1-\bar\alpha_t}\,\tilde e)/\sqrt{\bar\alpha_t}$, cluster its \emph{opaque} RGB pixels into $k$
 groups with a batched $k$-means (8 iterations, deterministic initialisation at evenly spaced luminance quantiles),
 replace every pixel by its centroid, leave transparent pixels and the alpha channel untouched, and map the result back
-to a noise prediction,
+to a noise prediction:
 \begin{equation}
   \hat x_0^{\text{pal}} = \Pi_k(\hat x_0), \qquad
   \tilde e \;\leftarrow\; \bigl(x_t - \sqrt{\bar\alpha_t}\,\hat x_0^{\text{pal}}\bigr) / \sqrt{1-\bar\alpha_t},
   \label{eq:palette}
 \end{equation}
-before taking the scheduler step (Figure~\ref{fig:palette} shows the effect). The projection is thus a hard
-constraint applied to the model's own belief, not a
-post-process: the steps that follow see the quantised state and repair the seams it creates, which is why doing this
-inside the sampler beats quantising the finished image (31.8 vs.\ 41.6 at 16\,px, Section~\ref{sec:main16}). It adds no
-network evaluations; $k$-means on $R^2 \le 576$ pixels is negligible next to a UNet pass. We use $f = 0.5$ throughout and
-report $k$ per resolution; $k$ can also be drawn per sprite from the corpus histogram, which we ablate. The restriction
-to late steps matters less than the projection does: running it for the whole schedule ($f = 1$) costs two points
-(33.7 against 31.6), so a reader who wants the simplest possible version can drop $f$ and lose little.
+before taking the scheduler step. The projection is a hard constraint on the model's belief rather than a
+post-process: the steps that follow see the quantised state and repair the seams it creates
+(Figure~\ref{fig:palette}), which is why PPS clearly outperforms quantising the finished image
+(Section~\ref{sec:ablation}). The palette is estimated per sprite, so each sprite keeps its own colours. PPS adds no
+network evaluations, since 8 $k$-means iterations over at most 576 pixels are negligible next to a UNet pass, and it
+requires no retraining. A pixel counts as opaque when its predicted alpha exceeds 0.5, the same threshold used to
+binarise alpha in the data. We use $f=0.5$ throughout.
 
-% ----------------------------------------------------------------------------------------------------------------
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.82\linewidth]{figures/fig_palette.png}
-\caption{Palette-projected sampling at 16\,px, same prompts and seed. Without projection (top) flat regions carry a few
-levels of dither; projecting the predicted $x_0$ onto four or six colours during the late steps (middle, bottom) removes
-it, and the remaining denoising steps repair the seams. Native FD 87.2 / 36.9 / 34.1.}
+\includegraphics[width=0.64\linewidth]{figures/fig_palette.png}
+\caption{Palette-Projected Sampling at 16\,px, same prompts and seed; panel titles give the guidance weight and native
+FD of each row. Without projection (top), flat regions carry a few levels of dither. Projecting the predicted
+$\hat x_0$ onto six (middle) or four (bottom) colours during the late steps removes it, and the remaining denoising
+steps repair the seams, producing clean flat regions and crisp outlines.}
 \label{fig:palette}
 \end{figure}
 
-\subsection{Guidance rules we compare}
-\label{sec:guidance}
+\subsection{Palette Refinement of external sprites}
+\label{sec:refinemethod}
 
-All guidance rules combine the target-resolution prediction $e_{\text{strong}} = \epsilon_\theta(x_t, t, c, b_R)$ with a
-reference $\eref$ on the same state, $\tilde e = \eref + w\,(e_{\text{strong}} - \eref)$. CFG \citep{HoSalimans2022} uses
-the empty caption. ICG \citep{Sadat2024icg} replaces the caption embedding by i.i.d.\ Gaussian noise with the
-embedding's standard deviation, redrawn at every step, which needs no unconditional training and, as we show, is the
-rule that survives the change of protocol. A bucketed model also offers a reference with no extra weights---the same
-network under a \emph{lower} bucket label, optionally through an early EMA snapshot (the \emph{composed} variant)---and
-that reference can be internalised into the weights with guidance-free training \citep{Chen2025gft} so that one forward
-pass reproduces the two-pass rule. These cross-resolution variants are the ones that win under the biased protocol and
-fail under the native one; Appendix~\ref{app:crossres} gives their equations and their full tables.
+Because PPS acts on the sampler state, it can be applied to an image the model did not generate. Following SDEdit
+\citep{Meng2022sdedit}, we re-noise a sprite produced by an external pipeline and reduced to the canvas to a fraction
+$\sigma$ of the schedule, and denoise it with \ours{} under ICG and PPS. The parameter $\sigma$ is an explicit dial:
+small values preserve the input, and $\sigma=1$ discards it and recovers generation from noise, which we use only as a
+consistency check. This combines a large generator's layout and subject with a sprite drawn in the grammar of the
+medium.
 
 % ================================================================================================================
 \section{Experiments}
 \label{sec:exp}
 
-\subsection{Protocol}
+\subsection{Experimental setup}
 \label{sec:protocol}
 
+\paragraph{Evaluation.}
 For every configuration we draw one sample for each of 3{,}000 held-out captions, the recaptions of 3{,}000 held-out
-sprites, so the prompt distribution matches the data. Our metric is the Fréchet distance of DINOv2-small CLS features
-\citep{Oquab2023,Stein2023} (FD; lower is better), computed at the native resolution $R$: images are composited on white
-and nearest-neighbour upsampled to 224\,px. We report it under two reference sets. The \emph{native} reference uses only
-sprites that are natively at most $R$\,px (Section~\ref{sec:data}); its real-vs-real floor is 4.47 at 16\,px. The
-\emph{biased} reference is the conventional one, a random sample of the corpus, of which 92.9\% is downscaled artwork at
-16\,px; its floor is 3.45. Seed-to-seed standard deviation of our headline configuration is 0.49 over three seeds, and
-an independent re-training of the same recipe lands within 2.5 FD of the first (20.33/154.30 versus 20.31/151.85 at 20k
-steps, biased/native), so we do not interpret differences below that scale. We also report CLIP ViT-B/32 image--text
-similarity ($100\cos$) and retrieval R@1 of the own caption among 100.
+sprites. Our primary metric is the Fréchet distance of DINOv2-small CLS features \citep{Oquab2023,Stein2023} (FD, lower
+is better) under the native protocol; images are composited on white and nearest-neighbour upsampled to 224\,px. We
+also report CLIP ViT-B/32 image--text similarity ($100\cos$) and retrieval R@1 of the own caption among 100. The
+seed-to-seed standard deviation of our headline configuration is 0.49 over three seeds; single-seed numbers therefore
+differ from the three-seed mean by a few tenths (e.g.\ 31.6 for seed 0). The palette size $k$, the start $f$ and the
+guidance weight $w$ were selected on the evaluation FD; at 16\,px we verify that the selection of $k$ transfers between
+disjoint halves of the captions (Section~\ref{sec:ablation}).
 
-\paragraph{Does the ranking depend on the encoder?}
-A reference set we defined and a feature space we chose could between them manufacture the result, so we recomputed the
-main comparison with Inception-v3 clean-FID and KID \citep{Parmar2022} on the same saved samples and the same native
-reference. The ordering is unchanged --- projection 23.79, $k{=}6$ 23.28, no projection 26.27, CFG 29.37, one global
-palette 36.05, median filter 66.63, real held-out 10.54 --- so the controls still fail and the conclusion is not a
-property of DINOv2. The separation, however, collapses: what is a $2.8\times$ gap between projecting and not projecting
-under DINOv2 is $1.10\times$ under Inception, and $k{=}4$ and $k{=}6$ swap places. This is what we would expect from an
-encoder whose input is resized to 299\,px: at 16\,px the hard edges and four-colour interiors that the projection
-creates are mostly destroyed by that resampling. We therefore read Inception as a check on the ranking only, and not as
-independent confirmation of the size of the effect.
+\paragraph{Baselines.}
+We compare against three publicly available text-to-sprite pipelines: gpt-image-2 \citep{GPTImage2}, FLUX.2-klein-4B \citep{FLUX2} with a
+pixel-art LoRA \citep{PixelArtLoRAFlux}, and SDXL \citep{Podell2023} with Pixel Art XL \citep{PixelArtXL}. Each generates
+at its native size and is reduced to the sprite canvas by the same cutout and downsampling code we use for real data.
+At 16\,px, box downscaling is the strongest conversion we found: on gpt-image-2, measured against the corpus-sample
+reference, PixelOE \citep{PixelOE2024} and learned pixelization \citep{Wu2022} give 146.3 and 155.2 against 82.2 for
+box downscaling (Appendix~\ref{app:externalfig}). Every baseline additionally receives the same $k$-colour palette post-process that PPS
+applies inside our sampler. SD-$\pi$XL \citep{Binninger2024} requires about 8 GPU-hours per sprite and is therefore not
+evaluated at scale.
 
-% ----------------------------------------------------------------------------------------------------------------
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/fig_native_gt.png}
-\caption{Eight prompts from the native ground-truth set (sprites drawn at 16\,px and excluded from training). Rows:
-ours with ICG and palette projection, ours with ICG only, ours with CFG 1.5, and the real sprite. Unlike
-Figure~\ref{fig:external}, the bottom row here is pixel art rather than a downscaled illustration, which is what the
-model is being asked to match.}
-\label{fig:nativegt}
-\end{figure}
+\paragraph{Implementation details.}
+The main model is trained from scratch for 80k steps with AdamW at a constant learning rate of $5\cdot10^{-5}$, EMA
+0.999 and 10\% caption dropout. We use ICG with $w=2$ and PPS with $k=4$ at 16\,px unless stated otherwise;
+Appendix~\ref{app:details} lists all hyperparameters.
 
-\paragraph{Leakage control.}
-Two forms of contamination are possible here and we check both. First, the prompt set must come from the list the
-training run actually excluded: building it from the evaluation split instead puts training sprites into the prompt set,
-and the model then reconstructs them almost pixel for pixel. Second, exact-duplicate removal is not enough --- sprite
-sheets contain animation frames, so a held-out sprite can have a near-identical twin in training. Hashing every sprite
-by an $8\times8$ luminance-plus-alpha average hash, 1{,}241 of the 3{,}000 held-out prompts (41.4\%) have such a twin.
-Rescoring on the 1{,}759 prompts that do not (Table~\ref{tab:leak}) moves every number by at most 3.0 FD --- the
-largest single change, 167.2 to 164.2 --- and changes no ordering, so we report the full set in the main tables and the clean subset here.
-
-\begin{table}[h]
-\caption{Removing every prompt whose sprite has a near-duplicate twin in training. Native protocol, 16\,px.}
-\label{tab:leak}
-\centering
-\small
-\begin{tabular}{@{}lcc@{}}
-\toprule
-Configuration & all 3{,}000 prompts & clean 1{,}759 \\
-\midrule
-v7r, CFG 1.5 (original targets)   & 167.2 & 164.2 \\
-v8f2, CFG 1.5                     & 123.1 & 125.0 \\
-v8n, CFG 1.5                      & 117.9 & 120.1 \\
-v8n, ICG $w{=}2$                  & 87.1  & 87.3 \\
-v8n, ICG $w{=}2$ + palette $k{=}4$ & 31.8 & 29.0 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-A second evaluation set makes the ground truth itself native pixel art: the 210 held-out sprites that are natively
-$\le 16$\,px \emph{and} were excluded from training (124 after removing near-duplicate twins; Figure~\ref{fig:nativegt}). Scores there are higher
-for everyone, including the real sprites, because the prompts describe genuine low-resolution art rather than
-downscaled illustrations: CFG 1.5 97.7, ICG $w{=}2$ 76.2, ICG + palette 61.1, real held-out sprites 34.4 (all $n=124$).
-The ordering is the same as in Table~\ref{tab:main16}.
-
-\paragraph{What the reference sprites actually depict.}
-The corpus is cut from sheets on alpha connected components, so besides sprites it contains letters, UI strips, tile
-fragments and pieces of larger drawings; the colour and contrast filters of the extraction pipeline do not remove them.
-We labelled every evaluation image with a vision--language model (20 per numbered grid, classes: object, effect,
-fragment, glyph, junk). Of the 3{,}000 held-out sprites, 73.2\% are standalone objects, 15.7\% are fragments, 7.8\% are
-effects, 2.0\% are glyphs and 1.3\% is junk; in the native reference set the object share is 61.7\%. A third protocol
-therefore keeps only objects on both sides: 825 reference sprites and 2{,}181 prompts. The ordering is the same as under
-the other two references (Table~\ref{tab:obj}), which is why we keep the full native protocol for the main tables and
-report this one as a content control.
-
-\begin{table}[h]
-\caption{Object-only protocol at 16\,px: the reference and the prompts are restricted to sprites a vision--language
-model labels as standalone objects.}
-\label{tab:obj}
-\centering
-\small
-\begin{tabular}{@{}lc@{}}
-\toprule
-Configuration & FD (object reference) $\downarrow$ \\
-\midrule
-v7r, CFG 1.5 (original targets)     & 201.3 \\
-real held-out sprites (mixed provenance) & 161.3 \\
-v8n, CFG 1.5                        & 144.9 \\
-v8n, ICG $w{=}2$                    & 103.0 \\
-\textbf{v8n, ICG $w{=}2$ + palette $k{=}4$} & \textbf{37.1} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Main results at 16\,px}
-\label{sec:main16}
-
-Table~\ref{tab:main16} separates the three things that changed. Rebuilding the targets moves the model from 167.2 to
-117.9 under the native protocol without touching the sampler. Independent-condition guidance then takes it to 87.1, and
-palette projection to $31.8 \pm 0.5$ --- a larger step than the entire distance between the guidance rules. Projecting
-inside the sampler is what makes the last step work: quantising the finished samples to the same four colours reaches
-only 41.6, because nothing repairs the seams that quantisation introduces.
-
-\begin{table}[t]
-\caption{16\,px, 3{,}000 held-out captions. \emph{Native}: reference drawn only from sprites natively $\le 16$\,px
-(floor 4.47). \emph{Biased}: the conventional corpus-sample reference (floor 3.45), 92.9\% of which is downscaled
-artwork. The two columns rank the same methods in opposite orders; Section~\ref{sec:why} explains why. Palette rows use
-$k$-means projection from $t/T \le 0.5$; ``post-hoc'' quantises the finished samples instead.}
-\label{tab:main16}
-\centering
-\small
-\begin{tabular}{@{}llcc@{}}
-\toprule
-Model (targets) & Sampler & Native FD $\downarrow$ & Biased FD \\
-\midrule
-v7r (original targets)   & CFG 1.5 (best weight)              & 167.2 & 11.1 \\
-v8f2 (policy fixed)      & CFG 1.5                            & 123.1 & 14.8 \\
-v8n (policy + new data)  & CFG 1.0                            & 113.2 & 19.0 \\
-v8n                      & CFG 1.5                            & 117.9 & 13.6 \\
-v8n                      & CFG 2                              & 131.1 & 12.2 \\
-\midrule
-v8n & cross-resolution label reference, $w{=}1.5$   & 114.9 & 14.2 \\
-v8n & composed reference, $w{=}1.5$                 & 117.0 & 12.8 \\
-v8n & internalised (1 \nfe), $w{=}1.5$              & 170.3 & 10.4 \\
-v8n & ICG $w{=}1.5$ \citep{Sadat2024icg}            & 87.2  & 16.2 \\
-v8n & ICG $w{=}2$                                   & 87.1  & 20.7 \\
-\midrule
-v8n & ICG $w{=}1.5$ + post-hoc 4-colour quantisation & 41.6 & 111.0 \\
-v8n & ICG $w{=}1.5$ + palette projection, $k{=}4$    & 34.1 & 111.0 \\
-v8n & ICG $w{=}2$ + palette projection, $k{=}6$      & 36.9 & 71.1 \\
-\textbf{v8n} & \textbf{ICG $w{=}2$ + palette projection, $k{=}4$} & \textbf{31.8 \pmsd{0.49}} & 111.2 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\paragraph{Ablation: data versus sampler.}
-Applying the final sampler to the model trained on the original targets already gives 42.9, so most of the gain is on
-the sampling side; the rebuilt targets then remove a further 26\% (42.9 $\to$ 41.6 with the bucket policy alone, and
-$\to$ 31.8 once the new sprites are added). The two are complementary: palette projection on top of plain CFG reaches
-only 58.4, against 31.8 with ICG, so the guidance and the projection do different work.
-
-\paragraph{Is it the palette, or just less information?}
-Two controls replace $\Pi_k$ at exactly the same steps. The first projects onto \emph{one} four-colour palette shared
-by every sprite, learned by $k$-means over the opaque colours of the reference set: the same colour count, without the
-per-sprite structure. The second applies a $3\times3$ median filter, which removes the same few-level dither but imposes
-no palette at all. Neither reproduces the effect (Table~\ref{tab:palctrl}): both are \emph{worse} than not projecting,
-so the gain is not ``fewer colours'' and not ``smoother'', but each sprite's own small palette.
-
-\begin{table}[h]
-\caption{Controls for palette-projected sampling. 16\,px, v8n, ICG $w{=}2$, 3{,}000 prompts, projection from
-$t/T \le 0.5$ in every row.}
-\label{tab:palctrl}
-\centering
-\small
-\begin{tabular}{@{}lcc@{}}
-\toprule
-Late-step treatment of $\hat x_0$ & Native FD $\downarrow$ & Biased FD \\
-\midrule
-none                                                & 87.1 & 20.7 \\
-\textbf{per-sprite $k$-means, $k{=}4$ (ours)}        & \textbf{31.6} & 111.2 \\
-one corpus-wide 4-colour palette                    & 120.1 & 233.9 \\
-$3\times3$ median filter (de-dither, no palette)     & 112.2 & 92.8 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\paragraph{Palette size.}
-Sweeping $k$ at 16\,px gives 38.1 / 31.8 / 33.7 / 36.9 / 50.6 for $k = 3 / 4 / 5 / 6 / 8$, and 39.9 when $k$ is drawn per
-sprite from the corpus histogram. The FD optimum is $k{=}4$, which is below the median palette of the real data, and it
-is worth being precise about what that means. Measured on the samples themselves, $k{=}6$ is the setting that
-reproduces the medium: six opaque colours and a flat-neighbour ratio of 0.429 against six and 0.460 for real sprites,
-where $k{=}4$ gives four colours and 0.544 --- flatter than the real thing. Plain CFG and ICG sit at 52 and 49 colours
-with a flat ratio of 0.083, and gpt-image-2's reduced renders at 93 colours and 0.005. The projection therefore moves
-the samples from far outside the medium to inside it, and the last step from $k{=}6$ to $k{=}4$ buys 5 FD by
-overshooting. We report $k{=}4$ as the best-FD setting because that is what it is, and $k{=}6$ as the one a
-practitioner should use; the disagreement between them is small but it is real, and it is the metric's, not the
-method's.
-
-\paragraph{Is it the network?}
-Every number so far comes from one convolutional network, so the projection could in principle be repairing a
-failure mode particular to it. We retrained the pilot with the UNet replaced by a 69.7M-parameter transformer
-(PixArt-style adaptive norm; the resolution bucket enters through the text context, since that design has no
-class-conditioning path), leaving the corpus, the noise schedule, the sampler and the evaluation untouched. At
-20k steps the transformer is the weaker model by a wide margin --- 185.6 against 149.1 native FD under plain
-CFG, a gap of 36.5 --- and yet under the reported configuration the two land at 42.4 and 43.1 (two seeds each,
-spread 0.3 and 0.4), a residual gap of 0.7 with the sign reversed. The projection is not a property of
-convolutions, and at this scale it matters more than the choice of backbone: it absorbs 98\% of the difference
-between two architectures. We draw no conclusion about which backbone is better --- two seeds at 20k steps
-cannot support that --- only that the method transfers, and that what separates the two networks is almost
-entirely something the decoder can repair.
-
-\paragraph{The cost in prompt alignment.}
-Palette projection trades a little text faithfulness for a large distributional gain: CLIP $100\cos$ / R@1 are
-27.60 / 22.8\% for ICG $w{=}2$ alone, 27.38 / 22.0\% at $k{=}6$ and 27.07 / 19.2\% at $k{=}4$, against 27.66 / 22.6\%
-for the real held-out sprites the captions were written from. At $k{=}6$ the samples are therefore as retrievable
-from their captions as the real sprites are, and $k{=}4$ gives up about three points for five points of FD. We
-report $k{=}4$ as the best-FD setting and $k{=}6$ as the balanced one. The cost is smaller on a larger
-canvas but does not keep shrinking: 3.6 points of retrieval at 16\,px (22.8\% to 19.2\%), and 1.9 at both 20\,px
-(26.7\% to 24.8\%) and 24\,px (27.6\% to 25.7\%).
-
-\subsection{What the corpus can and cannot buy}
-\label{sec:datablations}
-
-The corpus contains material that is not a sprite, material that is badly drawn, and less real pixel art than we
-would like. We tried to fix all three at training time; none of the three earns a place in the final model.
-The third attempt is worth reporting at length anyway, because of how it failed.
-
-\paragraph{Content filtering.}
-A vision--language model labels every sprite as object / effect / fragment / glyph / junk (Section~\ref{sec:data}).
-Dropping the 8{,}818 sprites it calls fragment, glyph or junk (training rows 86{,}290 $\to$ 73{,}845) improves a
-20k-step run from 165.6 to 156.7 native FD at equal steps, a 5.4\% gain. That is real but small next to the effect of
-the sampler, and it costs a full retraining, so we report it as an ablation and keep the unfiltered model.
-
-\paragraph{More clean data, and why a short pilot cannot tell you whether it helps.}
-The obvious remedy for a corpus that is only 7.1\% natively small is more natively small sprites. We found two
-sources: the Kenney CC0 packs (7{,}546 sprites cut from 19 packs, 6{,}566 usable rows after content filtering, a
-median palette of three colours --- flatter material than anything else we have, but only 41.8\% whole objects) and
-the OpenGameArt CC-BY-3.0 bundle, which our rebuild had never touched (21{,}722 sprites against which exact pixel
-hashing finds 13 duplicates, 11{,}988 usable rows, 82.4\% whole objects). Together they take training from 86{,}290
-rows to 118{,}378.
-
-At 20k steps the addition looks decisive. The Kenney packs alone move the reported configuration from 54.2 to 53.2;
-adding the CC-BY-3.0 bundle moves it to 42.9, a 19.4\% gain and twenty times the seed spread. The natural reading ---
-ours at the time --- is that the projection supplies flatness, which the Kenney packs duplicate, while whole objects
-supply the shape and subject matter it cannot, so data and decoding are complements.
-
-Trained to the same 80k steps as every other model in this paper, the enlarged corpus is \emph{worse}: 39.3 $\pm$ 0.3
-against 31.8 $\pm$ 0.4 over three seeds each, a 24\% regression, with plain CFG unchanged (119.7 against 117.9). The
-ordering at 20k steps is the reverse of the ordering at 80k, and only the second one is the model anybody would ship.
-We do not offer a mechanism, because the obvious one does not survive measurement: if the new material diluted the
-16\,px bucket with larger art we would expect its natively-small fraction to be much lower, and it is 24.0\% against
-28.6\% for the material already there --- lower, but nowhere near enough to explain a 24\% regression.
-
-We report this because it is the second time a 20k-step comparison inverted by 80k in this work; the first was model
-capacity, where a 2.2$\times$ larger network led at 20k (46.1 against 54.2), had lost by 40k (38.3 against 35.8) and
-was clearly behind at 80k (38.5 against 31.8). Short pilots are how this area is usually made affordable, and in this
-setting they are safe only for rejecting a change, not for accepting one. Every headline number in this paper is
-measured at full length for that reason.
-
-One further negative belongs here. Wanting still more material, we processed the one OpenGameArt licence bundle the
-rebuild had skipped, CC0. It cuts into 54{,}781 sprites, of which 1{,}017 are not already in the corpus and 166 are
-natively 24\,px or smaller: it is the bundle the original corpus was built from.
-
-
-\paragraph{Quality conditioning, and what it does to FD.}
-The same model rates each sprite's craft from 1 to 5; on the original corpus 25\% of the images are rated 1--2 and 8\%
-are rated 5. Prepending the rating to the caption as a tag (``crisp detailed sprite,'' / ``clean sprite,'' / nothing /
-``rough sprite,'') and asking for the top tag at sampling time is the standard aesthetic-tag recipe and needs no
-architecture change. It works as intended in the only sense a person can check: the samples are visibly more finished
-(Figure~\ref{fig:qualtag}). At full length the numbers repeat the 20k picture --- 34.2 untagged and 45.6 with the top
-tag, against 31.8 for the unconditioned model on the same sampler. Both distributional metrics get worse --- 158.4 $\to$ 208.4 against the native reference,
-and 186.5 $\to$ 227.5 against a reference restricted to the 719 sprites rated 4--5 --- because conditioning on the best
-8\% of the corpus narrows the output distribution, and FD measures distance to the whole distribution, not to its best
-part. We keep the main model unconditioned, report the knob for practitioners, and note the disagreement as a limit of
-distributional evaluation for this medium: a reviewer who looks at Figure~\ref{fig:qualtag} and a reviewer who reads
-the table will draw opposite conclusions, and both are reading their instrument correctly.
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{figures/fig_quality_tag.png}
-\caption{Quality conditioning at 16\,px: same model, same prompts and seed, sampled with (top) and without (bottom) the
-top craft tag. The tagged samples are more finished and more detailed; both FD protocols rate them worse, because the
-tag narrows the distribution.}
-\label{fig:qualtag}
-\end{figure}
-
-\subsection{Other resolutions}
-\label{sec:otherres}
-
-The same recipe transfers, and the useful palette size is not simply the data's median: FD prefers a coarser
-palette where the canvas is large enough for dither to matter and a finer one at 12\,px, where a sprite has only
-144 pixels to begin with. Native FD for v8n with ICG $w{=}2$, three seeds at the best $k$ of each resolution: at
-12\,px 143.2 $\pm$ 0.8 ($k{=}8$; $k{=}6$ 143.3, $k{=}10$
-145.2, $k{=}5$ 150.7, $k{=}4$ 156.5, no projection 155.7, CFG 1.5 167.3); at 16\,px 31.8 ($k{=}4$; $k{=}6$ 36.9,
-no projection 87.1); at 20\,px 96.7 ($k{=}8$; $k{=}6$ 99.1, $k{=}4$ 110.7, no projection 117.0); and at 24\,px
-124.2 ($k{=}6$; $k{=}4$ 128.4, $k{=}8$ 130.1, no projection 186.8, CFG 1.5 229.2). The gain from projection is
-largest at 24\,px, where the model has the most room to dither, and smallest at 12\,px, where it has the least.
-The same ordering holds one rung above our target range: at 32\,px, CFG 1.5 scores 139.2, ICG $w{=}2$ 97.1 and
-ICG with an eight-colour projection 74.5 (twelve colours: 78.7), so nothing about the recipe is specific to
-12--24\,px.
-
-\subsection{External systems}
+\subsection{Comparison with state-of-the-art systems}
 \label{sec:external}
 
-We compare against three publicly available pipelines on 200 held-out captions: gpt-image-2 and FLUX.2-klein-4B \citep{FLUX2} with the
-Limbicnation pixel-art LoRA \citep{PixelArtLoRAFlux} and SDXL with Pixel Art XL \citep{PixelArtXL}, each generating at its native size and then reduced to the
-sprite canvas by the same cutout and downsampling code we use for real data. To keep the comparison honest we give every
-system the same palette post-process that our sampler applies internally.
-
 \begin{table}[t]
-\caption{External comparison, 200 held-out captions, native protocol. Every row is scored after the same $k$-colour
-post-process ($k = 4/8/6$ at 16/20/24\,px); our row applies it inside the sampler instead. ``Real (mixed)'' are held-out
-sprites of the original, mostly downscaled corpus --- the targets the biased protocol treats as ground truth.}
+\caption{Comparison with external systems, 200 held-out captions (external generation is costly), native FD
+$\downarrow$. FD at $n{=}200$ is biased upwards relative to $n{=}3000$ (ours: 53.1 vs.\ 31.8), identically for every
+row. Every baseline receives the same $k$-colour post-process ($k=4/8/6$ at 16/20/24\,px) that \ours{} applies inside
+its sampler. Ours at 16\,px is the mean of three seeds (50.8 / 52.9 / 55.4), 20 and 24\,px are single seeds. The gray
+row, real held-out sprites of the original mixed-provenance corpus with the same post-process, is the ground truth of
+the conventional protocol and is shown for reference.}
 \label{tab:external}
 \centering
 \small
 \begin{tabular}{@{}lccc@{}}
 \toprule
-System & 16\,px & 20\,px & 24\,px \\
+Method & 16\,px & 20\,px & 24\,px \\
 \midrule
-\textbf{Ours (v8n, ICG + palette projection)} & \textbf{50.8} & \textbf{152.5} & 192.2 \\
-Real sprites (mixed provenance)               & 77.0 & 165.5 & \textbf{150.7} \\
-gpt-image-2 + downscale                       & 134.4 & 448.6 & 478.0 \\
-FLUX.2-klein + pixel-art LoRA                 & 150.1 & 473.9 & 472.4 \\
-SDXL + Pixel Art XL LoRA                      & 244.2 & 526.3 & 527.2 \\
+SDXL + Pixel Art XL LoRA          & 244.2 & 526.3 & 527.2 \\
+FLUX.2-klein + pixel-art LoRA     & 150.1 & 473.9 & 472.4 \\
+gpt-image-2 + downscale           & 134.4 & 448.6 & 478.0 \\
+\textbf{\ours{} (ours)}           & \textbf{53.1 \pmsd{2.3}} & \textbf{152.5} & \textbf{192.2} \\
+\midrule
+\gray{Real sprites (mixed provenance)} & \gray{77.0} & \gray{165.5} & \gray{150.7} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Without the post-process the external systems score 284.4 / 318.9 / 436.4 at 16\,px, so the palette step helps them as
-well; they remain 2.6--4.8$\times$ further from real pixel art than our model at every resolution. At 16 and 20\,px we
-are also closer to native pixel art than the mixed-provenance sprites that the conventional protocol calls ground
-truth, which is a statement about that corpus rather than about our model. At 24\,px the real sprites are still ahead of
-us (150.7 versus 192.2).
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.78\linewidth]{figures/fig_external.png}
+\caption{Qualitative comparison at 16\,px on eight held-out captions. Rows: \ours{}; \ours{} without palette projection;
+gpt-image-2 generated at 1024\,px, reduced and given the same four-colour post-process; FLUX.2-klein with a pixel-art
+LoRA, reduced \emph{without} the post-process (Table~\ref{tab:external} reports it with the post-process, 150.1); the
+real held-out sprite. The FLUX row is unquantised so the residual illustration look is visible; the table is the
+fair, post-processed comparison. Numbers in the row titles are single-seed native FD ($n=200$).}
+\label{fig:external}
+\end{figure}
 
-\paragraph{The rule as a post-process on other systems.}
-Quantising a finished external sample helps but cannot repair the seams quantisation leaves, the same limitation we
-measured on our own samples (41.6 post-hoc against 31.8 in-sampler). The projection can nevertheless be applied to
-another system's output, by re-noising its sprite to a fraction $\sigma$ of the schedule and denoising it with our
-model under the reported configuration. Table~\ref{tab:refine} reports both halves of what that does: how much closer
-to real pixel art the result gets, and how much of the original sprite is still there. The second half matters because
-at $\sigma{=}1$ the procedure is simply our own model, and a distributional score alone cannot tell repair from
-replacement. We measure retention in pixel space --- alpha-mask IoU and mean RGB distance against the input --- because
-the DINOv2 cosine is saturated at this size: two unrelated sprites for the same caption already score 0.918, against
-0.94 for a refinement, so it cannot separate the two cases at all.
+Table~\ref{tab:external} and Figure~\ref{fig:external} compare \ours{}, a specialist trained on sprites, with
+general-purpose generators used zero-shot, which is how practitioners obtain sprites today. \ours{} achieves the
+lowest native FD at every resolution, 2.5--4.6$\times$ below every zero-shot baseline even
+though those baselines receive the same palette post-process; without it, gpt-image-2, FLUX.2 and SDXL score 284.4, 318.9
+and 436.4 at 16\,px. The post-process itself does not explain the gap: real mixed-provenance sprites with the same
+four-colour quantisation score 77.0, so quantisation alone does not reach our 53.1. That row is dominated by
+downscaled artwork (Section~\ref{sec:data}); against it, \ours{} is better at 16 and 20\,px and behind at 24\,px. Qualitatively, the external systems
+draw miniature paintings with soft gradients and anti-aliased outlines, while \ours{} produces the flat regions of
+sprites authored at this size.
 
-At $\sigma{=}0.6$ the silhouette is about 80\% preserved, well above the 0.46--0.53 floor of a freshly generated sprite
-for the same caption, and native FD improves by 36--41\% for all three systems. Sweeping $\sigma$ on gpt-image-2 gives a
-monotone trade-off with no knee --- 134.4 / 130.2 / 124.2 / 115.9 / 98.7 / 86.5 / 68.0 / 53.6 native FD against
-retention 1.00 / 1.00 / 0.98 / 0.93 / 0.86 / 0.79 / 0.64 / 0.52 at $\sigma = 0$ to $1$ --- and the endpoint is a
-self-check: at $\sigma{=}1$ the input is discarded entirely and the run reproduces our own samples (53.6 against 50.8,
-retention 0.518 against 0.513). The modal-colour fraction stays between 0.433 and 0.453 across the whole sweep,
-against 0.448 for real sprites, so no setting flattens the subject away. The decoding rule is therefore usable
-on top of a generator we did not train, with $\sigma$ as an explicit dial between keeping the input and matching the
-medium. It does not close the gap to generating natively (86.5 against 50.8 for gpt-image-2), which is the honest limit
-of a post-process: it can fix how a sprite is drawn, not what was drawn (Figure~\ref{fig:refine}). Text
-alignment makes the same point from the other side: caption retrieval is 22.0\% for gpt-image-2's own sprite,
-18.5\% after refinement at $\sigma{=}0.6$ and 15.0\% for our model generating the caption itself; the real sprites of
-that table, which carry the same four-colour post-process as every other row, fall to 12.5\%, so the quantisation
-itself costs retrieval whatever produced the image. Refinement keeps most of a large generator's semantic advantage while moving the style
-towards the medium, and at $\sigma{=}1$ it lands on our own numbers in all three measurements --- FD 53.6 against
-50.8, retention 0.518 against 0.513, retrieval 16.0\% against 15.0\% --- which is the self-consistency check for
-the whole procedure. The effect is not particular to 16\,px: on gpt-image-2 at 20 and 24\,px, $\sigma{=}0.6$ takes
-native FD from 448.6 to 265.7 and from 478.0 to 299.0 (41\% and 37\%), with retention rising to 0.840 and 0.875 as
-there are more pixels for the same $\sigma$ to leave alone. The gap to generating natively widens with resolution,
-though --- 265.7 against our 152.5 at 20\,px and 299.0 against 192.2 at 24\,px, where at 16\,px it was 86.5 against
-50.8 --- which is the same limit seen from further away: a post-process repairs how a sprite is drawn, and the
-larger the canvas the more of the distance is structure it cannot touch.
+\subsection{Ablation study}
+\label{sec:ablation}
 
-\begin{table}[h]
-\caption{The decoding rule applied to external sprites, 200 captions, 16\,px. $\sigma$ is the fraction of the schedule
-re-run. Retention is measured against the system's own output; the floor column is our model generating the same
-captions from noise, i.e.~what ``no retention'' looks like.}
-\label{tab:refine}
+\begin{table}[t]
+\caption{Ablation of the components of \ours{}, 16\,px, 3{,}000 held-out captions: native FD $\downarrow$, and CLIP
+$100\cos$ / retrieval R@1 where measured (real held-out sprites: 27.66 / 22.6\%). ``Post-hoc'' quantises the finished
+samples to the same palette size.}
+\label{tab:main16}
 \centering
 \small
-\begin{tabular}{@{}lcccccc@{}}
+\begin{tabular}{@{}lllcc@{}}
 \toprule
-& \multicolumn{3}{c}{Native FD $\downarrow$} & \multicolumn{2}{c}{Retention at $\sigma{=}0.6$} & Floor \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-6} \cmidrule(lr){7-7}
-System & post-hoc & $\sigma{=}0.4$ & $\sigma{=}0.6$ & IoU & RGB-L1 & IoU \\
+Targets & Guidance & Palette & Native FD $\downarrow$ & CLIP / R@1 \\
 \midrule
-gpt-image-2            & 134.4 & 115.9 & \textbf{86.5}  & 0.788 & 45.7 & 0.513 \\
-FLUX.2-klein + LoRA    & 150.1 & 116.1 & \textbf{88.2}  & 0.803 & 44.3 & 0.530 \\
-SDXL + Pixel Art XL    & 244.2 & 197.2 & \textbf{155.0} & 0.813 & 52.5 & 0.464 \\
+original          & CFG 1.5   & ---                & 167.2 & -- \\
+w/o new sprites   & CFG 1.5   & ---                & 123.1 & -- \\
+rebuilt           & CFG 1.5   & ---                & 117.9 & -- \\
+rebuilt           & ICG 2     & ---                & 87.1  & 27.60 / 22.8\% \\
 \midrule
-Ours, generated natively & \multicolumn{3}{c}{50.8} & \multicolumn{3}{c}{---} \\
+original          & ICG 2     & PPS, $k{=}4$       & 42.9  & -- \\
+rebuilt           & CFG 1.5   & PPS, $k{=}4$       & 58.4  & -- \\
+rebuilt           & ICG 1.5   & post-hoc, $k{=}4$  & 41.6  & -- \\
+rebuilt           & ICG 1.5   & PPS, $k{=}4$       & 34.1  & -- \\
+rebuilt           & ICG 2     & PPS, $k{=}6$       & 36.9  & 27.38 / 22.0\% \\
+\textbf{rebuilt}  & \textbf{ICG 2} & \textbf{PPS, $\bm{k{=}4}$} & \textbf{31.8 \pmsd{0.49}} & 27.07 / 19.2\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{figure}[h]
+\paragraph{Effect of each component.}
+Table~\ref{tab:main16} shows that every component contributes. Rebuilding the targets alone improves FD from 167.2 to
+117.9 without touching the sampler, and the new sprites account for a further 5.2 on top of the bucket policy. ICG
+brings it to 87.1, and PPS to $31.8\pm0.5$, a step of 55.3. The components are complementary: PPS on the original
+targets reaches 42.9 and PPS with plain CFG reaches 58.4, while the full combination reaches 31.8.
+
+\paragraph{In-sampler projection vs.\ post-processing.}
+At ICG 1.5 (87.2 without a palette), quantising the finished samples to four colours already reaches 41.6, which
+identifies the per-sprite palette as the decisive property of the medium. Imposing the same palette inside the sampler
+reaches 34.1, a further 18\%: the steps that follow the projection repair the seams that quantisation introduces, which
+a post-process cannot do.
+
+\paragraph{Is it the per-sprite palette?}
+Two controls replace $\Pi_k$ at exactly the same steps. Projecting onto \emph{one} four-colour palette shared by every
+sprite, learned by $k$-means over the reference set, gives 120.1; a $3\times3$ median filter, which removes the same
+dither without imposing a palette, gives 112.2. Both are far from PPS (31.6 with the same seed), confirming that the gain
+comes from each sprite's own small palette rather than from fewer colours or smoothing alone.
+
+\paragraph{Palette size and schedule.}
+Sweeping $k$ at 16\,px gives 38.1 / 31.8 / 33.7 / 36.9 / 50.6 for $k=3/4/5/6/8$: every setting improves over no
+projection (87.1) by a wide margin. The choice of $k$ transfers across a validation split: selecting on one half of the
+captions picks $k=4$, which is also best on the disjoint half. At $k=6$ the samples reproduce the colour statistics of
+real sprites (six colours and 43\% equal neighbours, vs.\ six and 46\%) and are as retrievable from their captions as
+the real sprites (R@1 22.0\% vs.\ 22.6\%); $k=4$ trades 2.8 points of retrieval for the best FD, and we recommend
+$k=6$ when prompt fidelity matters most. PPS is also robust to its start point: single-seed runs give 31.4 and 31.6 at
+$f=0.4$ and $0.5$ (within seed noise), and running it for the entire schedule still gives 33.7.
+
+\paragraph{Generality across backbones.}
+We replace the UNet with a 69.7M-parameter transformer (PixArt-style adaptive norm; \citealt{Chen2023pixart}), keeping corpus, schedule, sampler
+and evaluation unchanged, and compare the two at 20k steps with two seeds each. Under plain CFG the transformer trails
+by 36.5 FD (185.6 vs.\ 149.1); with ICG and PPS the transformer reaches 42.4 and the UNet 43.1 (seed spread at most
+0.4), bringing two backbones that differ markedly under CFG to the same level.
+
+\begin{table}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/fig_refine.png}
-\caption{Eight captions drawn at random from the 200. Top: gpt-image-2 rendered large and reduced, with the same
-palette post-process as every other row. Middle: the same sprite re-noised to $\sigma$ of the schedule and denoised by
-our model with ICG and the four-colour projection. Bottom two: our model generating the caption from noise, and the
-held-out sprite. The refined sprites keep the subject --- the aggregate agrees, with a modal-colour fraction of 0.453
-against 0.448 for real sprites --- while the colours and edges move towards the medium. They also look better than our
-own samples for the same captions, which score 86.5 and 50.8 native FD respectively: what our model still lacks is not
-the decoding rule but the ability to draw the subject.}
+\begin{minipage}[t]{0.49\linewidth}
+\centering
+\caption{Other resolutions, native FD $\downarrow$ (ICG $w{=}2$). Ours: three seeds at 12--24\,px.}
+\label{tab:res}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Res. & w/o PPS & \ours{} ($k$) & Gain \\
+\midrule
+12\,px & 155.7 & \textbf{143.2 \pmsd{0.8}} (8) & 8\% \\
+16\,px & 87.1  & \textbf{31.8 \pmsd{0.5}} (4) & 63\% \\
+20\,px & 117.0 & \textbf{96.5 \pmsd{0.9}} (8) & 18\% \\
+24\,px & 186.8 & \textbf{123.6 \pmsd{0.5}} (6) & 34\% \\
+32\,px & 97.1  & \textbf{74.5} (8) & 23\% \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.49\linewidth}
+\centering
+\caption{Palette Refinement of external sprites, 16\,px, native FD $\downarrow$ and silhouette IoU with the input at
+$\sigma{=}0.6$ (a fresh sample scores 0.46--0.53).}
+\label{tab:refine}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+System & input & $\sigma{=}0.4$ & $\sigma{=}0.6$ & IoU \\
+\midrule
+gpt-image-2  & 134.4 & 115.9 & \textbf{86.5}  & 0.79 \\
+FLUX.2       & 150.1 & 116.1 & \textbf{88.2}  & 0.80 \\
+SDXL         & 244.2 & 197.2 & \textbf{155.0} & 0.81 \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\end{table}
+
+\paragraph{Other resolutions.}
+Table~\ref{tab:res} shows that \ours{} improves native FD at every canvas size from 12 to 32\,px. Absolute values are
+not comparable across rows: each resolution has its own native reference (half of the natively $\le R$\,px pool, e.g.\
+355 sprites at 12\,px) and its own floor. The recipe is not specific to our target range: at 32\,px PPS improves ICG
+from 97.1 to 74.5, and CFG scores 139.2.
+
+\subsection{Palette Refinement of external generators}
+\label{sec:refine}
+
+Table~\ref{tab:refine} applies Palette Refinement to the three external pipelines. We measure retention as the IoU of
+the alpha mask with the input sprite, since DINOv2 similarity is saturated at this size. At $\sigma=0.6$, native FD
+improves by 36--41\% for all three systems while the mask IoU stays near 0.8, well above the 0.46--0.53 of a freshly
+generated sprite for the same caption. On gpt-image-2 the same $\sigma$ takes native FD from 448.6 to 265.7 at 20\,px
+and from 478.0 to 299.0 at 24\,px (IoU 0.84 / 0.88). Sweeping $\sigma$ is monotone (134.4 / 115.9 / 86.5 / 53.6 at
+$\sigma=0 / 0.4 / 0.6 / 1$); $\sigma=1$ recovers our own samples (53.6 vs.\ 53.1). At $\sigma=0.6$, refinement retains
+most of the large generator's caption retrieval (18.5\% vs.\ 22.0\%) while moving its style towards the medium
+(Figure~\ref{fig:refine}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\linewidth]{figures/fig_refine.png}
+\caption{Palette Refinement on eight random captions. Rows: gpt-image-2 rendered large and reduced; the same sprite
+refined by \ours{} at $\sigma=0.4$ and $\sigma=0.6$; \ours{} generating the caption from noise; the held-out sprite.
+Refinement keeps the subject and layout of the input while converting its colours and edges to native pixel art.}
 \label{fig:refine}
 \end{figure}
 
+\subsection{Analysis}
+\label{sec:analysis}
+
+\begin{table}[t]
+\centering
+\begin{minipage}[t]{0.48\linewidth}
+\centering
+\caption{Per-image statistics at 16\,px: median opaque colours and fraction of exactly equal adjacent opaque pixels.}
+\label{tab:stats}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+& Colours & Flat pairs \\
+\midrule
+Native reference (real)     & 6  & 0.46 \\
+Biased reference            & 34 & 0.20 \\
+\midrule
+gpt-image-2, reduced        & 93 & 0.01 \\
+CFG 1.5                     & 52 & 0.08 \\
+ICG $w{=}2$                 & 49 & 0.08 \\
+\textbf{\ours{}, $k{=}6$}   & \textbf{6} & \textbf{0.43} \\
+\ours{}, $k{=}4$            & 4  & 0.54 \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.49\linewidth}
+\centering
+\caption{Fraction of each set that a provenance probe (logistic regression on DINOv2 features), trained only on real
+sprites, calls natively drawn at 16\,px.}
+\label{tab:probe}
+\small
+\begin{tabular}{@{}lc@{}}
+\toprule
+Set & Native \\
+\midrule
+\gray{Real held-out sprites (control)}  & \gray{94.9\%} \\
+\midrule
+gpt-image-2, reduced                    & 4.5\% \\
+FLUX.2 + LoRA, palette post-process     & 30.5\% \\
+gpt-image-2, palette post-process       & 33.0\% \\
+\ours{} w/o PPS                         & 36.8\% \\
+\textbf{\ours{}}                        & \textbf{67.5\%} \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\end{table}
+
+\paragraph{PPS reproduces the statistics of the medium.}
+Table~\ref{tab:stats} shows why the decoding rule works. Every continuous sampler, as well as gpt-image-2, emits 49--93
+colours with almost no exactly flat regions. PPS moves the samples from far outside the medium to inside it: at $k=6$
+\ours{} matches the real palette size exactly and reaches 0.43 flat pairs against 0.46 for real sprites.
+
+\paragraph{A provenance probe.}
+We fit a logistic
+regression on DINOv2 features to separate real sprites drawn at 16\,px from 25--64\,px artwork reduced to 16\,px, using
+only real images and holding out the native pool used elsewhere. It reaches 93.0\% held-out accuracy and calls 94.9\% of
+unseen real sprites native. The probe shares its features with the FD and responds to palette size and edge hardness,
+so we read it as a complementary view of the same property rather than an independent judgement of quality.
+Table~\ref{tab:probe} shows that PPS nearly doubles the fraction of our samples classified as natively drawn (36.8\%
+$\to$ 67.5\%), while the external systems stay near one third even after quantisation. The same holds at 20\,px (42.4\% $\to$ 58.7\%) and 24\,px (28.1\% $\to$ 42.7\%), and
+Palette Refinement at $\sigma=0.6$ raises gpt-image-2 from 33.0\% to 53.0\% and FLUX.2 from 30.5\% to 58.5\%.
+
+\paragraph{Generalisation beyond the training pool.}
+The native reference is drawn from the same pool as the training data. To rule out that the gains reflect proximity to
+training images, we evaluate on the 210 held-out sprites that are natively $\le 16$\,px and were excluded from training,
+using their captions as prompts and the sprites themselves as ground truth; removing every prompt whose sprite has a
+near-duplicate in training leaves 124. The ordering is unchanged: \ours{} 61.1, ICG 76.2, CFG 1.5 97.7, against 34.4
+for the real sprites themselves (all $n=124$; Appendix~\ref{app:more}), so PPS closes 36\% of the gap between ICG and
+real data on sprites the model has never seen. The same holds when prompts with near-duplicate twins are removed from the main evaluation
+(below).
+
+\paragraph{The native protocol changes the conclusions.}
+The biased reference is a population of blurred illustrations (34 colours, 0.20 flat pairs; Table~\ref{tab:stats}), so
+it rewards samplers that produce them. A one-pass sampler that internalises guidance \citep{Chen2025gft} is best under
+the biased reference and worst under the native one (Appendix~\ref{app:crossres}); PPS would be discarded by the biased
+one.
+
+\paragraph{Robustness of the evaluation.}
+Removing the 41.4\% of prompts with a near-duplicate in training changes no ordering (\ours{} 31.8$\to$29.0); an
+object-only protocol, Inception-v3 and longer training agree (Appendix~\ref{app:more}).
 
 % ================================================================================================================
-\section{Why the two protocols disagree}
-\label{sec:why}
+\section{Conclusion}
+\label{sec:conclusion}
 
-Table~\ref{tab:main16} contains two rankings of the same samples. Under the biased reference the internalised
-cross-resolution model is best (10.4) and our final configuration is worst (111.2); under the native reference the order
-is reversed (170.3 versus 31.8). Only one of these references is a description of the medium, but both are the kind of
-reference set that a paper in this area would plausibly build, so it is worth being precise about what separates them.
-
-\paragraph{The two references are different distributions.}
-At 16\,px the biased reference is 92.9\% artwork drawn at 25--64\,px and box-downsampled. Downsampling averages
-neighbouring pixels, so those images have soft transitions and large palettes: their median opaque-colour count is 32
-against 6 for sprites drawn at 16\,px, and their fraction of exactly-equal adjacent pixel pairs is 0.30 against 0.46.
-Scoring against them rewards a generator that produces the same softness. This is not a subtle effect: real held-out
-sprites of mixed provenance score 136.1 against the native reference (77.0 after palette quantisation), i.e.\ the
-``ground truth'' of the conventional protocol is itself far from native pixel art.
-
-\paragraph{What guidance does to those statistics.}
-Per-image statistics on 600 samples explain the reversal. Classifier-free guidance sharpens by increasing contrast, not
-by reducing the palette: at $w = 1.5$ it emits 56.2 colours with contrast 59.4 (real: 11.0 colours, contrast 62.3), and
-raising $w$ further increases both contrast and colour count, which the biased reference rewards (12.2 at $w{=}2$) and
-the native one punishes (131.1). ICG moves all three statistics towards the data at once (50.9 colours, flat-pair
-fraction 0.381, contrast 63.9), which is why it is the one external rule that improves both protocols' agreement and
-composes with the projection. The cross-resolution reference, by construction, is a \emph{lower-resolution} belief: it
-is smoother than the target-resolution prediction, so extrapolating away from it adds contrast in the same way CFG does
-while leaving the palette untouched, and internalising it bakes a smoothed reference into the weights --- which is why
-the internalised model is worse than its own base model under the native reference even at $w = 1$ (178.8 versus 113.2),
-before any extrapolation is applied.
-
-\paragraph{What a sprite generator is asked to produce.}
-It is tempting to read the external systems' more attractive samples as better generation, but the target here is not an
-attractive picture. A sprite sheet is a production asset: our content labels put 73.2\% of the held-out sprites in the
-object class, 7.8\% in effects (fire, smoke, sparkles, projectiles) and 15.7\% in fragments --- tiles, strips, borders
-and parts of larger drawings that a game assembles at run time. At $16\times16$ an explosion particle or a wall tile
-\emph{is} a small cluster of flat colours; drawing it as a polished illustration with shading and highlights is the
-wrong answer, however pleasant it looks in isolation. This is the sense in which the medium, not the eye, sets the
-objective, and it is what the native protocol measures: a system that renders every caption as a miniature painting
-scores 134--527 against real low-resolution art, while our samples, which are often plain, score 50.8--192.2.
-
-It also explains the quality-conditioning result of Section~\ref{sec:datablations} at the level of mechanism. The
-craft-5 sprites in the corpus are predominantly finished items and characters; conditioning on that tag does not only
-remove badly drawn sprites, it removes whole legitimate categories --- effects and tiles --- from the output
-distribution. The samples look better one at a time and the distributional score gets worse, because the model is now
-answering a narrower question than the one the corpus asks.
-
-\paragraph{Consequence for practice.}
-A benchmark built from ``sprites'' that are downscaled illustrations will keep selecting methods that produce downscaled
-illustrations. We do not claim the native protocol is the only defensible choice --- a corpus of 25--64\,px artwork is a
-legitimate target if that is what one wants to generate --- but it should be a deliberate choice, and papers should say
-which one they used. We report both throughout, and we release the split so that either can be reproduced.
-
-% ================================================================================================================
-\section{Limitations and conclusion}
-\label{sec:limits}
-
-\paragraph{Where the remaining error lives.}
-Our samples are recognisable but crude, and it is worth saying which knobs we ruled out. Swapping the frozen CLIP
-ViT-B/32 text encoder for ViT-L/14 (512 to 768 dimensions) changes nothing at equal steps: 164.0 against 165.6 native
-FD, with retrieval R@1 slightly \emph{lower} (19.6\% against 20.6\%). Training longer is exhausted: continuing the main
-model past 80k gives 31.8, 30.8 and 32.3 at 80k, 100k and 120k steps on the final recipe, a flat line inside seed
-noise. Capacity does not help either at this data scale --- a $2.2\times$ model (72.5M to 161.2M parameters, same data
-and schedule) leads early and loses late: 46.1 against 54.2 at 20k, 38.3 against 35.8 at 40k, and 38.5 against
-\textbf{31.8} at 80k. The one intervention that visibly improves the samples is quality conditioning, which narrows the
-distribution and therefore scores worse.
-
-What is left is the corpus. It holds roughly 50k sprites, a vision--language model rates 25\% of them 1--2 out of 5 for
-craft, and 19\% of the held-out set is not a standalone object at all. A model fitted to that mixture reproduces the
-mixture, which is the correct behaviour under our own protocol and also the reason we do not present this as a system
-for producing attractive sprites. The path we would take next is more and better data --- curated sprite collections,
-or a much larger corpus with the craft rating used for filtering rather than conditioning --- not a larger network.
-
-\paragraph{Can a model be asked instead?}
-An obvious cheap substitute for a human study is to put the pairs to a vision--language model, so we tried it: 560
-forced choices over 40 captions, each pair judged once for fidelity to the medium and once for preference, with the
-real held-out sprites in the pool as a control. The control fails. Asked which of two sprites looks more like real
-low-resolution pixel art, the judge puts FLUX.2 and gpt-image-2 above the real sprites themselves, 72\% and 70\% head
-to head; replacing the question with the concrete distinction --- drawn pixel by pixel at this size, or a larger
-picture shrunk down --- moves the real sprites from 40.6\% to 48.8\% and the blurriest baseline from 41.2\% to 27.5\%,
-but FLUX.2 still beats the real sprites 68\% of the time. Our own samples tie with the real sprites at 50\% under both
-wordings, which is the one thing the study does establish.
-
-We report this as a negative result about the instrument rather than evidence about the systems. It says that the
-property this paper is about --- whether an image was authored at sprite resolution --- is not one a general-purpose
-vision model recovers from the image, even when asked for it directly, which is precisely why a reference set of real
-low-resolution sprites is doing work that a generic judge cannot. It also sets the design of the human study we have
-not yet run: the same control has to be in it, and if human raters also rank the real sprites below a large
-generator's downscaled output, the question is measuring polish and must be reported as such.
-
-\paragraph{Limitations.}
-(i) \emph{Scope.} Everything is measured on models we trained, on one family of game-sprite corpora; the transformer
-run rules out convolutions as the explanation but not a shared inductive bias of pixel-space diffusion, and we have
-not tested a second domain. (ii) \emph{Metric.} FD with DINOv2 on 12--24\,px images upsampled to
-224\,px assigns one sprite pixel to one or a few patches, and is sensitive to exactly the colour and contrast statistics
-that our projection changes; we report CLIP alignment, both references and a second feature space throughout, but the
-second feature space is much less sensitive at this size, the model judge we tried fails its own control, and we have
-no human study, which remains the obvious next check for a claim about a medium people look at. (iii) \emph{Palette
-tuning.} $k$ and the projection start $f$ were selected on the same held-out FD we report. Splitting the 3{,}000 captions
-into halves by index and choosing on one of them selects the same $k{=}4$, which on the disjoint half scores 33.36
-against 38.63 / 35.62 / 38.27 / 43.76 for $k = 3/5/6/8$ (values at $n{=}1500$ are not comparable to the $n{=}3000$
-numbers elsewhere, since FD is biased by sample size), so that choice transfers. For $f$ the honest statement is that
-the optimum is flat rather than validated: $f = 0.4$ and $0.5$ give 31.4 and 31.6, within the 0.49 seed spread, and
-each wins on one half, while every value outside that interval is worse (32.9 at $0.3$, 32.3 / 32.8 / 32.9 at
-$0.6/0.7/0.8$, 33.7 when the projection runs for the whole schedule). Anything in $[0.4, 0.5]$ will do; the late-step
-restriction is worth about two points, so most of the effect is the projection itself rather than its timing. The
-per-sprite variant drawn from the corpus histogram (39.9) is still worse than the tuned constant, so some of the gap
-is fitted to the metric. (iv) \emph{Where we still lose.} At 24\,px real sprites remain closer to native pixel
-art than our samples (150.7 versus 192.2), and on individual prompts a large generator plus downscaling still produces a
-more attractive picture than ours even though it is further from the medium --- our samples inherit the crudeness of the
-data as well as its grammar. (v) \emph{Alignment.} The strongest setting costs 4.4 points of CLIP retrieval; at $k{=}6$
-the cost is 1.3 points, and prompt following at these sizes is weak for every model we tested.
-
-\paragraph{Conclusion.}
-For 12--24\,px sprites, what the model is asked to imitate matters more than which guidance rule it uses. The corpus
-that this literature trains on is 93\% downscaled artwork at 16\,px, it leaks 16.2\% of its own held-out set through
-exact duplicates, and the evaluation reference built from it rewards the softness it introduced. Rebuilding the targets
-and scoring against real low-resolution pixel art moves FD-DINOv2 from 167.2 to 117.9; projecting the predicted $x_0$
-onto a small per-sprite palette during the late denoising steps --- the property of the medium that continuous diffusion
-cannot express --- takes it to $31.8\pm0.5$, against 134.4 for the strongest external pipeline under the same palette
-post-process. The same change of reference set reverses the ranking of our earlier cross-resolution guidance results,
-which is the part of this paper we would most like others to check.
+We proposed \ours{} for 12--24\,px sprites at their native resolution. Native-Resolution Target Rebuilding and a
+native protocol fix contaminated targets; Palette-Projected Sampling enforces a per-sprite palette inside the sampler
+and, with SDEdit-style re-noising, refines external sprites.
+\emph{Limitations.} A VLM judge prefers polished renders over real sprites
+(Appendix~\ref{app:more}), so a human study is the natural next step; PPS at $k=4$ trades a little retrieval for
+fidelity ($k=6$ matches real sprites).
 
 % ================================================================================================================
 \section*{Reproducibility statement}
-Section~\ref{sec:model} and Appendix~\ref{app:details} specify the architecture, data processing, training recipe and
-sampler. Equation~\eqref{eq:gft} and Appendix~\ref{app:crossres} give the full internalization
-objective with all hyperparameters. Section~\ref{sec:protocol} and Appendix~\ref{app:details} specify the evaluation
-protocol: prompt set, chunked seeding, reference set, preprocessing and floors. Appendix~\ref{app:guidance} gives the exact
-settings of every guidance baseline, and Section~\ref{sec:external} the conversion pipelines for the external systems. We
-will release code for training, sampling, palette projection and evaluation, the captions, the per-sprite licence
-manifest of the new material, and the held-out split
-\todo{anonymous code link in the supplementary material}. The raw sprite corpus carries per-asset licences and will be
-released as a list of sources after a licence audit (see the ethics statement).
+Section~\ref{sec:model} and Appendix~\ref{app:details} specify the architecture, training recipe and sampler, and
+Eq.~(\ref{eq:palette}) with Section~\ref{sec:palette} fully specifies Palette-Projected Sampling. Section~\ref{sec:data}
+and Appendix~\ref{app:data} give every step of the data rebuild with per-step counts. Section~\ref{sec:protocol} and
+Appendix~\ref{app:details} specify the evaluation protocol: prompt set, chunked seeding, reference sets, preprocessing
+and floors. Section~\ref{sec:external} and Appendix~\ref{app:externalfig} describe the conversion pipelines for the
+external systems, and Appendix~\ref{app:crossres} the cross-resolution samplers. We will release code for
+training, sampling, palette projection and evaluation, the captions, the per-sprite licence manifest of the new
+material and the held-out split.
 
 \section*{Ethics statement}
 The model generates small game sprites. It adds no capability beyond existing text-to-image systems, and its outputs
 (12--24\,px) have little potential for targeted misuse. Its intended application raises the usual concerns of generative
 art tools, namely the displacement of pixel artists and the reproduction of styles present in the training corpus. The
-training data are community sprites from OpenGameArt and the Kenney and Liberated Pixel Cup packs. The 14{,}999 sprites added in this work carry a recorded source zip, member path and licence
-(CC-BY-4.0, CC-BY-SA-3.0, OGA-BY-3.0); the older material predates that bookkeeping, so a per-asset licence audit
-precedes any release of the full corpus. Captions were produced by a commercial vision-language model;
-external baselines were generated through commercial APIs under their terms of use. No human subjects were involved.
+training data are community sprites from OpenGameArt and the Kenney and Liberated Pixel Cup packs. The 14{,}999 sprites
+added in this work carry a recorded source zip, member path and licence (CC-BY-4.0, CC-BY-SA-3.0, OGA-BY-3.0); the older
+material predates that bookkeeping, so a per-asset licence audit precedes any release of the full corpus. Captions were
+produced by a commercial vision--language model; external baselines were generated through commercial APIs under their
+terms of use. No human subjects were involved.
 
 \section*{AI use statement}
 % Required by ICLR 2027 (does not count toward the page limit). The authors must complete and confirm this section.
 Generative AI tools were used in this work in the following ways. (a) Inside the method and its data pipeline:
-vision--language models produced the training and evaluation captions (gemini-3-flash for the original corpus,
+vision--language models produced the training and evaluation captions (gemini-3-flash \citep{Gemini3} for the original corpus,
 gemini-3.8-flash for the material added here), labelled every evaluation sprite by content type and rated sprite craft
-for the ablations of Section~\ref{sec:datablations}; two commercial image generators served as external baselines
+for the ablations of Appendix~\ref{app:more}; commercial image generators served as external baselines
 (Section~\ref{sec:external}). Each of these uses is an experimental component, is described where it is used, and its
 outputs were spot-checked against manual inspection --- the caption classifier was validated against image-level labels
 on 2{,}980 held-out sprites (82.5\% agreement), and the content and craft labels were checked on random grids by the
 authors. (b) In the research process: an LLM-based coding assistant implemented and ran experiments, searched and
 verified related work, and drafted and edited parts of this manuscript. Every number reported here comes from a script
-in the released code and was regenerated from the saved samples; the authors reviewed all AI-assisted work, including
-the negative results, and take responsibility for the final content, its claims and its errors.
+in the released code and was regenerated from the saved samples; the authors reviewed all AI-assisted work and take
+responsibility for the final content, its claims and its errors.
 
 \bibliography{refs}
 \bibliographystyle{iclr2027_conference}

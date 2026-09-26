@@ -1,3 +1,9 @@
+> **Update 2026-09-26:** `iclr27/main.tex` has been rewritten for ICLR 2027 submission (PaletteDiff framing). The six
+> issues marked "present" below no longer appear in it: the 44% figure, the uncited "this area" claims and the palette-size
+> sentence were removed; "2.6--4.8x" is now 2.5--4.6x with the three-seed 53.1; "a larger step than..." is now "a step of
+> 55.3"; and the palette figure caption now states that its rows use different guidance weights. The table below describes
+> the draft before the rewrite.
+
 # `iclr27/` is superseded by `cvpr27/`
 
 The target moved to CVPR 2027 on 2026-09-22. `paper_assets/cvpr27/` is the draft being prepared;
