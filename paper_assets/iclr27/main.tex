@@ -130,31 +130,36 @@ three by 36--41\% while preserving 80\% of their silhouettes. Our main contribut
 \paragraph{Pixel art.}
 Most work on pixel art converts an existing image rather than generating one: joint palette-and-pixel optimisation
 \citep{Gerstner2012}, contrast-aware downscaling \citep[PixelOE;][]{PixelOE2024} and learned pixelization
-\citep{Han2018,Wu2022}. Generative approaches include GANs for character sprites \citep{Coutinho2022}, pose-conditioned
-sprite sheets \citep{SpriteSheetDiffusion2024}, a palette-conditioned DDPM \citep{PixDiffPIG}, SD-$\pi$XL, which
-optimises one image by score distillation from SDXL \citep{Binninger2024}, and community LoRAs on large models
-\citep{PixelArtXL,PixelArtLoRAFlux}. \ours{} estimates the palette from the model's own prediction rather than conditioning on it, and generates a sprite
-in one sampling pass rather than hours of score distillation.
+\citep{Han2018,Wu2022}. Those methods assume a finished picture; they never choose training targets for a generator,
+and they never invent a palette for a sprite that does not yet exist. The generative line is thin: character-sprite
+GANs \citep{Coutinho2022}, pose-conditioned sprite sheets \citep{SpriteSheetDiffusion2024}, a DDPM conditioned on a
+given palette \citep{PixDiffPIG}, hours of score distillation from SDXL \citep{Binninger2024}, and community LoRAs on
+large models \citep{PixelArtXL,PixelArtLoRAFlux}. None of them ask whether a size-bucketed sprite corpus is dominated
+by downscaled artwork, and none estimate a per-sprite palette from the model's own prediction in one sampling pass.
+\ours{} addresses both.
 
 \paragraph{Guidance for diffusion models.}
 Classifier-free guidance \citep{HoSalimans2022} and its variants
-\citep{Kynkaanniemi2024,Sadat2024apg,Sadat2025fdg,Sadat2024cads,Chung2024} extrapolate away from an unconditional
-prediction; other rules use a weaker model \citep{Karras2024}, perturbed attention \citep{Ahn2024,Hong2023,Hong2024},
-a degraded \citep{CDG2026} or a random condition \citep[ICG;][]{Sadat2024icg}. We adopt ICG and show that it composes
-with palette projection.
+\citep{Kynkaanniemi2024,Sadat2024apg,Sadat2025fdg,Chung2024} change the reference that the conditional prediction is
+extrapolated away from; CADS instead anneals the condition \citep{Sadat2024cads}. Other rules use a weaker model
+\citep{Karras2024}, perturbed attention \citep{Ahn2024,Hong2023,Hong2024}, a degraded \citep{CDG2026} or a random
+condition \citep[ICG;][]{Sadat2024icg}. All of these leave the sample in a continuous colour space, so on this medium
+they still emit around fifty colours of dither. We adopt ICG, which needs no unconditional training, and compose it
+with a palette constraint that guidance alone does not provide.
 
 \paragraph{Constraints inside the sampler.}
-Projecting the predicted $\hat x_0$ at each step is a standard device for imposing hard constraints on diffusion models,
-from plug-and-play priors to inverse-problem solvers \citep{Venkatakrishnan2013,Chung2023dps}; discrete-state
-formulations impose quantisation by construction \citep{Austin2021,Gu2022vqdiffusion}. PPS applies this device to the
-property that defines pixel art, with a palette estimated on the fly, and keeps the continuous denoiser and its training
-unchanged.
+Projecting the predicted $\hat x_0$ is a standard device for inverse problems
+\citep{Venkatakrishnan2013,Chung2023dps}, and discrete-state diffusion imposes quantisation by changing the state space
+and the training objective \citep{Austin2021,Gu2022vqdiffusion}. Neither line estimates a small palette on the fly from
+the current prediction and then lets a continuous denoiser repair the seams. PPS is that device; the backbone and its
+training stay unchanged.
 
 \paragraph{Reference sets in generative evaluation.}
-FID is known to be sensitive to the feature extractor and preprocessing \citep{Heusel2017,Parmar2022,Stein2023}, and
-duplicate contamination affects many image corpora \citep{Barz2020,Webster2023,Torralba2011}. Following
-\citet{Stein2023}, we use DINOv2 features \citep{Oquab2023}; our native protocol additionally specifies \emph{which}
-real images form the reference, which for tiny sprites turns out to determine the ranking of methods.
+FID is sensitive to the feature extractor and to preprocessing \citep{Heusel2017,Parmar2022,Stein2023}, and duplicate
+leakage is a known corpus defect \citep{Barz2020,Webster2023,Torralba2011}. Those analyses do not specify, for a
+size-bucketed medium, which real images belong in the reference. A mixed-size sprite reference is mostly downscaled
+illustration and reverses the ranking of methods. Following \citet{Stein2023}, we use DINOv2 features
+\citep{Oquab2023}; the native protocol additionally admits only sprites drawn at the canvas size.
 
 % ================================================================================================================
 \section{Method}
@@ -235,11 +240,11 @@ binarise alpha in the data. We use $f=0.5$ throughout.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.64\linewidth]{figures/fig_palette.png}
+\includegraphics[width=0.98\linewidth]{figures/fig_palette.png}
 \caption{Palette-Projected Sampling at 16\,px, same prompts and seed; panel titles give the guidance weight and native
 FD of each row. Without projection (top), flat regions carry a few levels of dither. Projecting the predicted
-$\hat x_0$ onto six (middle) or four (bottom) colours during the late steps removes it, and the remaining denoising
-steps repair the seams, producing clean flat regions and crisp outlines.}
+$\hat x_0$ onto four colours during the late steps (bottom) removes it, and the remaining denoising steps repair the
+seams, producing clean flat regions and crisp outlines.}
 \label{fig:palette}
 \end{figure}
 
@@ -576,7 +581,7 @@ terms of use. No human subjects were involved.
 % Required by ICLR 2027 (does not count toward the page limit). The authors must complete and confirm this section.
 Generative AI tools were used in this work in the following ways. (a) Inside the method and its data pipeline:
 vision--language models produced the training and evaluation captions (gemini-3-flash \citep{Gemini3} for the original corpus,
-gemini-3.8-flash for the material added here), labelled every evaluation sprite by content type and rated sprite craft
+gemini-3.8-flash \citep{Gemini38} for the material added here), labelled every evaluation sprite by content type and rated sprite craft
 for the ablations of Appendix~\ref{app:more}; commercial image generators served as external baselines
 (Section~\ref{sec:external}). Each of these uses is an experimental component, is described where it is used, and its
 outputs were spot-checked against manual inspection --- the caption classifier was validated against image-level labels
